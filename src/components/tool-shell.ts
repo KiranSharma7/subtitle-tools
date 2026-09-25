@@ -8,9 +8,11 @@ export type Row = { cells: string[]; flag?: boolean };
 
 export type Tool = {
   // Tool-specific warnings (parser problems are added by the shell) and preview rows.
-  view: (parsed: ParseResult) => { warnings: string[]; rows: Row[] };
+  // summary replaces the "name: N cues, SRT." line.
+  view: (parsed: ParseResult) => { warnings: string[]; rows: Row[]; summary?: string };
   output: (parsed: ParseResult) => string;
   filename?: (name: string) => string; // download name; defaults to the uploaded name
+  parse?: (text: string) => ParseResult; // for tools that take any text, not only subtitles
 };
 
 // Wires up the markup from ToolShell.astro. Call the returned render() when the tool's own controls change.
@@ -35,7 +37,7 @@ export function mountTool(tool: Tool): () => void {
     text = t;
     encoding.value = enc;
     try {
-      parsed = parse(text, { fps: +fps.value });
+      parsed = tool.parse ? tool.parse(text) : parse(text, { fps: +fps.value });
       error.hidden = true;
       loaded.hidden = false;
       render();
@@ -61,7 +63,7 @@ export function mountTool(tool: Tool): () => void {
     // MicroDVD needs a frame rate: say so when the file gives one, otherwise let the user pick it.
     const fromFile = file.format === 'microdvd' && file.header ? `, ${file.fps} fps from the file` : '';
     $('fps-picker').hidden = file.format !== 'microdvd' || !!file.header;
-    $('summary').textContent = `${name}: ${file.cues.length} cues, ${formatNames[file.format]}${fromFile}.`;
+    $('summary').textContent = view.summary ?? `${name}: ${file.cues.length} cues, ${formatNames[file.format]}${fromFile}.`;
 
     const notes = [...problems, ...view.warnings];
     warnings.replaceChildren(...notes.map((n) => Object.assign(document.createElement('p'), { textContent: n })));

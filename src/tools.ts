@@ -34,4 +34,9 @@ export const tools = [
     href: '/convert-to-plain-text',
     blurb: 'Keep just the dialogue, with no timestamps, cue numbers or tags.',
   },
+  {
+    name: 'UTF-8 converter',
+    href: '/utf-8-converter',
+    blurb: 'Fix garbled letters by saving an old Windows-1251, Shift-JIS or GBK file as UTF-8.',
+  },
 ];

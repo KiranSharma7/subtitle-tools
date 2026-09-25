@@ -1,17 +1,17 @@
 ---
 // Shared file loading, encoding picker, warnings, preview and download for every Tool.
 // The page puts its own controls in the slot and wires them up with mountTool().
-type Props = { columns: string[] };
-const { columns } = Astro.props;
+type Props = { columns: string[]; accept?: string; hint?: string; label?: string };
+const { columns, label = 'Choose a subtitle file', accept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt', hint = 'SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2' } = Astro.props;
 
 const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'windows-1253', 'windows-1254', 'windows-1255', 'windows-1256', 'iso-8859-2', 'gbk', 'big5', 'shift_jis', 'euc-kr'];
 ---
 
 <section class="tool">
   <label class="drop" id="drop">
-    <input type="file" id="file" accept=".srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt" />
-    <strong>Choose a subtitle file</strong> or drop it here
-    <span>SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2</span>
+    <input type="file" id="file" accept={accept} />
+    <strong>{label}</strong> or drop it here
+    <span>{hint}</span>
   </label>
 
   <p id="error" class="error" role="alert" hidden></p>

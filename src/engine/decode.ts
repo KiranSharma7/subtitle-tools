@@ -6,8 +6,12 @@ export async function decode(bytes: Uint8Array): Promise<{ text: string; encodin
     const { default: jschardet } = await import('jschardet');
     let sample = '';
     for (const b of bytes.subarray(0, 64 * 1024)) sample += String.fromCharCode(b);
-    const guess = jschardet.detect(sample).encoding;
-    return decodeAs(bytes, guess || 'windows-1252');
+    // Lower case to match the encoding picker's names; gbk is the superset browsers use for GB2312.
+    let guess = (jschardet.detect(sample).encoding || 'windows-1252').toLowerCase();
+    if (guess === 'gb2312') guess = 'gbk';
+    // jschardet often mistakes short Windows-1251 text for Mac Cyrillic, which subtitle files never use.
+    if (guess === 'x-mac-cyrillic') guess = 'windows-1251';
+    return decodeAs(bytes, guess);
   }
 }
 

@@ -1,0 +1,43 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+---
+
+<Layout title="UTF-8 converter: fix garbled subtitle and text files" description="Turn a subtitle or text file saved in Windows-1251, Shift-JIS, GBK or another old encoding into UTF-8, so accents and non-Latin letters show up right. Your file stays on your device.">
+  <h1>UTF-8 converter</h1>
+  <p class="lede">Letters showing up as Ã© or ???? Save the file as UTF-8 and they'll read right.</p>
+
+  <ToolShell columns={['Line', 'Text']} label="Choose a file" accept="" hint="Any text file: subtitles, scripts, lyrics" />
+
+  <section class="help">
+    <h2>How to use it</h2>
+    <p>Upload the file and check the preview. If the letters look wrong, pick another encoding under <strong>Read as</strong> until they look right.</p>
+    <p>The download is the same text saved as UTF-8, without a byte order mark. Nothing else changes, line endings included.</p>
+  </section>
+</Layout>
+
+<script>
+  import { mountTool } from '../components/tool-shell.ts';
+
+  const encoding = document.getElementById('encoding') as HTMLSelectElement;
+  let text = '';
+
+  mountTool({
+    parse: (t) => ((text = t), { file: { format: 'txt', cues: [] }, problems: [] }),
+    view() {
+      const lines = text.split(/\r\n?|\n/);
+      const utf8 = encoding.value === 'UTF-8';
+      return {
+        summary: `${lines.length} lines, read as ${encoding.value}.`,
+        warnings: utf8 ? ['This file is already UTF-8. You can still download it with any byte order mark removed.'] : [],
+        rows: lines.map((l, i) => ({ cells: [String(i + 1), l] })),
+      };
+    },
+    output: () => text,
+  });
+</script>
+
+<style>
+  .help { margin-top: 80px; max-width: 640px; }
+  .help p { color: var(--graphite); }
+</style>

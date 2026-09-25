@@ -379,3 +379,13 @@ test('validate: missing WEBVTT line, clean file, and safe fixes', () => {
   assert.deepEqual(fixed.file.cues.map((c) => c.text), ['B', 'C', 'D', 'A', 'F', 'G']);
   assert.deepEqual(validate(fixed).map((i) => i.kind), ['zero-length', 'end-before-start', 'overlap']);
 });
+
+test('decode: legacy fixtures come out as the expected UTF-8, line endings kept', async () => {
+  const fixture = (f: string) => readFile(new URL(`../../tests/fixtures/${f}`, import.meta.url));
+  for (const name of ['cp1251', 'shift-jis', 'gbk']) {
+    const { text } = await decode(await fixture(`${name}.srt`));
+    assert.deepEqual(Buffer.from(text), await fixture(`${name}-utf8.srt`), name);
+  }
+  const names = await Promise.all(['cp1251', 'shift-jis', 'gbk'].map(async (n) => (await decode(await fixture(`${n}.srt`))).encoding));
+  assert.deepEqual(names, ['windows-1251', 'shift_jis', 'gbk']);
+});
