@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parse, write } from './formats.ts';
 import { shift } from './shift.ts';
+import { convert } from './convert.ts';
 import { parseTime } from './time.ts';
 import { decode } from './decode.ts';
 import { readFile } from 'node:fs/promises';
@@ -70,4 +71,34 @@ test('fixture: shift sample.srt 1.5s earlier matches expected bytes', async () =
   const r = shift(file, -1500);
   assert.deepEqual([r.clamped, r.removed], [[1], [2]]);
   assert.equal(write(r.file), (await fixture('sample-shifted-1.5s-earlier.srt')).toString());
+});
+
+test('convert srt to vtt: WEBVTT header, dot separators, nothing lost', () => {
+  const r = convert(parse(SRT).file, 'vtt');
+  assert.deepEqual(r.losses, []);
+  assert.equal(write(r.file), 'WEBVTT\n\n00:00:01.000 --> 00:00:02.500\n<i>Hello</i>\nthere\n\n00:00:03.000 --> 00:00:04.000\nBye\n');
+});
+
+test('convert vtt to srt: numbered, comma separators, exact loss report', () => {
+  const vtt = 'WEBVTT\n\nSTYLE\n::cue { color: red }\n\nintro\n00:01.000 --> 00:02.000 align:start\nHi\n\n00:03.000 --> 00:04.000 line:0\nMid\n\n00:05.000 --> 00:06.000\nBye\n';
+  const r = convert(parse(vtt).file, 'srt');
+  assert.equal(write(r.file), '1\n00:00:01,000 --> 00:00:02,000\nHi\n\n2\n00:00:03,000 --> 00:00:04,000\nMid\n\n3\n00:00:05,000 --> 00:00:06,000\nBye\n');
+  assert.deepEqual(r.losses, [
+    { kind: 'header', cues: [] },
+    { kind: 'id', cues: [1] },
+    { kind: 'settings', cues: [1, 2] },
+  ]);
+});
+
+test('convert vtt with a plain WEBVTT line and numeric ids loses nothing', () => {
+  assert.deepEqual(convert(parse('WEBVTT\n\n1\n00:01.000 --> 00:02.000\nHi\n\n2\n00:03.000 --> 00:04.000\nBye\n').file, 'srt').losses, []);
+});
+
+test('convert to the same format keeps everything', () => {
+  const vtt = 'WEBVTT - title\n\nSTYLE\n::cue { color: red }\n\nintro\n00:01.000 --> 00:02.000 align:start\nHi\n';
+  const { file } = parse(vtt);
+  const r = convert(file, 'vtt');
+  assert.deepEqual(r.losses, []);
+  assert.equal(write(r.file), write(file));
+  assert.equal(write(convert(parse(SRT).file, 'srt').file), write(parse(SRT).file));
 });

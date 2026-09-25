@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+---
+
+<Layout title="Convert to SRT: turn WebVTT subtitles into SRT" description="Convert WebVTT (.vtt) subtitles to SRT in your browser. See exactly what gets dropped before you download. Free, and your file stays on your device.">
+  <h1>Convert to SRT</h1>
+  <p class="lede">Turn a WebVTT file into SRT, the format almost every video player reads.</p>
+
+  <ToolShell columns={['#', 'Start', 'End', 'Text']} />
+
+  <section class="help">
+    <h2>How to use it</h2>
+    <p>Choose a WebVTT file. The preview shows the cues as they will be written, numbered from 1.</p>
+    <p>SRT has no cue ids, positions or styles. Anything that gets dropped is listed above the preview, with the cue numbers it affects.</p>
+    <p>The download is saved as UTF-8 with the same name and a <code>.srt</code> extension.</p>
+  </section>
+</Layout>
+
+<script>
+  import { mountConverter } from '../components/converter.ts';
+  mountConverter('srt');
+</script>
+
+<style>
+  .tool :global(td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .help { margin-top: 80px; max-width: 640px; }
+  .help p { color: var(--graphite); }
+</style>

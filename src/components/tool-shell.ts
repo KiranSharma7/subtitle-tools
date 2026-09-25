@@ -7,6 +7,7 @@ export type Tool = {
   // Tool-specific warnings (parser problems are added by the shell) and preview rows.
   view: (parsed: ParseResult) => { warnings: string[]; rows: Row[] };
   output: (parsed: ParseResult) => string;
+  filename?: (name: string) => string; // download name; defaults to the uploaded name
 };
 
 // Wires up the markup from ToolShell.astro. Call the returned render() when the tool's own controls change.
@@ -86,7 +87,7 @@ export function mountTool(tool: Tool): () => void {
     if (!parsed) return;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([tool.output(parsed)], { type: 'text/plain;charset=utf-8' }));
-    a.download = name;
+    a.download = tool.filename?.(name) ?? name;
     a.click();
     URL.revokeObjectURL(a.href);
   });

@@ -26,7 +26,7 @@ function parseTiming(line: string): { start: number; end: number; settings: stri
 }
 
 export function detect(text: string): Format | null {
-  if (/^WEBVTT(?:[ \t]|$)/.test(text)) return 'vtt';
+  if (/^WEBVTT(?:[ \t\n]|$)/.test(text)) return 'vtt';
   if (/^\s*\d*:?\d{1,2}:\d{1,2}[,.]\d{1,3}\s*-->/m.test(text)) return 'srt';
   return null;
 }
