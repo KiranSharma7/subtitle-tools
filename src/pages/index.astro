@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../site.ts';
+import { tools } from '../tools.ts';
+---
+
+<Layout title={`${site.name}: fix, convert and sync subtitle files`} description="Fast, private tools for fixing subtitle files. Shift timing, convert SRT and WebVTT, clean and validate, all in your browser.">
+  <h1>Fast, private tools for fixing subtitle files</h1>
+  <p class="lede">Your file never leaves your device. Everything runs in your browser.</p>
+  <ul class="tools">
+    {tools.map((t) => (
+      <li>
+        <a href={t.href}>{t.name}</a>
+        <p>{t.blurb}</p>
+      </li>
+    ))}
+  </ul>
+</Layout>
+
+<style>
+  .tools { list-style: none; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .tools li { background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); padding: 24px; }
+  .tools a { font-size: 20px; line-height: 1.4; font-weight: 600; text-decoration: none; }
+  .tools a:hover { color: var(--ember); }
+  .tools p { margin: 8px 0 0; color: var(--graphite); font-size: 14px; line-height: 1.43; }
+</style>

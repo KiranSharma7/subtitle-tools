@@ -1,0 +1,191 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'windows-1253', 'windows-1254', 'windows-1255', 'windows-1256', 'iso-8859-2', 'gbk', 'big5', 'shift_jis', 'euc-kr'];
+---
+
+<Layout title="Subtitle shifter: fix out-of-sync SRT and VTT subtitles" description="Move every subtitle in an SRT or WebVTT file earlier or later by seconds or milliseconds. Free, and your file stays on your device.">
+  <h1>Subtitle shifter</h1>
+  <p class="lede">Subtitles showing up too early or too late? Move them all by the same amount.</p>
+
+  <section class="tool">
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".srt,.vtt" />
+      <strong>Choose a subtitle file</strong> or drop it here
+      <span>SRT or WebVTT</span>
+    </label>
+
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <div id="loaded" hidden>
+      <p class="info">
+        <span id="summary"></span>
+        <label>Read as
+          <select id="encoding">{encodings.map((e) => <option>{e}</option>)}</select>
+        </label>
+      </p>
+
+      <fieldset>
+        <legend>Shift by</legend>
+        <input id="amount" type="number" min="0" step="any" value="1" aria-label="Amount" />
+        <select id="unit" aria-label="Unit">
+          <option value="1000">seconds</option>
+          <option value="1">milliseconds</option>
+        </select>
+        <select id="dir" aria-label="Direction">
+          <option value="1">later</option>
+          <option value="-1">earlier</option>
+        </select>
+      </fieldset>
+
+      <div id="warnings" class="warn" role="status" hidden></div>
+
+      <div class="preview">
+        <table>
+          <thead><tr><th>#</th><th>Before</th><th>After</th><th>Text</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <button id="download" class="primary">Download</button>
+    </div>
+  </section>
+
+  <section class="help">
+    <h2>How to use it</h2>
+    <p>Play the video and note when a line is spoken and when its subtitle appears. If the subtitle comes 2 seconds late, shift <em>earlier</em> by 2 seconds. If it comes early, shift <em>later</em>.</p>
+    <p>Cues that would start before 0:00 are moved to 0:00. Cues that would end before 0:00 are removed. Both are listed above the preview.</p>
+    <p>The download is saved as UTF-8 in the same format you uploaded, with styles and cue settings kept.</p>
+  </section>
+</Layout>
+
+<script>
+  import { parse, write, type ParseResult } from '../engine/formats.ts';
+  import { shift } from '../engine/shift.ts';
+  import { decode, decodeAs } from '../engine/decode.ts';
+  import { formatTime } from '../engine/time.ts';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const fileInput = $<HTMLInputElement>('file');
+  const drop = $('drop');
+  const error = $('error');
+  const loaded = $('loaded');
+  const encoding = $<HTMLSelectElement>('encoding');
+  const amount = $<HTMLInputElement>('amount');
+  const unit = $<HTMLSelectElement>('unit');
+  const dir = $<HTMLSelectElement>('dir');
+  const warnings = $('warnings');
+  const rows = $('rows');
+
+  let bytes: Uint8Array | null = null;
+  let name = '';
+  let parsed: ParseResult | null = null;
+
+  function load(text: string, enc: string) {
+    encoding.value = enc;
+    try {
+      parsed = parse(text);
+      error.hidden = true;
+      loaded.hidden = false;
+      render();
+    } catch (e) {
+      parsed = null;
+      loaded.hidden = true;
+      error.textContent = (e as Error).message;
+      error.hidden = false;
+    }
+  }
+
+  async function open(file: File) {
+    name = file.name;
+    bytes = new Uint8Array(await file.arrayBuffer());
+    const { text, encoding: enc } = await decode(bytes);
+    load(text, enc);
+  }
+
+  function offset() {
+    return Math.round((parseFloat(amount.value) || 0) * +unit.value * +dir.value);
+  }
+
+  function render() {
+    if (!parsed) return;
+    const { file, problems } = parsed;
+    const r = shift(file, offset());
+    $('summary').textContent = `${name}: ${file.cues.length} cues, ${file.format.toUpperCase()}.`;
+
+    const notes = [...problems];
+    if (r.clamped.length) notes.push(`Moved to 0:00 because they would start too early: cue ${r.clamped.join(', ')}.`);
+    if (r.removed.length) notes.push(`Removed because they would end before 0:00: cue ${r.removed.join(', ')}.`);
+    warnings.replaceChildren(...notes.map((n) => Object.assign(document.createElement('p'), { textContent: n })));
+    warnings.hidden = !notes.length;
+
+    // ponytail: preview capped at 200 rows; virtualise if people want to scroll huge files.
+    const t = (ms: number) => formatTime(ms, file.format === 'srt' ? ',' : '.');
+    const removed = new Set(r.removed);
+    let j = 0;
+    rows.replaceChildren(
+      ...file.cues.slice(0, 200).map((c, i) => {
+        const tr = document.createElement('tr');
+        const after = removed.has(i + 1) ? 'removed' : t(r.file.cues[j++].start);
+        for (const v of [String(i + 1), t(c.start), after, c.text]) tr.append(Object.assign(document.createElement('td'), { textContent: v }));
+        if (removed.has(i + 1) || r.clamped.includes(i + 1)) tr.className = 'flag';
+        return tr;
+      }),
+    );
+  }
+
+  fileInput.addEventListener('change', () => fileInput.files?.[0] && open(fileInput.files[0]));
+  drop.addEventListener('dragover', (e) => (e.preventDefault(), drop.classList.add('over')));
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('over');
+    const f = e.dataTransfer?.files[0];
+    if (f) open(f);
+  });
+  encoding.addEventListener('change', () => {
+    if (!bytes) return;
+    const { text, encoding: enc } = decodeAs(bytes, encoding.value);
+    load(text, enc);
+  });
+  for (const el of [amount, unit, dir]) el.addEventListener('input', render);
+
+  $('download').addEventListener('click', () => {
+    if (!parsed) return;
+    const out = write(shift(parsed.file, offset()).file);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([out], { type: 'text/plain;charset=utf-8' }));
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+</script>
+
+<style>
+  .tool { background: var(--fog); border-radius: var(--radius); padding: 32px; display: grid; gap: 24px; }
+  .drop { display: grid; gap: 8px; place-items: center; text-align: center; padding: 48px 16px; background: var(--paper); border: 1px dashed var(--mist); border-radius: var(--radius); cursor: pointer; }
+  .drop.over, .drop:hover { border-color: var(--ink); }
+  .drop span { color: var(--pewter); font-size: 14px; }
+  .drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .drop:has(input:focus-visible) { outline: 2px solid var(--ember); outline-offset: 2px; }
+  #loaded { display: grid; gap: 24px; }
+  #loaded[hidden], .error[hidden], .warn[hidden] { display: none; }
+  .info { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; margin: 0; font-size: 14px; color: var(--graphite); }
+  fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  legend { float: left; margin-right: 8px; font-weight: 600; }
+  input[type='number'] { width: 7em; }
+  input, select { padding: 8px 12px; border: 1px solid var(--mist); border-radius: var(--radius); background: var(--paper); }
+  .error { color: var(--error); margin: 0; }
+  .warn { background: var(--paper); border: 1px solid var(--mist); border-left: 3px solid var(--ink); border-radius: var(--radius); padding: 8px 16px; font-size: 14px; }
+  .warn :global(p) { margin: 8px 0; }
+  .preview { max-height: 360px; overflow: auto; background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, .preview :global(td) { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--fog); vertical-align: top; }
+  th { position: sticky; top: 0; background: var(--paper); font-weight: 500; color: var(--pewter); border-bottom-color: var(--mist); }
+  .preview :global(td) { white-space: pre-wrap; }
+  .preview :global(td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .preview :global(tr.flag) { background: var(--fog); font-weight: 500; }
+  .primary { justify-self: start; background: var(--ember); color: var(--paper); border: 0; border-radius: var(--radius); padding: 8px 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .help { margin-top: 80px; max-width: 640px; }
+  .help p { color: var(--graphite); }
+</style>
