@@ -32,3 +32,14 @@ test('convert an ASS file to SRT with a loss report', async ({ page }) => {
   expect(d.name).toBe('sample.srt');
   expect(d.bytes.equals(await readFile(fixture('sample-ass-converted.srt')))).toBe(true);
 });
+
+test('convert a SAMI file to SRT', async ({ page }) => {
+  await page.goto('/convert-to-srt');
+  await page.getByLabel('Choose a subtitle file').setInputFiles(fixture('sample.smi'));
+  await expect(page.getByText('sample.smi: 3 cues, SAMI.')).toBeVisible();
+  await expect(page.locator('tbody tr').nth(0)).toContainText('Hello & welcome\nto the <i>show</i>');
+
+  const d = await download(page);
+  expect(d.name).toBe('sample.srt');
+  expect(d.bytes.equals(await readFile(fixture('sample-sami-converted.srt')))).toBe(true);
+});

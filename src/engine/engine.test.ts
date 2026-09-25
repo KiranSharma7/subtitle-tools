@@ -184,3 +184,29 @@ test('ass: unreadable time is reported with its line number', () => {
   assert.equal(file.cues.length, 0);
   assert.match(problems[0], /Line 5/);
 });
+
+test('sami to srt: timing from SYNC, entities decoded, <br> is a line break, header reported', async () => {
+  const { file, problems } = parse(await fixture('sample.smi'));
+  assert.deepEqual(problems, []);
+  assert.equal(file.format, 'sami');
+  const r = convert(file, 'srt');
+  assert.equal(write(r.file), await fixture('sample-sami-converted.srt'));
+  assert.deepEqual(r.losses, [{ kind: 'header', cues: [] }]);
+});
+
+test('sami: shift and write back keeps the header and round-trips', async () => {
+  const { file } = parse(await fixture('sample.smi'));
+  const out = write(shift(file, 1000).file);
+  assert.ok(out.startsWith((await fixture('sample.smi')).split('<SYNC')[0]));
+  assert.match(out, /<SYNC Start=2000><P Class=ENCC>Hello &amp; welcome<br>to the <i>show<\/i>\n<SYNC Start=4500><P Class=ENCC>&nbsp;\n/);
+  // 6000 -> 7000 follows straight on from the previous cue, so no blank SYNC between them.
+  assert.match(out, /Second cue\n<SYNC Start=7000><P Class=ENCC>5 &lt; 6\n<SYNC Start=9000><P Class=ENCC>&nbsp;\n<\/BODY>\n<\/SAMI>\n$/);
+  assert.deepEqual(parse(out).file.cues, shift(file, 1000).file.cues);
+});
+
+test('sami: only the first language is read, the others are reported', () => {
+  const smi = '<SAMI><BODY>\n<SYNC Start=1000><P Class=ENCC>Hello<P Class=KRCC>안녕\n<SYNC Start=2000><P Class=ENCC>&nbsp;<P Class=KRCC>&nbsp;\n<SYNC Start=3000><P Class=KRCC>only korean\n<SYNC Start=4000><P Class=FRCC>bonjour\n</BODY></SAMI>';
+  const { file, problems } = parse(smi);
+  assert.deepEqual(file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 2000, 'Hello']]);
+  assert.deepEqual(problems, ['This file has more than one language. Only ENCC was read; skipped: KRCC, FRCC.']);
+});

@@ -7,6 +7,8 @@ export type Loss = { kind: string; cues: number[] };
 // Cue text as SRT/WebVTT write it (<i>, <b>, <u>, \n line breaks), plus what the source format had that this drops.
 function toCommon(format: Format, c: Cue, n: number): { text: string; lost: string[] } {
   if (format === 'ass' || format === 'ssa') return assToCommon(c);
+  // The SAMI class only names the language, and SAMI text is already stored as SRT holds it.
+  if (format === 'sami') return { text: c.text, lost: [] };
   // An id equal to the cue number comes back as SRT's own numbering, so nothing is lost.
   return { text: c.text, lost: Object.entries(c.extras ?? {}).filter(([k, v]) => !(k === 'id' && v === String(n))).map(([k]) => k) };
 }
