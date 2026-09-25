@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parse, plainText, write } from './formats.ts';
-import { shift } from './shift.ts';
+import { shift, shiftRanges, type RangeShiftResult } from './shift.ts';
 import { convert } from './convert.ts';
 import { parseTime } from './time.ts';
 import { decode } from './decode.ts';
@@ -258,4 +258,27 @@ test('mpl2: shift and write back round-trips', async () => {
 
 test('ass: Dialogue lines with no [Events] heading are still read', () => {
   assert.deepEqual(parse('Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Hi\n').file.cues.map((c) => c.text), ['Hi']);
+});
+
+test('partial shift: boundaries, clamp and new overlaps', () => {
+  const { file } = parse(
+    '1\n00:00:01,000 --> 00:00:02,000\nA\n\n2\n00:00:05,000 --> 00:00:06,000\nB\n\n3\n00:00:10,000 --> 00:00:11,000\nC\n\n4\n00:00:12,000 --> 00:00:13,000\nD\n',
+  );
+  const r = shiftRanges(file, [
+    { from: 0, to: 5000, offset: -1500 }, // cue 1 moves and clamps; cue 2 starts on To so stays
+    { from: 10000, to: 12000, offset: 2500 }, // cue 3 starts on From so moves, onto cue 4
+  ]);
+  assert.ok(!('error' in r));
+  assert.deepEqual(r.range, [0, null, 1, null]);
+  assert.deepEqual(r.clamped, [1]);
+  assert.deepEqual(r.removed, []);
+  assert.deepEqual(r.overlaps, [3]);
+  assert.deepEqual(r.file.cues.map((c) => [c.start, c.end]), [[0, 500], [5000, 6000], [12500, 13500], [12000, 13000]]);
+  assert.deepEqual((shiftRanges(file, [{ from: 0, to: 2000, offset: -5000 }]) as RangeShiftResult).removed, [1]);
+});
+
+test('partial shift refuses overlapping ranges', () => {
+  const { file } = parse('1\n00:00:01,000 --> 00:00:02,000\nA\n');
+  const r = shiftRanges(file, [{ from: 0, to: 5000, offset: 1 }, { from: 4000, to: 6000, offset: 1 }]);
+  assert.deepEqual(r, { error: 'Range 1 and range 2 overlap. Change one so they don\'t.' });
 });

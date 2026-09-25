@@ -1,0 +1,117 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+---
+
+<Layout title="Partial subtitle shifter: re-time part of an SRT, VTT or ASS file" description="Move only some subtitles earlier or later, with a different offset for each part of the video. Works on SRT, WebVTT, ASS, SAMI, MicroDVD and MPL2. Your file stays on your device.">
+  <h1>Partial subtitle shifter</h1>
+  <p class="lede">Subtitles only drift after an ad break or a cut scene? Move just that part.</p>
+
+  <ToolShell columns={['#', 'Before', 'After', 'Range', 'Text']}>
+    <div id="ranges"></div>
+    <button id="add" type="button">Add range</button>
+    <template id="range-row">
+      <fieldset>
+        <legend></legend>
+        <label>From <input class="from" value="00:00:00,000" /></label>
+        <label>To <input class="to" value="00:10:00,000" /></label>
+        <label>Shift by <input class="offset" type="number" step="any" value="1" /> seconds</label>
+        <button class="remove" type="button">Remove</button>
+      </fieldset>
+    </template>
+  </ToolShell>
+
+  <section class="help">
+    <h2>How to use it</h2>
+    <p>Add a range for each part of the video that is out of sync. Type times the way the preview shows them. A negative shift moves subtitles earlier.</p>
+    <p>A subtitle belongs to the range its start time falls in, and moves as a whole. One that starts exactly on a range's To time is not moved. Ranges can't overlap.</p>
+    <p>Cues that would start before 0:00 are moved to 0:00, and cues that would end before 0:00 are removed. If a moved cue now overlaps one outside its range, it's listed so you can check it.</p>
+    <p>The download is saved as UTF-8 in the same format you uploaded.</p>
+  </section>
+</Layout>
+
+<script>
+  import { write } from '../engine/formats.ts';
+  import { shiftRanges, type Range } from '../engine/shift.ts';
+  import { formatTime, parseTime } from '../engine/time.ts';
+  import type { SubtitleFile } from '../engine/types.ts';
+  import { mountTool } from '../components/tool-shell.ts';
+
+  const list = document.getElementById('ranges')!;
+  const tpl = document.getElementById('range-row') as HTMLTemplateElement;
+
+  function readRanges(): Range[] | string {
+    const out: Range[] = [];
+    for (const [i, f] of [...list.children].entries()) {
+      const v = (c: string) => (f.querySelector(c) as HTMLInputElement).value;
+      const from = parseTime(v('.from'));
+      const to = parseTime(v('.to'));
+      if (from === null || to === null) return `Range ${i + 1}: type times like 00:01:30,000.`;
+      out.push({ from, to, offset: Math.round((parseFloat(v('.offset')) || 0) * 1000) });
+    }
+    return out;
+  }
+
+  function run(file: SubtitleFile) {
+    const ranges = readRanges();
+    return typeof ranges === 'string' ? { error: ranges } : shiftRanges(file, ranges);
+  }
+
+  const render = mountTool({
+    view({ file }) {
+      const t = (ms: number) => formatTime(ms, file.format === 'srt' ? ',' : '.');
+      const r = run(file);
+      if ('error' in r) return { warnings: [`${r.error} Nothing is shifted.`], rows: file.cues.map((c, i) => ({ cells: [String(i + 1), t(c.start), t(c.start), '', c.text] })) };
+
+      const warnings: string[] = [];
+      if (r.clamped.length) warnings.push(`Moved to 0:00 because they would start too early: cue ${r.clamped.join(', ')}.`);
+      if (r.removed.length) warnings.push(`Removed because they would end before 0:00: cue ${r.removed.join(', ')}.`);
+      if (r.overlaps.length) warnings.push(`Now overlap a cue outside their range: cue ${r.overlaps.join(', ')}.`);
+
+      const removed = new Set(r.removed);
+      let j = 0;
+      const rows = file.cues.map((c, i) => {
+        const after = removed.has(i + 1) ? 'removed' : t(r.file.cues[j++].start);
+        const k = r.range[i];
+        return {
+          cells: [String(i + 1), t(c.start), after, k === null ? '' : `Range ${k + 1}`, c.text],
+          flag: removed.has(i + 1) || r.clamped.includes(i + 1) || r.overlaps.includes(i + 1),
+        };
+      });
+      return { warnings, rows };
+    },
+    output({ file }) {
+      const r = run(file);
+      return write('error' in r ? file : r.file);
+    },
+  });
+
+  function renumber() {
+    [...list.children].forEach((f, i) => (f.querySelector('legend')!.textContent = `Range ${i + 1}`));
+    render();
+  }
+
+  function addRange() {
+    const row = tpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+    row.querySelector('.remove')!.addEventListener('click', () => (row.remove(), renumber()));
+    list.append(row);
+    renumber();
+  }
+
+  list.addEventListener('input', render);
+  document.getElementById('add')!.addEventListener('click', addRange);
+  addRange();
+</script>
+
+<style>
+  #ranges { display: grid; gap: 16px; }
+  fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  legend { float: left; font-weight: 600; }
+  label { display: flex; gap: 8px; align-items: center; }
+  .from, .to { width: 9em; font-variant-numeric: tabular-nums; }
+  input[type='number'] { width: 6em; }
+  #add, .remove { justify-self: start; background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); padding: 8px 16px; cursor: pointer; }
+  .tool :global(td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .help { margin-top: 80px; max-width: 640px; }
+  .help p { color: var(--graphite); }
+</style>
