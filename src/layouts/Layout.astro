@@ -43,9 +43,21 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
           <a href="/contact">Contact</a>
+          <button type="button" class="link" data-consent-open>Cookie settings</button>
         </nav>
       </div>
     </footer>
+    <section id="consent" class="consent" aria-label="Cookie consent" hidden>
+      <p>We'd like to use Google Analytics cookies to count visits and see which tools get used. Your files are never sent. <a href="/privacy">Privacy policy</a></p>
+      <div>
+        <button type="button" id="consent-accept">Accept</button>
+        <button type="button" id="consent-reject">Reject</button>
+      </div>
+    </section>
+    <script>
+      import { initConsent } from '../components/analytics.ts';
+      initConsent();
+    </script>
   </body>
 </html>
 
@@ -98,6 +110,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   footer p { margin: 0; }
   footer nav a { color: var(--mist); }
   footer nav a:hover { color: var(--paper); }
+  .link { background: none; border: 0; padding: 0; color: var(--mist); text-decoration: underline; cursor: pointer; font-size: inherit; }
+  .link:hover { color: var(--paper); }
+  .consent { position: fixed; inset: auto 16px 16px; max-width: 640px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); padding: 16px 24px; box-shadow: 0 8px 24px rgb(0 7 16 / 0.12); font-size: 14px; }
+  .consent[hidden] { display: none; }
+  .consent p { margin: 0; flex: 1 1 280px; color: var(--graphite); }
+  .consent div { display: flex; gap: 8px; }
+  .consent button { border-radius: var(--radius); padding: 8px 16px; font-weight: 600; cursor: pointer; border: 1px solid var(--ink); background: var(--paper); }
+  #consent-accept { background: var(--ember); border-color: var(--ember); color: var(--paper); }
   .doc { max-width: 640px; }
   .doc p { color: var(--graphite); }
   .help { margin-top: 80px; max-width: 640px; }

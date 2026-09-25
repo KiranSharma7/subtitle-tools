@@ -13,8 +13,12 @@ import { site } from '../site.ts';
     <p>If you reject, or haven't chosen yet, Google Analytics sends nothing. We use Google Consent Mode with everything set to denied until you accept.</p>
     <h2>Cookies and storage</h2>
     <p>Google Analytics sets cookies (named <code>_ga</code> and <code>_ga_*</code>) only after you accept. We save your accept or reject choice in your browser's local storage, so we don't ask again.</p>
-    <p id="consent-change">You can change your choice at any time from the link in the footer.</p>
+    <p>You can change your choice at any time: <button type="button" class="change" data-consent-open>change cookie settings</button>. There's also a link in the footer.</p>
     <h2>Contact</h2>
     <p>Questions about privacy: <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
   </article>
 </Layout>
+
+<style>
+  .change { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; cursor: pointer; }
+</style>

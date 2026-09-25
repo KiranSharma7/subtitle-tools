@@ -1,6 +1,7 @@
 import { parse, type ParseResult } from '../engine/formats.ts';
 import { decode, decodeAs } from '../engine/decode.ts';
 import type { Format } from '../engine/types.ts';
+import { track } from './analytics.ts';
 
 const formatNames: Record<Format, string> = { srt: 'SRT', vtt: 'VTT', ass: 'ASS', ssa: 'SSA', sami: 'SAMI', microdvd: 'MicroDVD', mpl2: 'MPL2', txt: 'TXT' };
 
@@ -54,6 +55,7 @@ export function mountTool(tool: Tool): () => void {
     bytes = new Uint8Array(await file.arrayBuffer());
     const { text, encoding: enc } = await decode(bytes);
     load(text, enc);
+    if (parsed) track('file_loaded', { tool: location.pathname.slice(1), input_format: parsed.file.format });
   }
 
   function render() {
@@ -101,6 +103,9 @@ export function mountTool(tool: Tool): () => void {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([tool.output(parsed)], { type: 'text/plain;charset=utf-8' }));
     a.download = tool.filename?.(name) ?? name;
+    // Only converters rename the file, and their extension is the output format.
+    const output_format = tool.filename ? a.download.split('.').pop()! : parsed.file.format;
+    track('download', { tool: location.pathname.slice(1), input_format: parsed.file.format, output_format });
     a.click();
     URL.revokeObjectURL(a.href);
   });

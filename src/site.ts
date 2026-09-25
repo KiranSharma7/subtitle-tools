@@ -3,4 +3,5 @@ export const site = {
   name: 'Subtitle Tools',
   url: 'https://example.com',
   email: 'hello@example.com',
+  gaId: 'G-XXXXXXXXXX',
 };
