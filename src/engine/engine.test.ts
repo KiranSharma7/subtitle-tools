@@ -238,3 +238,20 @@ test('microdvd to srt: y codes become tags, other codes are reported, the frame 
   assert.deepEqual(r.file.cues.map((c) => c.text), ['<b>A\n<i>B</i></b>', 'C']);
   assert.deepEqual(r.losses, [{ kind: 'formatting', cues: [1] }, { kind: 'positioning', cues: [2] }]);
 });
+
+test('mpl2: deciseconds to ms, / italics become <i> when converting', async () => {
+  const mpl2 = await fixture('sample-mpl2.txt');
+  const { file, problems } = parse(mpl2);
+  assert.deepEqual(problems, []);
+  assert.equal(file.format, 'mpl2');
+  assert.deepEqual(file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 2500, 'Hello\n/world'], [4000, 5200, '/Whole line italic'], [60000, 61500, 'Bye']]);
+  const r = convert(file, 'srt');
+  assert.equal(write(r.file), await fixture('sample-mpl2-converted.srt'));
+  assert.deepEqual(r.losses, []);
+});
+
+test('mpl2: shift and write back round-trips', async () => {
+  const mpl2 = await fixture('sample-mpl2.txt');
+  assert.equal(write(parse(mpl2).file), mpl2);
+  assert.equal(write(shift(parse(mpl2).file, 1000).file), '[20][35]Hello|/world\n[50][62]/Whole line italic\n[610][625]Bye\n');
+});

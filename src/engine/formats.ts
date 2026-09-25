@@ -4,6 +4,7 @@ import { convert } from './convert.ts';
 import { parseAss, writeAss } from './ass.ts';
 import { parseSami, writeSami } from './sami.ts';
 import { parseMicroDvd, writeMicroDvd } from './microdvd.ts';
+import { parseMpl2, writeMpl2 } from './mpl2.ts';
 
 export type ParseResult = { file: SubtitleFile; problems: string[] };
 
@@ -35,6 +36,7 @@ export function detect(text: string): Format | null {
   if (/<sami[\s>]/i.test(text)) return 'sami';
   if (/^\s*\d*:?\d{1,2}:\d{1,2}[,.]\d{1,3}\s*-->/m.test(text)) return 'srt';
   if (/^\{\d+\}\{\d+\}/m.test(text)) return 'microdvd';
+  if (/^\[\d+\]\[\d+\]/m.test(text)) return 'mpl2';
   return null;
 }
 
@@ -46,6 +48,7 @@ export function parse(input: string, { fps }: { fps?: number } = {}): ParseResul
   if (format === 'ass' || format === 'ssa') return parseAss(text, format);
   if (format === 'sami') return parseSami(text);
   if (format === 'microdvd') return parseMicroDvd(text, fps);
+  if (format === 'mpl2') return parseMpl2(text);
 
   const cues: Cue[] = [];
   const problems: string[] = [];
@@ -105,6 +108,7 @@ export function write(file: SubtitleFile, format: Format = file.format, { keepLi
   if (format === 'ass' || format === 'ssa') return writeAss(file);
   if (format === 'sami') return writeSami(file);
   if (format === 'microdvd') return writeMicroDvd(file);
+  if (format === 'mpl2') return writeMpl2(file);
   if (format === 'txt') {
     const cues = file.cues.map((c) => plainText(c.text, keepLineBreaks)).filter(Boolean);
     return cues.join(keepLineBreaks ? '\n\n' : '\n') + '\n';

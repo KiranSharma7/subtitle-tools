@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 ---
 
-<Layout title="Subtitle shifter: fix out-of-sync SRT and VTT subtitles" description="Move every subtitle in an SRT or WebVTT file earlier or later by seconds or milliseconds. Free, and your file stays on your device.">
+<Layout title="Subtitle shifter: fix out-of-sync SRT, VTT and ASS subtitles" description="Move every subtitle in an SRT, WebVTT, ASS, SAMI, MicroDVD or MPL2 file earlier or later by seconds or milliseconds. Free, and your file stays on your device.">
   <h1>Subtitle shifter</h1>
   <p class="lede">Subtitles showing up too early or too late? Move them all by the same amount.</p>
 
@@ -27,6 +27,7 @@ import ToolShell from '../components/ToolShell.astro';
     <p>Play the video and note when a line is spoken and when its subtitle appears. If the subtitle comes 2 seconds late, shift <em>earlier</em> by 2 seconds. If it comes early, shift <em>later</em>.</p>
     <p>Cues that would start before 0:00 are moved to 0:00. Cues that would end before 0:00 are removed. Both are listed above the preview.</p>
     <p>The download is saved as UTF-8 in the same format you uploaded, with styles and cue settings kept.</p>
+    <p>MicroDVD files count frames, not seconds. If the file doesn't say its frame rate, pick the one your video uses.</p>
   </section>
 </Layout>
 

@@ -1,0 +1,3 @@
+[10][25]Hello|/world
+[40][52]/Whole line italic
+[600][615]Bye

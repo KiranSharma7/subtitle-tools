@@ -7,12 +7,12 @@ export const tools = [
   {
     name: 'Convert to SRT',
     href: '/convert-to-srt',
-    blurb: 'Turn a WebVTT file into SRT, with a list of anything that gets dropped.',
+    blurb: 'Turn WebVTT, ASS, SAMI and other files into SRT, with a list of anything that gets dropped.',
   },
   {
     name: 'Convert to WebVTT',
     href: '/convert-to-webvtt',
-    blurb: 'Turn an SRT file into WebVTT for web video players.',
+    blurb: 'Turn SRT, ASS, SAMI and other files into WebVTT for web video players.',
   },
   {
     name: 'Convert to plain text',

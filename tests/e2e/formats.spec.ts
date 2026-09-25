@@ -64,3 +64,14 @@ test('MicroDVD with a frame rate in the file says so and hides the picker', asyn
   await expect(page.getByText('film.sub: 1 cues, MicroDVD, 25 fps from the file.')).toBeVisible();
   await expect(page.getByLabel('Frame rate')).toBeHidden();
 });
+
+test('convert an MPL2 file to SRT', async ({ page }) => {
+  await page.goto('/convert-to-srt');
+  await page.getByLabel('Choose a subtitle file').setInputFiles(fixture('sample-mpl2.txt'));
+  await expect(page.getByText('sample-mpl2.txt: 3 cues, MPL2.')).toBeVisible();
+  await expect(page.locator('tbody tr').nth(1)).toContainText('<i>Whole line italic</i>');
+
+  const d = await download(page);
+  expect(d.name).toBe('sample-mpl2.srt');
+  expect(d.bytes.equals(await readFile(fixture('sample-mpl2-converted.srt')))).toBe(true);
+});

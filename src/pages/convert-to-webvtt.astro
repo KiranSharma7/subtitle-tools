@@ -3,16 +3,16 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 ---
 
-<Layout title="Convert to WebVTT: turn SRT subtitles into VTT" description="Convert SRT subtitles to WebVTT (.vtt) for HTML5 video in your browser. Free, and your file stays on your device.">
+<Layout title="Convert to WebVTT: turn SRT, ASS, SAMI and other subtitles into VTT" description="Convert SRT, ASS, SSA, SAMI, MicroDVD or MPL2 subtitles to WebVTT (.vtt) for HTML5 video in your browser. Free, and your file stays on your device.">
   <h1>Convert to WebVTT</h1>
-  <p class="lede">Turn an SRT file into WebVTT, the format web video players use.</p>
+  <p class="lede">Turn an SRT, ASS or other subtitle file into WebVTT, the format web video players use.</p>
 
   <ToolShell columns={['#', 'Start', 'End', 'Text']} />
 
   <section class="help">
     <h2>How to use it</h2>
-    <p>Choose an SRT file. The preview shows the cues as they will be written.</p>
-    <p>SRT has nothing that WebVTT cannot hold, so nothing is lost. If anything ever is dropped, it is listed above the preview.</p>
+    <p>Choose an SRT, ASS, SSA, SAMI, MicroDVD or MPL2 file. The preview shows the cues as they will be written.</p>
+    <p>SRT converts with nothing lost. ASS styles, positions and karaoke timing have no WebVTT equivalent, so they are dropped. Anything that gets dropped is listed above the preview, with the cue numbers it affects.</p>
     <p>The download is saved as UTF-8 with the same name and a <code>.vtt</code> extension.</p>
   </section>
 </Layout>

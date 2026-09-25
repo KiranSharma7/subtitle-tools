@@ -1,6 +1,7 @@
 import type { Cue, Format, SubtitleFile } from './types.ts';
 import { assToCommon } from './ass.ts';
 import { microDvdToCommon } from './microdvd.ts';
+import { mpl2ToCommon } from './mpl2.ts';
 
 // kind is 'header' or what a cue lost ('settings', 'style', 'karaoke'...); cues are 1-based and empty for the header.
 export type Loss = { kind: string; cues: number[] };
@@ -11,6 +12,7 @@ function toCommon(format: Format, c: Cue, n: number): { text: string; lost: stri
   // The SAMI class only names the language, and SAMI text is already stored as SRT holds it.
   if (format === 'sami') return { text: c.text, lost: [] };
   if (format === 'microdvd') return microDvdToCommon(c);
+  if (format === 'mpl2') return mpl2ToCommon(c);
   // An id equal to the cue number comes back as SRT's own numbering, so nothing is lost.
   return { text: c.text, lost: Object.entries(c.extras ?? {}).filter(([k, v]) => !(k === 'id' && v === String(n))).map(([k]) => k) };
 }

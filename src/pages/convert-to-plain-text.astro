@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 ---
 
-<Layout title="Convert subtitles to plain text: get the dialogue as a .txt file" description="Turn SRT or WebVTT subtitles into plain text. Timing, cue numbers and formatting tags are removed. Free, and your file stays on your device.">
+<Layout title="Convert subtitles to plain text: get the dialogue as a .txt file" description="Turn SRT, WebVTT, ASS, SAMI and other subtitles into plain text. Timing, cue numbers and formatting tags are removed. Free, and your file stays on your device.">
   <h1>Convert to plain text</h1>
   <p class="lede">Get just the dialogue, with no timestamps, cue numbers or tags.</p>
 
@@ -13,8 +13,8 @@ import ToolShell from '../components/ToolShell.astro';
 
   <section class="help">
     <h2>How to use it</h2>
-    <p>Choose an SRT or WebVTT file. The preview shows the text of each cue with the timing and formatting tags removed.</p>
-    <p>Cue ids, cue settings and the WebVTT header are dropped too. Anything that gets dropped is listed above the preview.</p>
+    <p>Choose an SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2 file. The preview shows the text of each cue with the timing and formatting tags removed.</p>
+    <p>Cue ids, cue settings, styles and the file header are dropped too. Anything that gets dropped is listed above the preview.</p>
     <p>With <em>Keep line breaks</em> on, each cue keeps its lines and cues are separated by a blank line. Turn it off to put each cue on one line.</p>
     <p>The download is saved as UTF-8 with the same name and a <code>.txt</code> extension. Plain text has no timing, so it can't be turned back into subtitles.</p>
   </section>
