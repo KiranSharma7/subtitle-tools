@@ -4,6 +4,7 @@ import { parse, write } from './formats.ts';
 import { shift } from './shift.ts';
 import { parseTime } from './time.ts';
 import { decode } from './decode.ts';
+import { readFile } from 'node:fs/promises';
 
 const SRT = '﻿1\r\n00:00:01,000 --> 00:00:02,500\r\n<i>Hello</i>\r\nthere\r\n\r\n2\r\n00:00:03,000 --> 00:00:04,000\r\nBye\r\n';
 
@@ -59,4 +60,14 @@ test('decode falls back from UTF-8', async () => {
   const cp1251 = new Uint8Array([0xcf, 0xf0, 0xe8, 0xe2, 0xe5, 0xf2, 0x2c, 0x20, 0xea, 0xe0, 0xea, 0x20, 0xe4, 0xe5, 0xeb, 0xe0, 0x3f, 0x20, 0xdd, 0xf2, 0xee, 0x20, 0xf2, 0xe5, 0xf1, 0xf2, 0x2e]);
   const r = await decode(cp1251);
   assert.match(r.text, /Привет/);
+});
+
+test('fixture: shift sample.srt 1.5s earlier matches expected bytes', async () => {
+  const fixture = (f: string) => readFile(new URL(`../../tests/fixtures/${f}`, import.meta.url));
+  const { text } = await decode(await fixture('sample.srt'));
+  const { file, problems } = parse(text);
+  assert.match(problems[0], /Line 19/);
+  const r = shift(file, -1500);
+  assert.deepEqual([r.clamped, r.removed], [[1], [2]]);
+  assert.equal(write(r.file), (await fixture('sample-shifted-1.5s-earlier.srt')).toString());
 });

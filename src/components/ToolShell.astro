@@ -1,0 +1,63 @@
+---
+// Shared file loading, encoding picker, warnings, preview and download for every Tool.
+// The page puts its own controls in the slot and wires them up with mountTool().
+type Props = { columns: string[] };
+const { columns } = Astro.props;
+
+const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'windows-1253', 'windows-1254', 'windows-1255', 'windows-1256', 'iso-8859-2', 'gbk', 'big5', 'shift_jis', 'euc-kr'];
+---
+
+<section class="tool">
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept=".srt,.vtt" />
+    <strong>Choose a subtitle file</strong> or drop it here
+    <span>SRT or WebVTT</span>
+  </label>
+
+  <p id="error" class="error" role="alert" hidden></p>
+
+  <div id="loaded" hidden>
+    <p class="info">
+      <span id="summary"></span>
+      <label>Read as
+        <select id="encoding">{encodings.map((e) => <option>{e}</option>)}</select>
+      </label>
+    </p>
+
+    <slot />
+
+    <div id="warnings" class="warn" role="status" hidden></div>
+
+    <div class="preview">
+      <table>
+        <thead><tr>{columns.map((c) => <th>{c}</th>)}</tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <button id="download" class="primary">Download</button>
+  </div>
+</section>
+
+<style>
+  .tool { background: var(--fog); border-radius: var(--radius); padding: 32px; display: grid; gap: 24px; }
+  .drop { display: grid; gap: 8px; place-items: center; text-align: center; padding: 48px 16px; background: var(--paper); border: 1px dashed var(--mist); border-radius: var(--radius); cursor: pointer; }
+  .drop.over, .drop:hover { border-color: var(--ink); }
+  .drop span { color: var(--pewter); font-size: 14px; }
+  .drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .drop:has(input:focus-visible) { outline: 2px solid var(--ember); outline-offset: 2px; }
+  #loaded { display: grid; gap: 24px; }
+  #loaded[hidden], .error[hidden], .warn[hidden] { display: none; }
+  .info { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; margin: 0; font-size: 14px; color: var(--graphite); }
+  .tool :global(input:not([type='file'])), .tool :global(select) { padding: 8px 12px; border: 1px solid var(--mist); border-radius: var(--radius); background: var(--paper); }
+  .error { color: var(--error); margin: 0; }
+  .warn { background: var(--paper); border: 1px solid var(--mist); border-left: 3px solid var(--ink); border-radius: var(--radius); padding: 8px 16px; font-size: 14px; }
+  .warn :global(p) { margin: 8px 0; }
+  .preview { max-height: 360px; overflow: auto; background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, .preview :global(td) { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--fog); vertical-align: top; }
+  th { position: sticky; top: 0; background: var(--paper); font-weight: 500; color: var(--pewter); border-bottom-color: var(--mist); }
+  .preview :global(td) { white-space: pre-wrap; }
+  .preview :global(tr.flag) { background: var(--fog); font-weight: 500; }
+  .primary { justify-self: start; background: var(--ember); color: var(--paper); border: 0; border-radius: var(--radius); padding: 8px 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
+</style>
