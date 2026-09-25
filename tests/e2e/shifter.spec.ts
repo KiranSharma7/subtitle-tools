@@ -44,6 +44,6 @@ test('changing the encoding re-renders the preview', async ({ page }) => {
 test('a non-subtitle file shows an error', async ({ page }) => {
   await page.goto('/subtitle-shifter');
   await page.getByLabel('Choose a subtitle file').setInputFiles(fixture('not-subtitle.txt'));
-  await expect(page.getByRole('alert')).toHaveText("This does not look like an SRT or WebVTT file. Plain text can't be read: it has no timing.");
+  await expect(page.getByRole('alert')).toHaveText("This does not look like a subtitle file. Plain text can't be read: it has no timing.");
   await expect(page.getByRole('button', { name: 'Download' })).toBeHidden();
 });

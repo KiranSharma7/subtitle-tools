@@ -13,7 +13,7 @@ test('convert WebVTT to SRT, see the loss report, download', async ({ page }) =>
   await expect(rows).toHaveCount(3);
   await expect(rows.nth(2)).toContainText('01:02:03,456');
   const report = page.getByRole('status');
-  await expect(report).toContainText('The file header (title, STYLE, REGION and NOTE blocks) dropped.');
+  await expect(report).toContainText('The file header (title, styles and other settings) dropped.');
   await expect(report).toContainText('Cue ids dropped: cue 1.');
   await expect(report).toContainText('Cue settings (position and alignment) dropped: cue 1, 2.');
 

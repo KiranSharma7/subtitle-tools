@@ -1,0 +1,34 @@
+import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+
+const fixture = (f: string) => fileURLToPath(new URL(`../fixtures/${f}`, import.meta.url));
+
+async function download(page: import('@playwright/test').Page) {
+  const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download' }).click()]);
+  return { name: d.suggestedFilename(), bytes: await readFile(await d.path()) };
+}
+
+test('shift an ASS file and keep it as ASS', async ({ page }) => {
+  await page.goto('/subtitle-shifter');
+  await page.getByLabel('Choose a subtitle file').setInputFiles(fixture('sample.ass'));
+  await expect(page.getByText('sample.ass: 3 cues, ASS.')).toBeVisible();
+  await page.getByLabel('Amount').fill('1');
+
+  const d = await download(page);
+  expect(d.name).toBe('sample.ass');
+  expect(d.bytes.equals(await readFile(fixture('sample-shifted-1s-later.ass')))).toBe(true);
+});
+
+test('convert an ASS file to SRT with a loss report', async ({ page }) => {
+  await page.goto('/convert-to-srt');
+  await page.getByLabel('Choose a subtitle file').setInputFiles(fixture('sample.ass'));
+  await expect(page.locator('tbody tr').nth(0)).toContainText('<i>Hello</i>, there\nsecond line');
+  const report = page.getByRole('status');
+  await expect(report).toContainText('Karaoke timing dropped: cue 3.');
+  await expect(report).toContainText('Position and alignment tags dropped: cue 2.');
+
+  const d = await download(page);
+  expect(d.name).toBe('sample.srt');
+  expect(d.bytes.equals(await readFile(fixture('sample-ass-converted.srt')))).toBe(true);
+});

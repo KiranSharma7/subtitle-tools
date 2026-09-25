@@ -119,3 +119,68 @@ test('plain text keeps a literal < and > in dialogue, drops VTT timestamp tags',
 test('plain text is not an input format', () => {
   assert.throws(() => parse('Shopping list\nmilk\n'), /Plain text/);
 });
+
+const fixture = (f: string) => readFile(new URL(`../../tests/fixtures/${f}`, import.meta.url), 'utf8');
+
+test('ass: dialogue lines become cues, round trip keeps every byte', async () => {
+  const ass = await fixture('sample.ass');
+  const { file, problems } = parse(ass);
+  assert.deepEqual(problems, []);
+  assert.equal(file.format, 'ass');
+  assert.deepEqual(file.cues.map((c) => [c.start, c.end]), [[1000, 3500], [5000, 6200], [7000, 9000]]);
+  assert.equal(file.cues[0].text, '{\\i1}Hello{\\i0}, there\\Nsecond line');
+  assert.deepEqual(file.cues[1].extras, { layer: '1', style: 'Sign', name: '', marginl: '0', marginr: '0', marginv: '20', effect: '' });
+  assert.equal(write(file), ass);
+});
+
+test('ass: shift keeps header, styles, layer, margins and override tags', async () => {
+  const ass = await fixture('sample.ass');
+  const out = write(shift(parse(ass).file, 1555).file);
+  assert.equal(out, ass
+    .replace('0:00:01.00,0:00:03.50', '0:00:02.56,0:00:05.06')
+    .replace('0:00:05.00,0:00:06.20', '0:00:06.56,0:00:07.76')
+    .replace('0:00:07.00,0:00:09.00', '0:00:08.56,0:00:10.56'));
+});
+
+test('ass to srt: italic, bold, line breaks mapped; dropped styling reported by cue', async () => {
+  const r = convert(parse(await fixture('sample.ass')).file, 'srt');
+  assert.equal(write(r.file), '1\n00:00:01,000 --> 00:00:03,500\n<i>Hello</i>, there\nsecond line\n\n2\n00:00:05,000 --> 00:00:06,200\nEXIT\n\n3\n00:00:07,000 --> 00:00:09,000\nSinging <b>loud</b>\n');
+  assert.deepEqual(r.losses, [
+    { kind: 'header', cues: [] },
+    { kind: 'karaoke', cues: [3] },
+    { kind: 'layer', cues: [2] },
+    { kind: 'margins', cues: [2] },
+    { kind: 'name', cues: [1] },
+    { kind: 'positioning', cues: [2] },
+    { kind: 'style', cues: [2] },
+  ]);
+});
+
+test('ass tags: unclosed tags are closed, \\r resets, colours and fades count as formatting', () => {
+  const ass = '[Script Info]\nScriptType: v4.00+\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n' +
+    'Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,{\\b700\\u1}A{\\r}B {\\i1\\c&H0000FF&}C\\nD{comment}\n' +
+    'Dialogue: 0,0:00:03.00,0:00:04.00,Default,,0,0,0,,{\\fad(200,200)\\alpha&H80&\\be1}E\n';
+  const r = convert(parse(ass).file, 'vtt');
+  assert.deepEqual(r.file.cues.map((c) => c.text), ['<b><u>A</u></b>B <i>C\nD</i>', 'E']);
+  assert.deepEqual(r.losses, [{ kind: 'header', cues: [] }, { kind: 'formatting', cues: [1, 2] }]);
+});
+
+test('ssa (V4 Styles) works the same as ass', async () => {
+  const ssa = await fixture('sample.ssa');
+  const { file } = parse(ssa);
+  assert.equal(file.format, 'ssa');
+  assert.equal(write(file), ssa);
+  const r = convert(file, 'srt');
+  assert.equal(write(r.file), '1\n00:00:01,000 --> 00:00:02,500\n<i>Hello</i>\nthere\n\n2\n00:00:03,000 --> 00:00:04,000\nBye, now\n');
+  assert.deepEqual(r.losses, [{ kind: 'header', cues: [] }]);
+});
+
+test('ass: plain text export maps tags and line breaks', async () => {
+  assert.equal(write(parse(await fixture('sample.ass')).file, 'txt'), 'Hello, there\nsecond line\n\nEXIT\n\nSinging loud\n');
+});
+
+test('ass: unreadable time is reported with its line number', () => {
+  const { file, problems } = parse('[Script Info]\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:xx,0:00:02.00,Default,,0,0,0,,A\n');
+  assert.equal(file.cues.length, 0);
+  assert.match(problems[0], /Line 5/);
+});

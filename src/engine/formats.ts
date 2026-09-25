@@ -1,5 +1,7 @@
 import type { Cue, Format, SubtitleFile } from './types.ts';
 import { formatTime, parseTime } from './time.ts';
+import { convert } from './convert.ts';
+import { parseAss, writeAss } from './ass.ts';
 
 export type ParseResult = { file: SubtitleFile; problems: string[] };
 
@@ -27,6 +29,7 @@ function parseTiming(line: string): { start: number; end: number; settings: stri
 
 export function detect(text: string): Format | null {
   if (/^WEBVTT(?:[ \t\n]|$)/.test(text)) return 'vtt';
+  if (/^\[Script Info\]|^Dialogue\s*:/im.test(text)) return /^\[V4 Styles\]|^ScriptType:\s*v4\.00\s*$/im.test(text) ? 'ssa' : 'ass';
   if (/^\s*\d*:?\d{1,2}:\d{1,2}[,.]\d{1,3}\s*-->/m.test(text)) return 'srt';
   return null;
 }
@@ -34,7 +37,8 @@ export function detect(text: string): Format | null {
 export function parse(input: string): ParseResult {
   const text = input.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
   const format = detect(text);
-  if (!format) throw new Error("This does not look like an SRT or WebVTT file. Plain text can't be read: it has no timing.");
+  if (!format) throw new Error("This does not look like a subtitle file. Plain text can't be read: it has no timing.");
+  if (format === 'ass' || format === 'ssa') return parseAss(text, format);
 
   const cues: Cue[] = [];
   const problems: string[] = [];
@@ -88,7 +92,10 @@ export function plainText(text: string, keepLineBreaks = true): string {
   return lines.join(keepLineBreaks ? '\n' : ' ');
 }
 
+// Writing to another format converts first, so tags are mapped and extras dropped (see convert for the loss report).
 export function write(file: SubtitleFile, format: Format = file.format, { keepLineBreaks = true } = {}): string {
+  if (format !== file.format) file = convert(file, format).file;
+  if (format === 'ass' || format === 'ssa') return writeAss(file);
   if (format === 'txt') {
     const cues = file.cues.map((c) => plainText(c.text, keepLineBreaks)).filter(Boolean);
     return cues.join(keepLineBreaks ? '\n\n' : '\n') + '\n';

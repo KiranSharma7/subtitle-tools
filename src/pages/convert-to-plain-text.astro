@@ -29,13 +29,16 @@ import ToolShell from '../components/ToolShell.astro';
   const keep = document.getElementById('keep') as HTMLInputElement;
 
   const render = mountTool({
-    view: ({ file }) => ({
-      warnings: lossWarnings(convert(file, 'txt').losses),
-      // Cues with no text left are left out of the download, so leave them out here too.
-      rows: file.cues
-        .map((c, i) => ({ cells: [String(i + 1), plainText(c.text, keep.checked)] }))
-        .filter((r) => r.cells[1]),
-    }),
+    view({ file }) {
+      const r = convert(file, 'txt');
+      return {
+        warnings: lossWarnings(r.losses),
+        // Cues with no text left are left out of the download, so leave them out here too.
+        rows: r.file.cues
+          .map((c, i) => ({ cells: [String(i + 1), plainText(c.text, keep.checked)] }))
+          .filter((r) => r.cells[1]),
+      };
+    },
     output: ({ file }) => write(file, 'txt', { keepLineBreaks: keep.checked }),
     filename: (name) => name.replace(/\.[^.]*$/, '') + '.txt',
   });

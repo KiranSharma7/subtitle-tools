@@ -5,9 +5,17 @@ import type { Format } from '../engine/types.ts';
 import { mountTool } from './tool-shell.ts';
 
 const lost: Record<string, string> = {
-  header: 'The file header (title, STYLE, REGION and NOTE blocks)',
+  header: 'The file header (title, styles and other settings)',
   id: 'Cue ids',
   settings: 'Cue settings (position and alignment)',
+  style: 'ASS styles',
+  layer: 'ASS layers',
+  name: 'Speaker names',
+  margins: 'Margins',
+  effect: 'ASS effects',
+  positioning: 'Position and alignment tags',
+  karaoke: 'Karaoke timing',
+  formatting: 'Formatting tags (colours, fonts, fades)',
 };
 
 export const lossWarnings = (losses: Loss[]) =>
