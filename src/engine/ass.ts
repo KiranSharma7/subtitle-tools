@@ -25,7 +25,8 @@ export function parseAss(text: string, format: 'ass' | 'ssa'): ParseResult {
   const cues: Cue[] = [];
   const problems: string[] = [];
   const header: string[] = [];
-  let inEvents = false;
+  // A file with Dialogue lines but no [Events] heading still gets them read.
+  let inEvents = !lines.some(isEvents);
 
   lines.forEach((l, i) => {
     if (isSection(l)) inEvents = isEvents(l);

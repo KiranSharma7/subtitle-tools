@@ -255,3 +255,7 @@ test('mpl2: shift and write back round-trips', async () => {
   assert.equal(write(parse(mpl2).file), mpl2);
   assert.equal(write(shift(parse(mpl2).file, 1000).file), '[20][35]Hello|/world\n[50][62]/Whole line italic\n[610][625]Bye\n');
 });
+
+test('ass: Dialogue lines with no [Events] heading are still read', () => {
+  assert.deepEqual(parse('Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Hi\n').file.cues.map((c) => c.text), ['Hi']);
+});

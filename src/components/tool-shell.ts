@@ -4,7 +4,7 @@ import type { Format } from '../engine/types.ts';
 
 const formatNames: Record<Format, string> = { srt: 'SRT', vtt: 'VTT', ass: 'ASS', ssa: 'SSA', sami: 'SAMI', microdvd: 'MicroDVD', mpl2: 'MPL2', txt: 'TXT' };
 
-export type Row ={ cells: string[]; flag?: boolean };
+export type Row = { cells: string[]; flag?: boolean };
 
 export type Tool = {
   // Tool-specific warnings (parser problems are added by the shell) and preview rows.
