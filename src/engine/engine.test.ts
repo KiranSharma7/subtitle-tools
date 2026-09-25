@@ -6,6 +6,7 @@ import { convert } from './convert.ts';
 import { parseTime } from './time.ts';
 import { decode } from './decode.ts';
 import { clean, defaultCleanOptions, type CleanOptions } from './clean.ts';
+import { validate, fixSafe } from './validate.ts';
 import { readFile } from 'node:fs/promises';
 
 const SRT = '﻿1\r\n00:00:01,000 --> 00:00:02,500\r\n<i>Hello</i>\r\nthere\r\n\r\n2\r\n00:00:03,000 --> 00:00:04,000\r\nBye\r\n';
@@ -345,4 +346,36 @@ test('clean guesswork: merge identical neighbours, and all four are off by defau
   assert.deepEqual(r.changed, [1]);
   assert.deepEqual(clean(file, defaultCleanOptions).file, file);
   for (const k of ['sdh', 'speakers', 'watermarks', 'merge'] as const) assert.equal(defaultCleanOptions[k], false);
+});
+
+const BROKEN =
+  '1\n00:00:05,000 --> 00:00:06,000\nA\n\n3\n00:00:01,000 --> 00:00:02,000\nB\n\n00:00:03,000 --> 00:00:03,000\nC\n\n4\n00:00:04,000 --> 00:00:03,500\nD\n\n5\n00:00:0x --> 00:00:09,000\nE\n\n6\n00:00:10,000 --> 00:00:12,000\nF\n\n7\n00:00:11,000 --> 00:00:13,000\nG\n\n8\n00:00:14,000 --> 00:00:15,000\n<i></i>\n';
+
+test('validate: each issue kind', () => {
+  const issues = validate(parse(BROKEN));
+  assert.deepEqual(issues.map((i) => [i.cue, i.kind]), [
+    [2, 'numbering'],
+    [2, 'order'],
+    [3, 'numbering'],
+    [3, 'zero-length'],
+    [4, 'end-before-start'],
+    [5, 'timestamp'],
+    [7, 'overlap'],
+    [8, 'empty'],
+  ]);
+  assert.equal(issues[0].message, 'Cue 2 is numbered 3.');
+  assert.equal(issues[2].message, 'Cue 3 has no number.');
+  assert.equal(issues[6].message, 'Cue 7 overlaps cue 6.');
+});
+
+test('validate: missing WEBVTT line, clean file, and safe fixes', () => {
+  const noHeader = parse('00:01.000 --> 00:02.000\nHi\n');
+  assert.deepEqual(validate(noHeader).map((i) => i.kind), ['header']);
+  assert.equal(write(fixSafe(noHeader)), 'WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHi\n');
+  assert.deepEqual(validate(parse(write(fixSafe(noHeader)))), []);
+  assert.deepEqual(validate(parse(SRT)), []);
+
+  const fixed = parse(write(fixSafe(parse(BROKEN))));
+  assert.deepEqual(fixed.file.cues.map((c) => c.text), ['B', 'C', 'D', 'A', 'F', 'G']);
+  assert.deepEqual(validate(fixed).map((i) => i.kind), ['zero-length', 'end-before-start', 'overlap']);
 });

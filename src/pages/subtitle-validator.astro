@@ -1,0 +1,43 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+---
+
+<Layout title="Subtitle validator: find errors in SRT and WebVTT files" description="Check an SRT or WebVTT file for bad numbering, cues out of order, overlaps, empty cues and broken timestamps, and fix the safe ones in one click. Your file stays on your device.">
+  <h1>Subtitle validator</h1>
+  <p class="lede">Find what's wrong with a subtitle file, and fix the safe problems in one click.</p>
+
+  <ToolShell columns={['Cue', 'Problem']} />
+
+  <section class="help">
+    <h2>How to use it</h2>
+    <p>Upload a file to see every problem, listed by cue number. Cue numbers count the cues as they appear in the file.</p>
+    <p><strong>Fix and download</strong> renumbers the cues, puts them in time order, removes empty cues, and adds a missing WEBVTT line. Cues with timestamps that can't be read are dropped.</p>
+    <p>Overlapping cues and cues that end before they start are never changed. Fix those by hand, because only you know which time is right.</p>
+  </section>
+</Layout>
+
+<script>
+  import { write } from '../engine/formats.ts';
+  import { validate, fixSafe } from '../engine/validate.ts';
+  import { mountTool } from '../components/tool-shell.ts';
+
+  document.getElementById('download')!.textContent = 'Fix and download';
+
+  mountTool({
+    view(parsed) {
+      const issues = validate(parsed);
+      if (!issues.length) return { warnings: [], rows: [{ cells: ['', 'No problems found.'] }] };
+      return {
+        warnings: [`${issues.length} problems found.`],
+        rows: issues.map((i) => ({ cells: [i.cue === null ? 'File' : String(i.cue), i.message], flag: i.kind === 'overlap' || i.kind === 'end-before-start' })),
+      };
+    },
+    output: (parsed) => write(fixSafe(parsed)),
+  });
+</script>
+
+<style>
+  .help { margin-top: 80px; max-width: 640px; }
+  .help p { color: var(--graphite); }
+</style>

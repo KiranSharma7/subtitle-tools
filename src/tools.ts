@@ -15,6 +15,11 @@ export const tools = [
     blurb: 'Remove tags, bracketed notes, music cues, duplicates and empty cues.',
   },
   {
+    name: 'Subtitle validator',
+    href: '/subtitle-validator',
+    blurb: 'Find bad numbering, overlaps, empty cues and broken timestamps, and fix the safe ones.',
+  },
+  {
     name: 'Convert to SRT',
     href: '/convert-to-srt',
     blurb: 'Turn WebVTT, ASS, SAMI and other files into SRT, with a list of anything that gets dropped.',

@@ -6,7 +6,15 @@ import { parseSami, writeSami } from './sami.ts';
 import { parseMicroDvd, writeMicroDvd } from './microdvd.ts';
 import { parseMpl2, writeMpl2 } from './mpl2.ts';
 
-export type ParseResult = { file: SubtitleFile; problems: string[] };
+// What the SRT/WebVTT parser saw in the text but doesn't keep in the file; the validator reads it.
+// Cue positions count every block with a --> line, including ones skipped for a bad timestamp.
+export type RawInfo = {
+  numbers: (string | null)[]; // per position: the line above the timing, if any
+  unreadable: number[]; // 1-based positions whose timestamp couldn't be read
+  dotTimes: boolean; // read as SRT but timed like WebVTT (00:01.000), so the WEBVTT line is probably missing
+};
+
+export type ParseResult = { file: SubtitleFile; problems: string[]; raw?: RawInfo };
 
 type Block = { line: number; lines: string[] };
 
@@ -53,6 +61,7 @@ export function parse(input: string, { fps }: { fps?: number } = {}): ParseResul
   const cues: Cue[] = [];
   const problems: string[] = [];
   const headerBlocks: string[] = [];
+  const raw: RawInfo = { numbers: [], unreadable: [], dotTimes: false };
   const blocks = splitBlocks(text);
 
   for (const [bi, b] of blocks.entries()) {
@@ -69,8 +78,11 @@ export function parse(input: string, { fps }: { fps?: number } = {}): ParseResul
       else problems.push(`Line ${b.line}: text with no timestamp before the first cue was skipped.`);
       continue;
     }
+    raw.numbers.push(ti > 0 ? b.lines[ti - 1] : null);
+    if (format === 'srt' && /\d\.\d+\s*-->/.test(b.lines[ti])) raw.dotTimes = true;
     const t = parseTiming(b.lines[ti]);
     if (!t) {
+      raw.unreadable.push(raw.numbers.length);
       problems.push(`Line ${b.line + ti}: can't read the timestamp "${b.lines[ti]}", cue skipped.`);
       continue;
     }
@@ -85,7 +97,7 @@ export function parse(input: string, { fps }: { fps?: number } = {}): ParseResul
   }
 
   const header = headerBlocks.length ? headerBlocks.join('\n\n') : undefined;
-  return { file: { format, header, cues }, problems };
+  return { file: { format, header, cues }, problems, raw };
 }
 
 const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', nbsp: ' ', lrm: '‎', rlm: '‏' };
