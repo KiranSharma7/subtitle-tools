@@ -304,6 +304,8 @@ test('clean: each option on its own', () => {
   assert.equal(cleaned('WHERE ARE YOU? I AM HERE.', { uppercase: true }), 'Where are you? I am here.');
   assert.equal(cleaned('I saw NASA', { uppercase: true }), 'I saw NASA');
   assert.equal(cleaned('<i></i>', { empty: true }), null);
+  const dup = { format: 'srt' as const, cues: [{ start: 0, end: 1, text: 'A' }, { start: 0, end: 1, text: 'A' }, { start: 0, end: 2, text: 'A' }] };
+  assert.deepEqual(clean(dup, { duplicates: true }).removed, [2]);
   assert.equal(cleaned('<i></i>', {}), '<i></i>');
 });
 
@@ -374,6 +376,9 @@ test('validate: missing WEBVTT line, clean file, and safe fixes', () => {
   assert.equal(write(fixSafe(noHeader)), 'WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHi\n');
   assert.deepEqual(validate(parse(write(fixSafe(noHeader)))), []);
   assert.deepEqual(validate(parse(SRT)), []);
+  const dotSrt = parse('1\n00:00:01.000 --> 00:00:02.000\nHi\n');
+  assert.deepEqual(validate(dotSrt), []);
+  assert.equal(fixSafe(dotSrt).format, 'srt');
 
   const fixed = parse(write(fixSafe(parse(BROKEN))));
   assert.deepEqual(fixed.file.cues.map((c) => c.text), ['B', 'C', 'D', 'A', 'F', 'G']);

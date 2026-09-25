@@ -11,7 +11,7 @@ import { parseMpl2, writeMpl2 } from './mpl2.ts';
 export type RawInfo = {
   numbers: (string | null)[]; // per position: the line above the timing, if any
   unreadable: number[]; // 1-based positions whose timestamp couldn't be read
-  dotTimes: boolean; // read as SRT but timed like WebVTT (00:01.000), so the WEBVTT line is probably missing
+  dotTimes: boolean; // read as SRT, timed like WebVTT (00:01.000) and no cue numbers, so the WEBVTT line is probably missing
 };
 
 export type ParseResult = { file: SubtitleFile; problems: string[]; raw?: RawInfo };
@@ -96,6 +96,8 @@ export function parse(input: string, { fps }: { fps?: number } = {}): ParseResul
     cues.push(cue);
   }
 
+  // Numbered cues mean an SRT that happens to use dots, not a WebVTT file.
+  if (raw.numbers.some((n) => n !== null)) raw.dotTimes = false;
   const header = headerBlocks.length ? headerBlocks.join('\n\n') : undefined;
   return { file: { format, header, cues }, problems, raw };
 }
