@@ -43,3 +43,24 @@ test('convert a SAMI file to SRT', async ({ page }) => {
   expect(d.name).toBe('sample.srt');
   expect(d.bytes.equals(await readFile(fixture('sample-sami-converted.srt')))).toBe(true);
 });
+
+test('MicroDVD with no frame rate: pick one and the preview timing follows', async ({ page }) => {
+  await page.goto('/convert-to-srt');
+  await page.getByLabel('Choose a subtitle file').setInputFiles(fixture('sample.sub'));
+  await expect(page.getByText('sample.sub: 2 cues, MicroDVD.')).toBeVisible();
+  const picker = page.getByLabel('Frame rate');
+  await expect(picker).toHaveValue('23.976');
+  const rows = page.locator('tbody tr');
+  await expect(rows.nth(0)).toContainText('00:00:01,001');
+
+  await picker.selectOption('24');
+  await expect(rows.nth(0)).toContainText('00:00:01,000');
+  await expect(rows.nth(1)).toContainText('00:00:05,000');
+});
+
+test('MicroDVD with a frame rate in the file says so and hides the picker', async ({ page }) => {
+  await page.goto('/subtitle-shifter');
+  await page.getByLabel('Choose a subtitle file').setInputFiles({ name: 'film.sub', mimeType: 'text/plain', buffer: Buffer.from('{1}{1}25\n{25}{50}Hi\n') });
+  await expect(page.getByText('film.sub: 1 cues, MicroDVD, 25 fps from the file.')).toBeVisible();
+  await expect(page.getByLabel('Frame rate')).toBeHidden();
+});

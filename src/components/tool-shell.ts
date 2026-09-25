@@ -1,7 +1,10 @@
 import { parse, type ParseResult } from '../engine/formats.ts';
 import { decode, decodeAs } from '../engine/decode.ts';
+import type { Format } from '../engine/types.ts';
 
-export type Row = { cells: string[]; flag?: boolean };
+const formatNames: Record<Format, string> = { srt: 'SRT', vtt: 'VTT', ass: 'ASS', ssa: 'SSA', sami: 'SAMI', microdvd: 'MicroDVD', mpl2: 'MPL2', txt: 'TXT' };
+
+export type Row ={ cells: string[]; flag?: boolean };
 
 export type Tool = {
   // Tool-specific warnings (parser problems are added by the shell) and preview rows.
@@ -21,14 +24,18 @@ export function mountTool(tool: Tool): () => void {
   const warnings = $('warnings');
   const rows = $('rows');
 
+  const fps = $<HTMLSelectElement>('fps');
+
   let bytes: Uint8Array | null = null;
   let name = '';
+  let text = '';
   let parsed: ParseResult | null = null;
 
-  function load(text: string, enc: string) {
+  function load(t: string, enc: string) {
+    text = t;
     encoding.value = enc;
     try {
-      parsed = parse(text);
+      parsed = parse(text, { fps: +fps.value });
       error.hidden = true;
       loaded.hidden = false;
       render();
@@ -51,7 +58,10 @@ export function mountTool(tool: Tool): () => void {
     if (!parsed) return;
     const { file, problems } = parsed;
     const view = tool.view(parsed);
-    $('summary').textContent = `${name}: ${file.cues.length} cues, ${file.format.toUpperCase()}.`;
+    // MicroDVD needs a frame rate: say so when the file gives one, otherwise let the user pick it.
+    const fromFile = file.format === 'microdvd' && file.header ? `, ${file.fps} fps from the file` : '';
+    $('fps-picker').hidden = file.format !== 'microdvd' || !!file.header;
+    $('summary').textContent = `${name}: ${file.cues.length} cues, ${formatNames[file.format]}${fromFile}.`;
 
     const notes = [...problems, ...view.warnings];
     warnings.replaceChildren(...notes.map((n) => Object.assign(document.createElement('p'), { textContent: n })));
@@ -77,6 +87,7 @@ export function mountTool(tool: Tool): () => void {
     const f = e.dataTransfer?.files[0];
     if (f) open(f);
   });
+  fps.addEventListener('change', () => load(text, encoding.value));
   encoding.addEventListener('change', () => {
     if (!bytes) return;
     const { text, encoding: enc } = decodeAs(bytes, encoding.value);

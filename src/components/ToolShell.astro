@@ -9,9 +9,9 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
 
 <section class="tool">
   <label class="drop" id="drop">
-    <input type="file" id="file" accept=".srt,.vtt,.ass,.ssa,.smi,.sami" />
+    <input type="file" id="file" accept=".srt,.vtt,.ass,.ssa,.smi,.sami,.sub" />
     <strong>Choose a subtitle file</strong> or drop it here
-    <span>SRT, WebVTT, ASS, SSA or SAMI</span>
+    <span>SRT, WebVTT, ASS, SSA, SAMI or MicroDVD</span>
   </label>
 
   <p id="error" class="error" role="alert" hidden></p>
@@ -21,6 +21,9 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
       <span id="summary"></span>
       <label>Read as
         <select id="encoding">{encodings.map((e) => <option>{e}</option>)}</select>
+      </label>
+      <label id="fps-picker" hidden>Frame rate
+        <select id="fps">{['23.976', '24', '25', '29.97', '30'].map((f) => <option>{f}</option>)}</select>
       </label>
     </p>
 

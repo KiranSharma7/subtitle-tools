@@ -210,3 +210,31 @@ test('sami: only the first language is read, the others are reported', () => {
   assert.deepEqual(file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 2000, 'Hello']]);
   assert.deepEqual(problems, ['This file has more than one language. Only ENCC was read; skipped: KRCC, FRCC.']);
 });
+
+test('microdvd: frame rate from the file is used and written back', () => {
+  const sub = '{1}{1}25\n{25}{50}Hello|world\n{75}{100}{y:i}Bye\n';
+  const { file, problems } = parse(sub, { fps: 30 });
+  assert.deepEqual(problems, []);
+  assert.equal(file.format, 'microdvd');
+  assert.equal(file.fps, 25);
+  assert.equal(file.header, '{1}{1}25');
+  assert.deepEqual(file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 2000, 'Hello\nworld'], [3000, 4000, '{y:i}Bye']]);
+  assert.equal(write(file), sub);
+  assert.equal(write(shift(file, 1000).file), '{1}{1}25\n{50}{75}Hello|world\n{100}{125}{y:i}Bye\n');
+});
+
+test('microdvd: with no frame rate in the file, the picked one is used (default 23.976)', () => {
+  const sub = '{24}{48}Hi\n{2400}{2448}Later\n';
+  const a = parse(sub).file;
+  assert.equal(a.fps, 23.976);
+  assert.equal(a.header, undefined);
+  assert.deepEqual([a.cues[0].start, a.cues[0].end], [1001, 2002]);
+  assert.equal(write(a), sub);
+  assert.deepEqual(parse(sub, { fps: 25 }).file.cues.map((c) => [c.start, c.end]), [[960, 1920], [96000, 97920]]);
+});
+
+test('microdvd to srt: y codes become tags, other codes are reported, the frame rate line is not a loss', () => {
+  const r = convert(parse('{1}{1}25\n{25}{50}{Y:b}{c:$0000FF}A|{y:i}B\n{75}{100}{P:0,0}C\n').file, 'srt');
+  assert.deepEqual(r.file.cues.map((c) => c.text), ['<b>A\n<i>B</i></b>', 'C']);
+  assert.deepEqual(r.losses, [{ kind: 'formatting', cues: [1] }, { kind: 'positioning', cues: [2] }]);
+});

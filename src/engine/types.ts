@@ -11,5 +11,6 @@ export type Cue = {
 export type SubtitleFile = {
   format: Format;
   header?: string;
+  fps?: number; // MicroDVD only: the frame rate used to turn frames into ms and back
   cues: Cue[];
 };
