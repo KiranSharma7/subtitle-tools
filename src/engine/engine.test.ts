@@ -5,6 +5,7 @@ import { shift, shiftRanges, type RangeShiftResult } from './shift.ts';
 import { convert } from './convert.ts';
 import { parseTime } from './time.ts';
 import { decode } from './decode.ts';
+import { clean, defaultCleanOptions, type CleanOptions } from './clean.ts';
 import { readFile } from 'node:fs/promises';
 
 const SRT = '﻿1\r\n00:00:01,000 --> 00:00:02,500\r\n<i>Hello</i>\r\nthere\r\n\r\n2\r\n00:00:03,000 --> 00:00:04,000\r\nBye\r\n';
@@ -281,4 +282,67 @@ test('partial shift refuses overlapping ranges', () => {
   const { file } = parse('1\n00:00:01,000 --> 00:00:02,000\nA\n');
   const r = shiftRanges(file, [{ from: 0, to: 5000, offset: 1 }, { from: 4000, to: 6000, offset: 1 }]);
   assert.deepEqual(r, { error: 'Range 1 and range 2 overlap. Change one so they don\'t.' });
+});
+
+const cleaned = (text: string, opts: Partial<CleanOptions>) => {
+  const r = clean({ format: 'srt', cues: [{ start: 0, end: 1000, text }] }, opts);
+  return r.file.cues[0]?.text ?? null;
+};
+
+test('clean: each option on its own', () => {
+  assert.equal(cleaned('<i>Hi</i> <font color="red">you</font>', { htmlTags: true }), 'Hi you');
+  assert.equal(cleaned('{\\an8}Hi {\\i1}you', { assTags: true }), 'Hi you');
+  assert.equal(cleaned('Hi (sighs) you', { parens: true }), 'Hi you');
+  assert.equal(cleaned('[door] Hi', { brackets: true }), 'Hi');
+  assert.equal(cleaned('Hi {note}', { braces: true }), 'Hi');
+  assert.equal(cleaned('Hi *laughs* you', { asterisks: true }), 'Hi you');
+  assert.equal(cleaned('#tag# Hi', { hashtags: true }), 'Hi');
+  assert.equal(cleaned('♪ la la la ♪', { musicNotes: true }), null);
+  assert.equal(cleaned('Hi', { musicNotes: true }), 'Hi');
+  assert.equal(cleaned('Hi\nthere\n- Yes\n- No', { lineBreaks: true }), 'Hi there\n- Yes\n- No');
+  assert.equal(cleaned('WHERE ARE YOU? I AM HERE.', { uppercase: true }), 'Where are you? I am here.');
+  assert.equal(cleaned('I saw NASA', { uppercase: true }), 'I saw NASA');
+  assert.equal(cleaned('<i></i>', { empty: true }), null);
+  assert.equal(cleaned('<i></i>', {}), '<i></i>');
+});
+
+test('clean: kept tags survive html removal', () => {
+  assert.equal(cleaned('<i>Hi</i> <b>big</b> <u>you</u>', { htmlTags: true, keep: ['i', 'b'] }), '<i>Hi</i> <b>big</b> you');
+});
+
+test('clean: duplicates, cues emptied by other options, and the change report', () => {
+  const { file } = parse('1\n00:00:01,000 --> 00:00:02,000\nA\n\n2\n00:00:01,000 --> 00:00:02,000\nA\n\n3\n00:00:03,000 --> 00:00:04,000\n[music]\n\n4\n00:00:05,000 --> 00:00:06,000\nB (off)\n\n5\n00:00:07,000 --> 00:00:08,000\nC\n');
+  const r = clean(file, { duplicates: true, brackets: true, parens: true, empty: true });
+  assert.deepEqual(r.file.cues.map((c) => c.text), ['A', 'B', 'C']);
+  assert.deepEqual(r.removed, [2, 3]);
+  assert.deepEqual(r.changed, [4]);
+  assert.deepEqual(r.after, ['A', null, null, 'B', 'C']);
+  assert.deepEqual(clean(file, { brackets: true }).after[2], '');
+});
+
+test('clean guesswork: SDH descriptions', () => {
+  assert.equal(cleaned('[DOOR SLAMS]\nWho is it? (whispers)', { sdh: true }), 'Who is it?');
+  assert.equal(cleaned('THUNDER RUMBLING\nRun!', { sdh: true }), 'Run!');
+  assert.equal(cleaned('NO! STOP!\nI am OK', { sdh: true }), 'NO! STOP!\nI am OK');
+});
+
+test('clean guesswork: speaker labels', () => {
+  assert.equal(cleaned('JOHN: Hi\n- MARY SMITH: Bye', { speakers: true }), 'Hi\n- Bye');
+  assert.equal(cleaned('Note: this is real\nAt 10:30 we go', { speakers: true }), 'Note: this is real\nAt 10:30 we go');
+});
+
+test('clean guesswork: watermarks', () => {
+  assert.equal(cleaned('Hi\nSubtitles by explosiveskull', { watermarks: true }), 'Hi');
+  assert.equal(cleaned('www.opensubtitles.org', { watermarks: true, empty: true }), null);
+  assert.equal(cleaned('I will sync it by tomorrow', { watermarks: true }), 'I will sync it by tomorrow');
+});
+
+test('clean guesswork: merge identical neighbours, and all four are off by default', () => {
+  const { file } = parse('1\n00:00:01,000 --> 00:00:02,000\nA\n\n2\n00:00:02,000 --> 00:00:03,000\nA\n\n3\n00:00:04,000 --> 00:00:05,000\nB\n\n4\n00:00:06,000 --> 00:00:07,000\nA\n');
+  const r = clean(file, { merge: true });
+  assert.deepEqual(r.file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 3000, 'A'], [4000, 5000, 'B'], [6000, 7000, 'A']]);
+  assert.deepEqual(r.removed, [2]);
+  assert.deepEqual(r.changed, [1]);
+  assert.deepEqual(clean(file, defaultCleanOptions).file, file);
+  for (const k of ['sdh', 'speakers', 'watermarks', 'merge'] as const) assert.equal(defaultCleanOptions[k], false);
 });

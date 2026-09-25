@@ -1,0 +1,98 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import { defaultCleanOptions } from '../engine/clean.ts';
+
+const d = defaultCleanOptions;
+const safe = [
+  ['htmlTags', 'Remove HTML tags'],
+  ['assTags', 'Remove ASS tags like {\\an8}'],
+  ['parens', 'Remove text in ( )'],
+  ['brackets', 'Remove text in [ ]'],
+  ['braces', 'Remove text in { }'],
+  ['asterisks', 'Remove text between *asterisks*'],
+  ['hashtags', 'Remove text between #hashtags#'],
+  ['musicNotes', 'Remove cues with music notes ♪'],
+  ['duplicates', 'Remove duplicate cues'],
+  ['lineBreaks', 'Remove unnecessary line breaks'],
+  ['uppercase', 'Change ALL-CAPS cues to normal case'],
+  ['empty', 'Remove empty cues'],
+] as const;
+const keep = [['i', 'italic'], ['b', 'bold'], ['font', 'font']] as const;
+const guesswork = [
+  ['sdh', 'Remove SDH descriptions like [DOOR SLAMS]'],
+  ['speakers', 'Remove speaker labels like JOHN:'],
+  ['watermarks', 'Remove subtitle-site credits and links'],
+  ['merge', 'Merge neighbouring cues with the same text'],
+] as const;
+---
+
+<Layout title="SRT cleaner: remove tags, SDH and junk from subtitles" description="Clean up SRT, WebVTT and other subtitle files: remove HTML and ASS tags, bracketed text, music cues, duplicates and empty cues. Your file stays on your device.">
+  <h1>SRT cleaner</h1>
+  <p class="lede">Strip tags, notes and junk from a subtitle file, and see every change before you download.</p>
+
+  <ToolShell columns={['#', 'Before', 'After']}>
+    <form id="opts">
+      <fieldset>
+        <legend>Clean</legend>
+        {safe.map(([k, label]) => <label><input type="checkbox" name={k} checked={d[k]} /> {label}</label>)}
+        <p class="keep">Keep these tags:
+          {keep.map(([k, label]) => <label><input type="checkbox" name="keep" value={k} checked={d.keep.includes(k)} /> {label}</label>)}
+        </p>
+      </fieldset>
+      <fieldset>
+        <legend>Guesswork</legend>
+        <p class="note">These can delete real dialogue, so they're off. Check the preview if you turn them on.</p>
+        {guesswork.map(([k, label]) => <label><input type="checkbox" name={k} checked={d[k]} /> {label}</label>)}
+      </fieldset>
+    </form>
+  </ToolShell>
+
+  <section class="help">
+    <h2>How to use it</h2>
+    <p>Tick what you want removed. The preview shows each cue before and after, and marks cues that changed or were removed.</p>
+    <p>Options run in a fixed order, and removing empty cues runs last. So a cue that only held <code>[music]</code> goes away when you remove text in [ ] and empty cues.</p>
+    <p>The download is saved as UTF-8 in the same format you uploaded.</p>
+  </section>
+</Layout>
+
+<script>
+  import { write } from '../engine/formats.ts';
+  import { clean, type CleanOptions } from '../engine/clean.ts';
+  import { mountTool } from '../components/tool-shell.ts';
+
+  const form = document.getElementById('opts') as HTMLFormElement;
+
+  function options(): Partial<CleanOptions> {
+    const data = new FormData(form);
+    const opts: Record<string, unknown> = { keep: data.getAll('keep') };
+    for (const [k, v] of data) if (k !== 'keep') opts[k] = v === 'on';
+    return opts;
+  }
+
+  const render = mountTool({
+    view({ file }) {
+      const r = clean(file, options());
+      const warnings = [`${r.changed.length} cues changed, ${r.removed.length} removed.`];
+      const rows = file.cues.map((c, i) => ({
+        cells: [String(i + 1), c.text, r.after[i] ?? 'removed'],
+        flag: r.after[i] !== c.text || r.changed.includes(i + 1),
+      }));
+      return { warnings, rows };
+    },
+    output: ({ file }) => write(clean(file, options()).file),
+  });
+
+  form.addEventListener('change', render);
+</script>
+
+<style>
+  form { display: grid; gap: 16px; }
+  fieldset { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; }
+  legend { font-weight: 600; margin-bottom: 8px; }
+  label { display: flex; gap: 8px; align-items: center; }
+  .keep, .note { grid-column: 1 / -1; margin: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .note { color: var(--graphite); font-size: 14px; }
+  .help { margin-top: 80px; max-width: 640px; }
+  .help p { color: var(--graphite); }
+</style>

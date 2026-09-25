@@ -10,6 +10,11 @@ export const tools = [
     blurb: 'Move only part of a file, with a different offset for each range of time.',
   },
   {
+    name: 'SRT cleaner',
+    href: '/srt-cleaner',
+    blurb: 'Remove tags, bracketed notes, music cues, duplicates and empty cues.',
+  },
+  {
     name: 'Convert to SRT',
     href: '/convert-to-srt',
     blurb: 'Turn WebVTT, ASS, SAMI and other files into SRT, with a list of anything that gets dropped.',
