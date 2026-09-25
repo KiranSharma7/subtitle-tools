@@ -34,7 +34,7 @@ export function detect(text: string): Format | null {
 export function parse(input: string): ParseResult {
   const text = input.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
   const format = detect(text);
-  if (!format) throw new Error('This does not look like an SRT or WebVTT file.');
+  if (!format) throw new Error("This does not look like an SRT or WebVTT file. Plain text can't be read: it has no timing.");
 
   const cues: Cue[] = [];
   const problems: string[] = [];
@@ -74,7 +74,25 @@ export function parse(input: string): ParseResult {
   return { file: { format, header, cues }, problems };
 }
 
-export function write(file: SubtitleFile, format: Format = file.format): string {
+const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', nbsp: ' ', lrm: '‎', rlm: '‏' };
+
+// Cue text with HTML and ASS tags removed, blank lines dropped, and lines optionally joined.
+export function plainText(text: string, keepLineBreaks = true): string {
+  const lines = text
+    // A tag starts with a letter (or is a VTT timestamp), so "x < 5 and y > 3" stays as dialogue.
+    .replace(/<\/?[a-z][^<>\n]*>|<[\d:.]+>|\{\\[^}]*\}/gi, '')
+    .replace(/&(amp|lt|gt|nbsp|lrm|rlm);/g, (_, e) => entities[e])
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  return lines.join(keepLineBreaks ? '\n' : ' ');
+}
+
+export function write(file: SubtitleFile, format: Format = file.format, { keepLineBreaks = true } = {}): string {
+  if (format === 'txt') {
+    const cues = file.cues.map((c) => plainText(c.text, keepLineBreaks)).filter(Boolean);
+    return cues.join(keepLineBreaks ? '\n\n' : '\n') + '\n';
+  }
   if (format === 'srt') {
     return file.cues
       .map((c, i) => `${i + 1}\n${formatTime(c.start, ',')} --> ${formatTime(c.end, ',')}\n${c.text}`)

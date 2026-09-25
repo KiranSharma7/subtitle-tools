@@ -14,4 +14,9 @@ export const tools = [
     href: '/convert-to-webvtt',
     blurb: 'Turn an SRT file into WebVTT for web video players.',
   },
+  {
+    name: 'Convert to plain text',
+    href: '/convert-to-plain-text',
+    blurb: 'Keep just the dialogue, with no timestamps, cue numbers or tags.',
+  },
 ];

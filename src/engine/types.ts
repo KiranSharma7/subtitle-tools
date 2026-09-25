@@ -1,4 +1,5 @@
-export type Format = 'srt' | 'vtt';
+// txt can be written but not read: plain text has no timing.
+export type Format = 'srt' | 'vtt' | 'txt';
 
 export type Cue = {
   start: number; // ms

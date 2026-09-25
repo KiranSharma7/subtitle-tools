@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parse, write } from './formats.ts';
+import { parse, plainText, write } from './formats.ts';
 import { shift } from './shift.ts';
 import { convert } from './convert.ts';
 import { parseTime } from './time.ts';
@@ -101,4 +101,21 @@ test('convert to the same format keeps everything', () => {
   assert.deepEqual(r.losses, []);
   assert.equal(write(r.file), write(file));
   assert.equal(write(convert(parse(SRT).file, 'srt').file), write(parse(SRT).file));
+});
+
+test('plain text: no timing, numbers or tags; line breaks kept or joined', () => {
+  const vtt = 'WEBVTT\n\nintro\n00:01.000 --> 00:02.000 align:start\n{\\an8}<i>Hello</i>\n<b>there</b> &amp; you\n\n00:03.000 --> 00:04.000\n<font color="red"></font>\n\n00:05.000 --> 00:06.000\n  Bye  \n';
+  const { file } = parse(vtt);
+  assert.equal(write(file, 'txt'), 'Hello\nthere & you\n\nBye\n');
+  assert.equal(write(file, 'txt', { keepLineBreaks: false }), 'Hello there & you\nBye\n');
+});
+
+test('plain text keeps a literal < and > in dialogue, drops VTT timestamp tags', () => {
+  assert.equal(plainText('if x < 5 and y > 3 ok'), 'if x < 5 and y > 3 ok');
+  assert.equal(plainText('I <3 you'), 'I <3 you');
+  assert.equal(plainText('<c.loud>Never</c> <00:00:01.500>drink &lrm;liquid'), 'Never drink ‎liquid');
+});
+
+test('plain text is not an input format', () => {
+  assert.throws(() => parse('Shopping list\nmilk\n'), /Plain text/);
 });
