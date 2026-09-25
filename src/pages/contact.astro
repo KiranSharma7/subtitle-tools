@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../site.ts';
+---
+
+<Layout title="Contact" description={`Get in touch with ${site.name} about a bug, a file that won't open, or a tool you'd like to see.`}>
+  <article class="doc">
+    <h1>Contact</h1>
+    <p>Found a bug, have a file that won't open, or want a new tool? Email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+    <p>Please don't attach subtitle files unless we ask. Describe the problem first.</p>
+  </article>
+</Layout>

@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../site.ts';
+---
+
+<Layout title="Terms of use" description={`The terms for using ${site.name}: free tools, no warranty, and you keep the rights to your files.`}>
+  <article class="doc">
+    <h1>Terms of use</h1>
+    <p>{site.name} is free to use. By using it you agree to these terms.</p>
+    <h2>Your files</h2>
+    <p>Your files stay on your device and remain yours. You're responsible for having the right to edit the subtitles you open.</p>
+    <h2>No warranty</h2>
+    <p>The tools are provided as they are. We try to get them right, but we can't promise the output is free of mistakes. Check the result before you rely on it, and keep a copy of your original file.</p>
+    <h2>Liability</h2>
+    <p>As far as the law allows, we aren't liable for any loss that comes from using the site or its output.</p>
+    <h2>Changes</h2>
+    <p>We may change these terms. The version on this page is the one that applies.</p>
+    <p>Questions: <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+  </article>
+</Layout>

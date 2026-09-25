@@ -23,6 +23,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:type" content="website" />
+    <link rel="sitemap" href="/sitemap.xml" />
     <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>
@@ -36,7 +37,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <slot />
     </main>
     <footer>
-      <p class="wrap">Your files are processed in your browser and never uploaded.</p>
+      <div class="wrap">
+        <p>Your files are processed in your browser and never uploaded.</p>
+        <nav aria-label="Site">
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/contact">Contact</a>
+        </nav>
+      </div>
     </footer>
   </body>
 </html>
@@ -86,7 +94,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   h2 { font-size: 24px; line-height: 1.33; font-weight: 600; }
   .lede { color: var(--graphite); margin: 0 0 32px; font-size: 20px; line-height: 1.4; max-width: 640px; }
   footer { background: var(--abyss); color: var(--mist); font-size: 14px; margin-top: 80px; }
-  footer .wrap { padding-block: 48px; }
+  footer .wrap { padding-block: 48px; display: flex; flex-wrap: wrap; gap: 16px 32px; justify-content: space-between; }
+  footer p { margin: 0; }
+  footer nav a { color: var(--mist); }
+  footer nav a:hover { color: var(--paper); }
+  .doc { max-width: 640px; }
+  .doc p { color: var(--graphite); }
+  .help { margin-top: 80px; max-width: 640px; }
+  .help p { color: var(--graphite); }
   button, input, select { font: inherit; color: inherit; letter-spacing: inherit; }
   :focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
 </style>

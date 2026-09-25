@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../site.ts';
+---
+
+<Layout title="Privacy policy" description={`How ${site.name} handles your files and data: files never leave your device, and analytics only run if you accept.`}>
+  <article class="doc">
+    <h1>Privacy policy</h1>
+    <h2>Your files</h2>
+    <p>Every tool runs in your browser. The files you open are read and changed on your own device. They are never uploaded to us or anyone else, and we can't see them.</p>
+    <h2>Analytics</h2>
+    <p>If you accept, we use Google Analytics 4 to count page views and which tools get used. For tools, we record only the tool name and the file formats, such as "SRT to WebVTT". We never send file names, file content or subtitle text.</p>
+    <p>If you reject, or haven't chosen yet, Google Analytics sends nothing. We use Google Consent Mode with everything set to denied until you accept.</p>
+    <h2>Cookies and storage</h2>
+    <p>Google Analytics sets cookies (named <code>_ga</code> and <code>_ga_*</code>) only after you accept. We save your accept or reject choice in your browser's local storage, so we don't ask again.</p>
+    <p id="consent-change">You can change your choice at any time from the link in the footer.</p>
+    <h2>Contact</h2>
+    <p>Questions about privacy: <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+  </article>
+</Layout>
