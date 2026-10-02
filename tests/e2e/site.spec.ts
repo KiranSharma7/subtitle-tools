@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
 import { tools } from '../../src/tools.ts';
 
 test('the homepage lists every tool and the footer links resolve', async ({ page, request }) => {
@@ -26,4 +27,20 @@ test('every page has a unique title and description, and is in the sitemap', asy
   }
   expect(titles.size).toBe(paths.length);
   expect(descriptions.size).toBe(paths.length);
+});
+
+test('nothing breaks the content security policy, with GA, the menu and a file loaded', async ({ page }) => {
+  const violations: string[] = [];
+  await page.exposeFunction('cspViolation', (v: string) => violations.push(v));
+  await page.addInitScript(() => document.addEventListener('securitypolicyviolation', (e) =>
+    (window as unknown as { cspViolation: (v: string) => void }).cspViolation(`${e.violatedDirective} ${e.blockedURI}`)));
+  await page.route(/google(tagmanager|-analytics)\.com/, (route) => route.fulfill({ body: '' }));
+
+  await page.goto('/subtitle-shifter');
+  await page.getByRole('button', { name: 'Accept' }).click();
+  await page.getByRole('button', { name: 'All tools' }).click();
+  await page.getByLabel('Choose a subtitle file').setInputFiles(fileURLToPath(new URL('../fixtures/sample.srt', import.meta.url)));
+  await expect(page.locator('tbody tr')).toHaveCount(4);
+  await page.goto('/');
+  expect(violations).toEqual([]);
 });

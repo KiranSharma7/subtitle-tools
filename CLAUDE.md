@@ -28,7 +28,7 @@ Static Astro site of small subtitle tools (shift, convert). Everything runs in t
 ## Domain, hosting, SEO
 
 - Live as **SubtitleMate** at `https://subtitlemate.com`. Name, URL, contact email and GA4 id live in `src/site.ts`. `gaId` is still a placeholder; set it before launch.
-- Hosted on Cloudflare Pages as plain static files. `.node-version` pins Node 22 for its build. `public/_headers` sets security headers. `404.astro` must exist: without a `404.html` Cloudflare serves the home page with status 200 for every bad URL.
+- Hosted on Cloudflare Pages as plain static files. `.node-version` pins Node 22 for its build. `public/_headers` sets security headers. The Content-Security-Policy is not there: `security.csp` in `astro.config.mjs` writes it as a `<meta>` tag with hashes of inline scripts, so a new third-party origin (script, image, fetch) must be added there or the browser blocks it. The `site.spec.ts` CSP test catches misses. `404.astro` must exist: without a `404.html` Cloudflare serves the home page with status 200 for every bad URL.
 - `build.format: 'file'` builds `/contact.html`, which Cloudflare serves at `/contact` with no redirect. Canonical URLs have no `.html` and no trailing slash; `cleanPath()` in `site.ts` does that mapping. Keep the two in step.
 - `src/layouts/Layout.astro` sets title (`"<title> | SubtitleMate"`, home page bare), description, canonical and Open Graph tags. Every page passes `title` and `description`.
 - `src/pages/sitemap.xml.ts` lists every `.astro` page automatically. A page that shouldn't be indexed needs a filter there. `public/robots.txt` points at it.
