@@ -98,7 +98,7 @@ Keep privacy, terms, contact, and about pages crawlable for trust, but do not ex
 | URL type | Recommended schema |
 |---|---|
 | Home | `Organization`, `WebSite`, `SoftwareApplication` when product details are visible |
-| Tool page | `SoftwareApplication` or `WebApplication`; `HowTo` only for visible instructions |
+| Tool page | `SoftwareApplication` or `WebApplication` (no `HowTo`: rich results retired Sept 2023) |
 | Guide | `Article` or `TechArticle` |
 | Glossary term | `DefinedTerm` inside a `DefinedTermSet` |
 | About | `AboutPage`, `Organization` |

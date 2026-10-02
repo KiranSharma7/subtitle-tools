@@ -1,0 +1,25 @@
+# SubtitleMate
+
+> Free subtitle tools that run in your browser. Files are never uploaded. Supports SRT, WebVTT, ASS/SSA, SAMI, MicroDVD (SUB), MPL2 and plain text.
+
+## Syncing
+
+- [Subtitle shifter](https://subtitlemate.com/subtitle-shifter): Move every cue earlier or later to fix a constant delay.
+- [Partial subtitle shifter](https://subtitlemate.com/partial-subtitle-shifter): Fix one section after a cut, scene change, or ad break.
+
+## Fixing and cleaning
+
+- [SRT cleaner](https://subtitlemate.com/srt-cleaner): Remove tags, SDH notes, labels, duplicates, and empty cues.
+- [Subtitle validator](https://subtitlemate.com/subtitle-validator): Check timestamps, overlaps, numbering, and empty cues.
+- [UTF-8 converter](https://subtitlemate.com/utf-8-converter): Read old encodings and save subtitle text as UTF-8.
+
+## Converters
+
+- [Convert to SRT](https://subtitlemate.com/convert-to-srt): Convert VTT, ASS, SSA, SAMI, SUB, or MPL2 to SRT.
+- [Convert to WebVTT](https://subtitlemate.com/convert-to-webvtt): Create WebVTT captions for HTML5 video and web players.
+- [Convert to plain text](https://subtitlemate.com/convert-to-plain-text): Remove timings and export the dialogue as a TXT file.
+
+## Optional
+
+- [About](https://subtitlemate.com/about): Who runs SubtitleMate and why.
+- [Contact](https://subtitlemate.com/contact): hello@subtitlemate.com

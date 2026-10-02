@@ -20,7 +20,9 @@ const schema = path === '/'
   ? { '@context': 'https://schema.org', '@graph': [org, { '@type': 'WebSite', name: site.name, url: site.url, publisher: { '@id': org['@id'] } }] }
   : path === '/about'
   ? { '@context': 'https://schema.org', '@type': 'AboutPage', url: canonical.href, mainEntity: org }
-  : tool &&{ '@context': 'https://schema.org', '@type': 'WebApplication', name: tool.name, description, url: canonical.href, applicationCategory: 'MultimediaApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } };
+  : path === '/contact'
+  ? { '@context': 'https://schema.org', '@type': 'ContactPage', url: canonical.href, mainEntity: org }
+  : tool && { '@context': 'https://schema.org', '@type': 'WebApplication', name: tool.name, description, url: canonical.href, applicationCategory: 'MultimediaApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, publisher: org };
 ---
 
 <!doctype html>
