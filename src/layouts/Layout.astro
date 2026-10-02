@@ -1,6 +1,7 @@
 ---
 import { site, cleanPath } from '../site.ts';
 import Header from '../components/Header.astro';
+import Logo from '../components/Logo.astro';
 import { tools } from '../tools.ts';
 
 interface Props {
@@ -51,15 +52,26 @@ const schema = path === '/'
       <slot />
     </main>
     <footer>
-      <div class="wrap">
-        <p>Files are processed in your browser and never uploaded.</p>
+      <div class="wrap footer-grid">
+        <div class="footer-brand">
+          <a class="footer-logo" href="/"><Logo />{site.name}</a>
+          <p>Free subtitle tools that run in your browser. Your files are never uploaded.</p>
+        </div>
+        <nav aria-label="Tools">
+          <h2>Tools</h2>
+          {tools.map((t) => <a href={t.href}>{t.name}</a>)}
+        </nav>
         <nav aria-label="Site">
+          <h2>{site.name}</h2>
           <a href="/about">About</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
           <a href="/contact">Contact</a>
           <button type="button" class="link" data-consent-open>Cookie settings</button>
         </nav>
+      </div>
+      <div class="wrap footer-bottom">
+        <p>© {new Date().getFullYear()} {site.name}</p>
       </div>
     </footer>
     <section id="consent" class="consent" aria-label="Cookie consent" hidden>
@@ -97,6 +109,7 @@ const schema = path === '/'
     --radius-sm: 12px;
     --radius-input: 6px;
     --pill: 9999px;
+    --content: 800px;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
@@ -107,7 +120,7 @@ const schema = path === '/'
     font: 16px/1.5 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-feature-settings: 'ss03', 'ss04';
   }
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+  .wrap { max-width: calc(var(--content) + 32px); margin: 0 auto; padding: 0 16px; }
   a { color: var(--ink); }
   h1 { font-size: clamp(40px, 6vw, 64px); line-height: 1.15; letter-spacing: -0.016em; font-weight: 500; margin: 64px 0 16px; }
   h2 { font-size: 24px; line-height: 1.5; font-weight: 500; }
@@ -115,12 +128,19 @@ const schema = path === '/'
   p, li { text-wrap: pretty; }
   .lede { color: var(--graphite); margin: 0 auto 48px; font-size: 18px; max-width: 640px; }
   main > h1, .lede { text-align: center; }
-  footer { border-top: 1px solid var(--ink); color: var(--graphite); font-size: 14px; margin-top: 128px; }
-  footer .wrap { padding-block: 48px; display: flex; flex-wrap: wrap; gap: 16px 32px; justify-content: space-between; }
-  footer p { margin: 0; }
-  footer nav { display: flex; flex-wrap: wrap; gap: 8px 24px; font-weight: 500; }
-  footer nav a { color: var(--ink); text-decoration: none; }
+  /* Every section on every page shares one width. */
+  main > * { max-width: var(--content); margin-inline: auto; }
+  footer { border-top: 1px solid var(--ink); background: var(--cream); color: var(--graphite); font-size: 14px; margin-top: 128px; }
+  .footer-grid { padding-block: 64px 48px; display: grid; gap: 40px 32px; grid-template-columns: 2fr 1fr 1fr; }
+  .footer-brand p { margin: 16px 0 0; max-width: 320px; }
+  .footer-logo { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-size: 20px; font-weight: 500; letter-spacing: -0.016em; }
+  footer nav { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+  footer nav h2 { font-size: 12px; line-height: 1.5; letter-spacing: .286em; text-transform: uppercase; color: var(--graphite); margin: 0 0 6px; }
+  footer nav a, footer .link { color: var(--ink); text-decoration: none; font-weight: 400; }
   footer nav a:hover, footer .link:hover { text-decoration: underline; }
+  .footer-bottom { max-width: var(--content); width: calc(100% - 32px); padding: 24px 0; border-top: 1px solid var(--ink); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+  .footer-bottom p { margin: 0; }
+  @media (max-width: 760px) { .footer-grid { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column: 1 / -1; } }
   .link { background: none; border: 0; padding: 0; color: var(--ink); cursor: pointer; font-size: inherit; font-weight: 500; }
   .consent { position: fixed; inset: auto 16px 16px; max-width: 640px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 16px 24px; font-size: 14px; }
   .consent[hidden] { display: none; }
@@ -128,12 +148,11 @@ const schema = path === '/'
   .consent div { display: flex; gap: 8px; }
   .consent button { border-radius: var(--radius); padding: 8px 20px; font-weight: 500; cursor: pointer; border: 1px solid var(--ink); background: transparent; }
   #consent-accept { background: var(--sun); }
-  .doc { max-width: 640px; }
   .doc p { color: var(--graphite); }
   /* Help: one column, one ink line above each topic. */
-  .help { margin: 128px auto 0; max-width: 900px; }
-  .help > * { max-width: 720px; margin: 0 0 24px; }
-  .help > h2 { font-size: 20px; line-height: 1.4; margin: 0 0 12px; padding-top: 32px; border-top: 1px solid var(--ink); max-width: none; }
+  .help { margin: 128px auto 0; }
+  .help > * { margin: 0 0 24px; }
+  .help > h2 { font-size: 20px; line-height: 1.4; margin: 0 0 12px; padding-top: 32px; border-top: 1px solid var(--ink); }
   .help > h2:first-child { border-top: 0; padding-top: 0; }
   .help > :has(+ h2) { margin-bottom: 32px; }
   .help p, .help li { color: var(--graphite); }

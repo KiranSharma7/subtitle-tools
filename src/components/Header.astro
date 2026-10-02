@@ -1,13 +1,14 @@
 ---
 import { tools } from '../tools.ts';
 import { site, cleanPath } from '../site.ts';
+import Logo from './Logo.astro';
 
 const current = cleanPath(Astro.url.pathname);
 ---
 
 <header class="site-header">
   <div class="inner">
-    <a class="brand" href="/">{site.name}</a>
+    <a class="brand" href="/"><Logo />{site.name}</a>
     <nav class="menu" aria-label="Primary">
       <div class="dropdown-wrap">
         <button
@@ -67,7 +68,7 @@ const current = cleanPath(Astro.url.pathname);
     border-bottom: 1px solid var(--ink);
   }
   .inner {
-    max-width: 1200px;
+    max-width: calc(var(--content) + 32px);
     margin: 0 auto;
     padding: 0 16px;
     min-height: 64px;
@@ -77,6 +78,9 @@ const current = cleanPath(Astro.url.pathname);
     gap: 16px;
   }
   .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     color: var(--ink);
     text-decoration: none;
     font-size: 20px;

@@ -42,7 +42,7 @@ test('both converters are in the nav and on the homepage', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'All tools' }).click();
   for (const name of ['Convert to SRT', 'Convert to WebVTT']) {
-    await expect(page.getByRole('navigation').getByRole('link', { name })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name })).toBeVisible();
     await expect(page.getByRole('main').getByRole('link', { name })).toBeVisible();
   }
 });
