@@ -1,11 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
 ---
 
 <Layout title="Convert subtitles to plain text: get the dialogue as a .txt file" description="Turn SRT, WebVTT, ASS, SAMI and other subtitles into plain text. Timing, cue numbers and formatting tags are removed. Free, and your file stays on your device.">
   <h1>Convert to plain text</h1>
-  <p class="lede">Get just the dialogue, with no timestamps, cue numbers or tags.</p>
+  <p class="lede">Convert SRT to TXT and keep the dialogue for a transcript, printout, notes, or language study.</p>
 
   <ToolShell columns={['#', 'Text']}>
     <label class="option"><input id="keep" type="checkbox" checked /> Keep line breaks</label>
@@ -13,11 +15,31 @@ import ToolShell from '../components/ToolShell.astro';
 
   <section class="help">
     <h2>How to use it</h2>
-    <p>Choose an SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2 file. The preview shows the text of each cue with the timing and formatting tags removed.</p>
-    <p>Cue ids, cue settings, styles and the file header are dropped too. Anything that gets dropped is listed above the preview.</p>
-    <p>With <em>Keep line breaks</em> on, each cue keeps its lines and cues are separated by a blank line. Turn it off to put each cue on one line.</p>
-    <p>The download is saved as UTF-8 with the same name and a <code>.txt</code> extension. Plain text has no timing, so it can't be turned back into subtitles.</p>
+    <p>Upload SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2. The preview keeps dialogue and removes timestamps, cue numbers, WebVTT settings and file headers, along with formatting tags.</p>
+    <h2>Choose your text layout</h2>
+    <p>Keep line breaks to preserve two-line subtitle cues and separate cues with a blank line. Turn it off to put each cue on one line, which is useful for a clean transcript or language-study notes.</p>
+    <pre><code>Keep line breaks:  I wanted to tell you something.
+                  But I did not know how.
+
+One line per cue: I wanted to tell you something. But I did not know how.</code></pre>
+    <h2>What is removed?</h2>
+    <p>Timing, cue numbers, IDs, WebVTT settings and file headers are removed, along with ASS formatting tags. A cue that has no text left is left out. Plain text has no timing, so it cannot be converted back into subtitles without adding timings again.</p>
+    <h2>Common problems</h2>
+    <p>If the transcript contains tags or SDH descriptions you do not want, <a href="/srt-cleaner">clean the subtitle first</a>. If accents or non-Latin text look garbled, use the <a href="/utf-8-converter">UTF-8 converter</a>, then extract the transcript again.</p>
   </section>
+
+  <Faq items={[
+    { question: 'Can I convert SRT to TXT?', answer: 'Yes. Upload the SRT file and download a plain text file with the dialogue.' },
+    { question: 'Are timestamps kept in the text file?', answer: 'No. Timestamps and cue numbers are removed. Header lines and WebVTT settings are removed too. Formatting tags are removed as well.' },
+    { question: 'What does Keep line breaks do?', answer: 'It keeps the lines inside each subtitle cue. Turn it off to put each cue on one line.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/srt-cleaner', label: 'Clean before extracting', description: 'Remove HTML tags and SDH notes, plus labels or duplicate cues.' },
+    { href: '/utf-8-converter', label: 'Fix the text encoding', description: 'Repair mojibake before making a transcript.' },
+    { href: '/convert-to-srt', label: 'Keep subtitle timing', description: 'Convert another subtitle format to SRT instead of plain text.' },
+    { href: '/convert-to-webvtt', label: 'Make web captions', description: 'Convert to WebVTT when you need timed captions instead.' },
+  ]} />
 </Layout>
 
 <script>
@@ -29,14 +51,18 @@ import ToolShell from '../components/ToolShell.astro';
   const keep = document.getElementById('keep') as HTMLInputElement;
 
   const render = mountTool({
-    view({ file }) {
+    view({ file }, { previewLimit = 200 } = {}) {
       const r = convert(file, 'txt');
+      const rows = [];
+      for (const [i, cue] of r.file.cues.entries()) {
+        const value = plainText(cue.text, keep.checked);
+        if (value) rows.push({ cells: [String(i + 1), value] });
+        if (rows.length >= previewLimit) break;
+      }
       return {
         warnings: lossWarnings(r.losses),
         // Cues with no text left are left out of the download, so leave them out here too.
-        rows: r.file.cues
-          .map((c, i) => ({ cells: [String(i + 1), plainText(c.text, keep.checked)] }))
-          .filter((r) => r.cells[1]),
+        rows,
       };
     },
     output: ({ file }) => write(file, 'txt', { keepLineBreaks: keep.checked }),
@@ -48,5 +74,5 @@ import ToolShell from '../components/ToolShell.astro';
 
 <style>
   .option { display: flex; gap: 8px; align-items: center; font-weight: 600; }
-  .tool :global(td:first-child) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:first-child) { white-space: nowrap; font-variant-numeric: tabular-nums; }
 </style>

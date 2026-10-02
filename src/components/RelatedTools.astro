@@ -1,0 +1,33 @@
+---
+type RelatedTool = { href: string; label: string; description: string };
+type Props = { tools: RelatedTool[] };
+const { tools } = Astro.props;
+---
+
+<section class="related" aria-labelledby="related-tools-title">
+  <h2 id="related-tools-title">Related subtitle tools</h2>
+  <ul>
+    {tools.map((tool) => (
+      <li>
+        <a href={tool.href}>{tool.label}</a>
+        <p>{tool.description}</p>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  .related { margin: 128px auto 0; }
+  .related h2 { margin-bottom: 32px; text-align: center; }
+  /* Same cards as the home page tool list. */
+  .related ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 24px; grid-template-columns: repeat(4, 1fr); }
+  .related li { position: relative; background: var(--sun); border: 1px solid var(--ink); border-radius: var(--radius); padding: 24px; }
+  @media (max-width: 960px) { .related ul { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .related ul { grid-template-columns: 1fr; } }
+  .related li { transition: box-shadow .15s, scale .15s; }
+  .related li:hover { box-shadow: 0 0 0 1px var(--ink); }
+  .related li:active { scale: .98; }
+  .related a { font-size: 24px; line-height: 1.25; font-weight: 500; text-decoration: none; }
+  .related a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .related p { margin: 8px 0 0; }
+</style>

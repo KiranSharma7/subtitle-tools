@@ -7,20 +7,32 @@ import { tools } from '../tools.ts';
 <Layout title={`${site.name}: fix, convert and sync subtitle files`} description="Fast, private tools for fixing subtitle files. Shift timing, convert SRT and WebVTT, clean and validate, all in your browser.">
   <h1>Fast, private tools for fixing subtitle files</h1>
   <p class="lede">Your file never leaves your device. Everything runs in your browser.</p>
-  <ul class="tools">
-    {tools.map((t) => (
-      <li>
-        <a href={t.href}>{t.name}</a>
-        <p>{t.blurb}</p>
-      </li>
+  <div class="tool-groups">
+    {['Converters', 'Syncing', 'Fixing and cleaning'].map((category) => (
+      <section class="tool-group" aria-labelledby={`tools-${category.toLowerCase().replaceAll(' ', '-')}`}>
+        <h2 id={`tools-${category.toLowerCase().replaceAll(' ', '-')}`}>{category}</h2>
+        <ul class="tools">
+          {tools.filter((t) => t.category === category).map((t) => (
+            <li>
+              <a href={t.href}>{t.name}</a>
+              <p>{t.blurb}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
     ))}
-  </ul>
+  </div>
 </Layout>
 
 <style>
-  .tools { list-style: none; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-  .tools li { background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); padding: 24px; }
-  .tools a { font-size: 20px; line-height: 1.4; font-weight: 600; text-decoration: none; }
-  .tools a:hover { color: var(--ember); }
-  .tools p { margin: 8px 0 0; color: var(--graphite); font-size: 14px; line-height: 1.43; }
+  .tool-groups { display: grid; gap: 64px; }
+  .tool-group h2 { margin: 0 0 20px; font-size: 28px; line-height: 1.25; font-weight: 500; }
+  .tools { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .tools li { position: relative; background: var(--sun); border: 1px solid var(--ink); border-radius: var(--radius); padding: 32px; }
+  .tools li { transition: box-shadow .15s, scale .15s; }
+  .tools li:hover { box-shadow: 0 0 0 1px var(--ink); }
+  .tools li:active { scale: .98; }
+  .tools a { font-size: 24px; line-height: 1.25; font-weight: 500; text-decoration: none; }
+  .tools a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .tools p { margin: 8px 0 0; }
 </style>

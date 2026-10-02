@@ -1,13 +1,15 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
 ---
 
 <Layout title="Subtitle shifter: fix out-of-sync SRT, VTT and ASS subtitles" description="Move every subtitle in an SRT, WebVTT, ASS, SAMI, MicroDVD or MPL2 file earlier or later by seconds or milliseconds. Free, and your file stays on your device.">
   <h1>Subtitle shifter</h1>
-  <p class="lede">Subtitles showing up too early or too late? Move them all by the same amount.</p>
+  <p class="lede">Fix subtitles that are out of sync by moving every cue earlier or later by the same amount.</p>
 
-  <ToolShell columns={['#', 'Before', 'After', 'Text']}>
+  <ToolShell columns={['#', 'Start', 'Text']}>
     <fieldset>
       <legend>Shift by</legend>
       <input id="amount" type="number" min="0" step="any" value="1" aria-label="Amount" />
@@ -24,11 +26,30 @@ import ToolShell from '../components/ToolShell.astro';
 
   <section class="help">
     <h2>How to use it</h2>
-    <p>Play the video and note when a line is spoken and when its subtitle appears. If the subtitle comes 2 seconds late, shift <em>earlier</em> by 2 seconds. If it comes early, shift <em>later</em>.</p>
-    <p>Cues that would start before 0:00 are moved to 0:00. Cues that would end before 0:00 are removed. Both are listed above the preview.</p>
-    <p>The download is saved as UTF-8 in the same format you uploaded, with styles and cue settings kept.</p>
-    <p>MicroDVD files count frames, not seconds. If the file doesn't say its frame rate, pick the one your video uses.</p>
+    <p>Find one spoken line and compare it with its subtitle. If the subtitle appears two seconds late, shift <strong>earlier</strong> by 2 seconds. If it appears early, shift <strong>later</strong> by 2 seconds.</p>
+    <pre><code>Subtitle is 2 seconds late  →  shift earlier by 2 seconds
+Subtitle is 1.5 seconds early →  shift later by 1.5 seconds</code></pre>
+    <h2>Supported formats</h2>
+    <p>Shift SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2 files. The download keeps the uploaded format, styles, cue settings, and filename.</p>
+    <h2>Fixed delay or timing drift?</h2>
+    <p>This tool applies one fixed offset to the whole file. It works when every subtitle is early or late by roughly the same amount. If subtitles start in sync and drift further out over time, the video and subtitle may use different frame rates. Try the <a href="/partial-subtitle-shifter">partial subtitle shifter</a> for a cut or ad break, or retime the file for the correct frame rate.</p>
+    <h2>Warnings you may see</h2>
+    <p>Cues moved before 0:00 are clamped to 0:00. Cues that end before 0:00 are removed. Both changes are listed above the preview. MicroDVD uses frames, so choose the video's frame rate when the file does not state one.</p>
+    <p>When the timing looks right, <a href="/subtitle-validator">validate the shifted file</a> before you share it.</p>
   </section>
+
+  <Faq items={[
+    { question: 'Should I shift subtitles earlier or later?', answer: 'If a subtitle appears late, shift it earlier. If it appears early, shift it later.' },
+    { question: 'Can this fix subtitles that drift over time?', answer: 'It fixes one constant delay. If the delay grows during the video, the subtitle and video may use different frame rates.' },
+    { question: 'What happens to cues before zero?', answer: 'Cues that start before 0:00 are moved to 0:00. Cues that end before 0:00 are removed and listed above the preview.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/partial-subtitle-shifter', label: 'Shift one section', description: 'Use a different offset after a cut, ad break, or scene change.' },
+    { href: '/subtitle-validator', label: 'Check the result', description: 'Find overlaps, bad timestamps, and empty cues.' },
+    { href: '/convert-to-webvtt', label: 'Convert to WebVTT', description: 'Prepare the shifted subtitles for HTML5 video.' },
+    { href: '/srt-cleaner', label: 'Clean the file', description: 'Remove tags, SDH notes, and duplicate cues.' },
+  ]} />
 </Layout>
 
 <script>
@@ -41,12 +62,20 @@ import ToolShell from '../components/ToolShell.astro';
   const unit = document.getElementById('unit') as HTMLSelectElement;
   const dir = document.getElementById('dir') as HTMLSelectElement;
 
+  // "12 cues shifted 1.5 seconds earlier."
+  function result(count: number) {
+    const n = parseFloat(amount.value) || 0;
+    if (!n) return 'Nothing shifted yet. Set an amount above.';
+    const u = unit.selectedOptions[0].text;
+    return `${count} ${count === 1 ? 'cue' : 'cues'} shifted ${n} ${n === 1 ? u.slice(0, -1) : u} ${dir.selectedOptions[0].text}.`;
+  }
+
   function offset() {
     return Math.round((parseFloat(amount.value) || 0) * +unit.value * +dir.value);
   }
 
   const render = mountTool({
-    view({ file }) {
+    view({ file }, { previewLimit = 200 } = {}) {
       const r = shift(file, offset());
       const warnings: string[] = [];
       if (r.clamped.length) warnings.push(`Moved to 0:00 because they would start too early: cue ${r.clamped.join(', ')}.`);
@@ -55,11 +84,11 @@ import ToolShell from '../components/ToolShell.astro';
       const t = (ms: number) => formatTime(ms, file.format === 'srt' ? ',' : '.');
       const removed = new Set(r.removed);
       let j = 0;
-      const rows = file.cues.map((c, i) => {
+      const rows = file.cues.slice(0, previewLimit).map((c, i) => {
         const after = removed.has(i + 1) ? 'removed' : t(r.file.cues[j++].start);
-        return { cells: [String(i + 1), t(c.start), after, c.text], flag: removed.has(i + 1) || r.clamped.includes(i + 1) };
+        return { cells: [String(i + 1), after, c.text], flag: removed.has(i + 1) || r.clamped.includes(i + 1) };
       });
-      return { warnings, rows };
+      return { warnings, rows, result: result(r.file.cues.length), total: file.cues.length };
     },
     output: ({ file }) => write(shift(file, offset()).file),
   });
@@ -71,5 +100,10 @@ import ToolShell from '../components/ToolShell.astro';
   fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   legend { float: left; margin-right: 8px; font-weight: 600; }
   input[type='number'] { width: 7em; }
-  .tool :global(td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  @media (max-width: 640px) {
+    legend { float: none; width: 100%; margin: 0 0 8px; padding: 0; }
+    fieldset > :not(legend) { flex: 1; min-width: 0; }
+  }
+  :global(.tool td:nth-child(-n + 2)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
 </style>

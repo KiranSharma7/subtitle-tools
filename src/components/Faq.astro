@@ -1,0 +1,40 @@
+---
+type FaqItem = { question: string; answer: string };
+type Props = { items: FaqItem[] };
+const { items } = Astro.props;
+const structuredData = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map(({ question, answer }) => ({
+    '@type': 'Question',
+    name: question,
+    acceptedAnswer: { '@type': 'Answer', text: answer },
+  })),
+}).replace(/</g, '\\u003c');
+---
+
+<section class="faq" aria-labelledby="faq-title">
+  <h2 id="faq-title">Frequently asked questions</h2>
+  <div class="faq-list">
+    {items.map((item) => (
+      <details>
+        <summary>{item.question}</summary>
+        <p>{item.answer}</p>
+      </details>
+    ))}
+  </div>
+</section>
+
+<script type="application/ld+json" set:html={structuredData}></script>
+
+<style>
+  .faq { margin: 128px auto 0; max-width: 900px; }
+  .faq > h2 { font-size: 24px; line-height: 1.4; margin: 0 0 24px; }
+  .faq-list { display: grid; gap: 16px; }
+  details { background: var(--cream); border-radius: var(--radius-sm); }
+  summary { cursor: pointer; font-weight: 500; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 24px; border-radius: inherit; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); display: flex; flex: none; transition: rotate .4s var(--spring); }
+  details[open] summary::after { rotate: 180deg; }
+  details p { color: var(--graphite); margin: 0; padding: 0 24px 24px; }
+</style>

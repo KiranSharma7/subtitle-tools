@@ -1,0 +1,41 @@
+keyword,cluster,intent,demand_signal,target_url,priority,live_volume,live_kd,decision
+subtitle converter,core conversion,transactional,high,/convert-to-srt,P0,Unknown,Unknown,keep
+convert subtitles to srt,SRT conversion,transactional,high,/convert-to-srt,P0,Unknown,Unknown,keep
+convert ass to srt,format conversion,transactional,medium,/convert-to-srt,P0,Unknown,Unknown,keep
+vtt to srt,format conversion,transactional,high,/convert-to-srt,P0,Unknown,Unknown,keep
+srt to vtt,WebVTT conversion,transactional,high,/convert-to-webvtt,P0,Unknown,Unknown,keep
+srt to webvtt,WebVTT conversion,transactional,high,/convert-to-webvtt,P0,Unknown,Unknown,keep
+srt to txt,plain text,transactional,medium,/convert-to-plain-text,P0,Unknown,Unknown,keep
+subtitle to text,plain text,transactional,medium,/convert-to-plain-text,P0,Unknown,Unknown,keep
+subtitle shifter,fixed sync,transactional,medium,/subtitle-shifter,P0,Unknown,Unknown,keep
+subtitle delay fixer,fixed sync,transactional,medium,/subtitle-shifter,P0,Unknown,Unknown,keep
+fix subtitle delay,fixed sync,transactional,high,/subtitle-shifter,P0,Unknown,Unknown,keep
+fix out of sync subtitles,fixed sync,transactional,high,/subtitle-shifter,P0,Unknown,Unknown,keep
+shift srt timing,fixed sync,transactional,medium,/subtitle-shifter,P0,Unknown,Unknown,keep
+subtitle timing drift,drift,informational,medium,/partial-subtitle-shifter,P0,Unknown,Unknown,keep
+partial subtitle shifter,range sync,transactional,low,/partial-subtitle-shifter,P0,Unknown,Unknown,keep
+srt cleaner,cleaning,transactional,medium,/srt-cleaner,P0,Unknown,Unknown,keep
+clean srt file,cleaning,transactional,medium,/srt-cleaner,P0,Unknown,Unknown,keep
+remove html tags from srt,cleaning,transactional,medium,/srt-cleaner,P0,Unknown,Unknown,keep
+remove sdh subtitles,cleaning,transactional,medium,/srt-cleaner,P0,Unknown,Unknown,keep
+remove speaker labels srt,cleaning,transactional,medium,/srt-cleaner,P0,Unknown,Unknown,keep
+subtitle validator,validation,transactional,medium,/subtitle-validator,P0,Unknown,Unknown,keep
+srt validator,validation,transactional,medium,/subtitle-validator,P0,Unknown,Unknown,keep
+subtitle checker,validation,transactional,medium,/subtitle-validator,P0,Unknown,Unknown,keep
+validate srt file,validation,transactional,medium,/subtitle-validator,P0,Unknown,Unknown,keep
+fix invalid srt,validation,transactional,medium,/subtitle-validator,P0,Unknown,Unknown,keep
+fix garbled subtitles,encoding,transactional,high,/utf-8-converter,P0,Unknown,Unknown,keep
+subtitle encoding converter,encoding,transactional,medium,/utf-8-converter,P0,Unknown,Unknown,keep
+convert srt to utf 8,encoding,transactional,medium,/utf-8-converter,P0,Unknown,Unknown,keep
+fix mojibake subtitles,encoding,informational,low,/utf-8-converter,P1,Unknown,Unknown,keep
+shift jis subtitles,encoding,transactional,low,/utf-8-converter,P1,Unknown,Unknown,keep
+gbk subtitles,encoding,transactional,low,/utf-8-converter,P1,Unknown,Unknown,keep
+merge subtitles,merge,transactional,medium,/merge-subtitles,P1,Unknown,Unknown,defer until feature
+merge srt files,merge,transactional,medium,/merge-subtitles,P1,Unknown,Unknown,defer until feature
+combine bilingual subtitles,merge,transactional,low,/merge-subtitles,P1,Unknown,Unknown,defer until feature
+extract subtitles from mkv,extraction,transactional,high,/extract-subtitles,P2,Unknown,Unknown,defer until feature
+extract srt from mp4,extraction,transactional,medium,/extract-subtitles,P2,Unknown,Unknown,defer until feature
+sup to srt,OCR,transactional,medium,/convert-sup-to-srt,P2,Unknown,Unknown,defer until OCR
+pgs to srt,OCR,transactional,medium,/convert-sup-to-srt,P2,Unknown,Unknown,defer until OCR
+srt vs vtt,format education,informational,medium,/guides/subtitle-formats,P1,Unknown,Unknown,publish guide
+what is webvtt,format education,informational,medium,/guides/subtitle-formats,P1,Unknown,Unknown,publish guide

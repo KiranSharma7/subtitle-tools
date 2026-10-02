@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scannable Interface Design"
+  short_description: "Design interfaces for fast scanning and clear hierarchy"
+  default_prompt: "Use $scannable-interface-design to review or improve this interface for alignment, scanability, density, visual cues, and hierarchy."

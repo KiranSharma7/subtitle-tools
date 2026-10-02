@@ -10,57 +10,159 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
 <section class="tool">
   <label class="drop" id="drop">
     <input type="file" id="file" accept={accept} />
-    <strong>{label}</strong> or drop it here
-    <span>{hint}</span>
+    <svg class="drop-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+    <span class="drop-text">
+      <span class="drop-idle"><strong>{label}</strong><span class="drop-or"> or drag it here</span></span>
+      <strong class="drop-over" aria-hidden="true">Drop it here</strong>
+    </span>
+    <span class="drop-hint">{hint}</span>
   </label>
 
   <p id="error" class="error" role="alert" hidden></p>
 
+  <div id="processing" class="processing" aria-live="polite" hidden>
+    <div class="processing-head">
+      <strong id="processing-phase">Reading file…</strong>
+      <button id="cancel" class="quiet" type="button">Cancel</button>
+    </div>
+    <progress id="progress" max="1" value="0" aria-label="File processing progress"></progress>
+    <span id="processing-detail">Your file stays in this browser.</span>
+  </div>
+
   <div id="loaded" hidden>
-    <p class="info">
-      <span id="summary"></span>
-      <label>Read as
-        <select id="encoding">{encodings.map((e) => <option>{e}</option>)}</select>
-      </label>
-      <label id="fps-picker" hidden>Frame rate
-        <select id="fps">{['23.976', '24', '25', '29.97', '30'].map((f) => <option>{f}</option>)}</select>
-      </label>
-    </p>
+    <div class="file-row">
+      <strong id="summary" class="file-summary"></strong>
+      <div class="file-actions">
+        <label>Read as
+          <select id="encoding">{encodings.map((e) => <option>{e}</option>)}</select>
+        </label>
+        <label id="fps-picker" hidden>Frame rate
+          <select id="fps">{['23.976', '24', '25', '29.97', '30'].map((f) => <option>{f}</option>)}</select>
+        </label>
+        <button id="replace" class="quiet" type="button">Replace file</button>
+      </div>
+    </div>
+    <p id="large-warning" class="large-warning" role="status" hidden></p>
 
     <slot />
 
-    <div id="warnings" class="warn" role="status" hidden></div>
-
-    <div class="preview">
-      <table>
-        <thead><tr>{columns.map((c) => <th>{c}</th>)}</tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
+    <div class="result">
+      <div class="result-bar">
+        <strong id="result"></strong>
+        <button id="download" class="primary">Download</button>
+      </div>
+      <div id="warnings" class="warnings" role="status" hidden></div>
+      <div class="preview">
+        <table>
+          <thead><tr>{columns.map((c) => <th scope="col">{c}</th>)}</tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p id="preview-note" class="preview-note" hidden></p>
     </div>
-
-    <button id="download" class="primary">Download</button>
   </div>
 </section>
 
 <style>
-  .tool { background: var(--fog); border-radius: var(--radius); padding: 32px; display: grid; gap: 24px; }
-  .drop { display: grid; gap: 8px; place-items: center; text-align: center; padding: 48px 16px; background: var(--paper); border: 1px dashed var(--mist); border-radius: var(--radius); cursor: pointer; }
-  .drop.over, .drop:hover { border-color: var(--ink); }
-  .drop span { color: var(--pewter); font-size: 14px; }
+  .tool { display: grid; gap: 24px; }
+
+  /* Drag over: box grows a touch, border goes ink, icon lifts, text swaps to "Drop it here". */
+  .drop { display: grid; justify-items: center; text-align: center; padding: 40px 24px; background: var(--paper); border: 2px dashed rgb(0 0 0 / .25); border-radius: var(--radius-sm); cursor: pointer; transition: transform .25s cubic-bezier(.3, 1.3, .6, 1), border-color .2s, background-color .2s; }
+  .drop:hover { border-color: rgb(0 0 0 / .45); }
+  .drop:active { transform: scale(.99); }
+  .tool.over .drop { transform: scale(1.02); border-color: var(--ink); }
+  .drop-icon { margin-bottom: 12px; color: var(--graphite); transition: transform .3s cubic-bezier(.3, 1.6, .6, 1), color .2s; }
+  .tool.over .drop-icon { transform: translateY(-4px) scale(1.15); color: var(--ink); }
+  .drop-text { display: grid; }
+  .drop-idle, .drop-over { grid-area: 1 / 1; transition: opacity .15s, transform .15s; }
+  .drop-over { opacity: 0; transform: translateY(4px); }
+  .tool.over .drop-idle { opacity: 0; transform: translateY(-4px); }
+  .tool.over .drop-over { opacity: 1; transform: none; }
+  .drop strong { font-weight: 500; }
+  .drop-or { color: var(--graphite); }
+  .drop-hint { color: var(--graphite); font-size: 14px; margin-top: 4px; }
+  @media (prefers-reduced-motion: reduce) { .drop, .drop-icon, .drop-idle, .drop-over { transition: none; } .tool.over .drop, .tool.over .drop-icon { transform: none; } }
+  .drop[aria-busy='true'] { opacity: .7; }
   .drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .drop:has(input:focus-visible) { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .drop:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (pointer: coarse) { .drop-or { display: none; } }
+
   #loaded { display: grid; gap: 24px; }
-  #loaded[hidden], .error[hidden], .warn[hidden] { display: none; }
-  .info { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; margin: 0; font-size: 14px; color: var(--graphite); }
-  .tool :global(input:not([type='file'])), .tool :global(select) { padding: 8px 12px; border: 1px solid var(--mist); border-radius: var(--radius); background: var(--paper); }
+  /* Each state rises in when it's shown. Preview rows don't: they re-render on every keystroke. */
+  #loaded:not([hidden]), .processing:not([hidden]), .error:not([hidden]), .warnings:not([hidden]), .drop:not([hidden]) { animation: rise .3s var(--spring) both; }
+  /* Download confirms with a check for a moment; the button's name stays "Download". */
+  .primary { display: inline-flex; align-items: center; gap: 8px; }
+  .primary::before { content: ''; width: 0; height: 14px; background: currentColor; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat; opacity: 0; transition: width .3s var(--spring), opacity .2s; margin-right: -8px; }
+  .primary.done::before { width: 14px; opacity: 1; margin-right: 0; }
+  #loaded[hidden], .drop[hidden], .processing[hidden], .error[hidden], .warnings[hidden], .large-warning[hidden], .preview-note[hidden] { display: none; }
+
+  .processing { display: grid; gap: 10px; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-sm); padding: 16px; }
+  .processing-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+  #processing-detail, .preview-note, .large-warning { color: var(--graphite); font-size: 14px; margin: 0; }
+  progress { width: 100%; height: 8px; accent-color: var(--ink); }
   .error { color: var(--error); margin: 0; }
-  .warn { background: var(--paper); border: 1px solid var(--mist); border-left: 3px solid var(--ink); border-radius: var(--radius); padding: 8px 16px; font-size: 14px; }
-  .warn :global(p) { margin: 8px 0; }
-  .preview { max-height: 360px; overflow: auto; background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); }
+
+  /* File row: what's loaded on the left, ways to change it on the right. */
+  .file-row { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; justify-content: space-between; }
+  .file-summary { display: flex; gap: 8px; align-items: baseline; font-weight: 500; overflow-wrap: anywhere; }
+  .file-summary::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: var(--pill); background: var(--mint); border: 1px solid var(--ink); transform: translateY(-1px); }
+  .file-actions { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 14px; color: var(--graphite); }
+  .file-actions label { display: flex; gap: 8px; align-items: center; }
+  .file-actions label[hidden] { display: none; }
+
+  .tool :global(input:not([type='file']):not([type='checkbox']):not([type='radio'])) { padding: 8px 12px; border: 1px solid var(--ink); border-radius: var(--radius-input); background: var(--paper); color: var(--ink); }
+  .tool :global(input[type='checkbox']), .tool :global(input[type='radio']) { accent-color: var(--ink); }
+  .quiet { border: 1px solid var(--ink); border-radius: var(--radius); background: transparent; padding: 7px 16px; color: var(--ink); font-weight: 500; cursor: pointer; }
+  .quiet:hover { background: var(--cream); }
+  .primary { background: var(--sun); color: var(--ink); border: 0; border-radius: var(--radius); padding: 12px 24px; font-size: 16px; font-weight: 500; cursor: pointer; }
+
+  /* One result box: status and Download, then warnings, then the cues. Hairlines split it. */
+  .result { display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-sm); overflow: clip; }
+  .result-bar { display: flex; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 12px 12px 12px 16px; background: var(--paper); border-bottom: 1px solid var(--ink); }
+  #result { flex: 1; font-weight: 500; }
+  .warnings { padding: 12px 16px; border-bottom: 1px solid var(--ink); font-size: 14px; display: grid; gap: 6px; }
+  .warnings :global(p) { margin: 0; display: flex; gap: 10px; align-items: baseline; }
+  .warnings :global(p)::before, .preview :global(td:first-child)::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: var(--pill); background: var(--sun); border: 1px solid var(--ink); }
+  .preview-note { padding: 12px 16px; border-top: 1px solid var(--cream); }
+
+  .preview { max-height: min(60vh, 520px); overflow: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, .preview :global(td) { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--fog); vertical-align: top; }
-  th { position: sticky; top: 0; background: var(--paper); font-weight: 500; color: var(--pewter); border-bottom-color: var(--mist); }
+  th, .preview :global(td) { text-align: left; padding: 8px 16px; border-bottom: 1px solid var(--cream); vertical-align: top; }
+  th { position: sticky; top: 0; z-index: 1; background: var(--paper); font-weight: 500; color: var(--graphite); border-bottom-color: var(--ink); }
+  th:first-child { padding-left: 32px; }
+  .preview :global(tr:last-child td) { border-bottom: 0; }
   .preview :global(td) { white-space: pre-wrap; }
-  .preview :global(tr.flag) { background: var(--fog); font-weight: 500; }
-  .primary { justify-self: start; background: var(--ember); color: var(--paper); border: 0; border-radius: var(--radius); padding: 8px 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .preview :global(td:first-child) { width: 1%; white-space: nowrap; color: var(--graphite); font-variant-numeric: tabular-nums; }
+  /* Flagged cues: a Sunshine dot on the number, matching the dot on each warning. */
+  .preview :global(tr.flag td:first-child) { color: var(--ink); font-weight: 500; }
+  .preview :global(td:first-child)::before { display: inline-block; margin-right: 8px; visibility: hidden; }
+  .preview :global(tr.flag td:first-child)::before { visibility: visible; }
+
+  @media (max-width: 640px) {
+    .tool { gap: 16px; }
+    #loaded { gap: 16px; }
+    .drop { padding: 32px 16px; }
+    .file-summary { flex-basis: 100%; }
+    .file-actions { width: 100%; justify-content: space-between; }
+
+    /* Warnings, then the list, then the bar pinned to the bottom of the screen while the result is in view. */
+    .warnings { order: 1; }
+    .preview { order: 2; max-height: none; overflow: visible; }
+    .preview-note { order: 3; }
+    .result-bar { order: 4; position: sticky; bottom: 0; z-index: 2; border-bottom: 0; border-top: 1px solid var(--ink); }
+    .warnings, .preview-note { border-top: 0; }
+    .preview { border-bottom: 1px solid var(--cream); }
+    .result-bar strong { font-size: 14px; }
+    .primary { flex: none; }
+
+    /* Each cue: the number hangs in a left rail; timings flow on one line, text below, all on one left edge. */
+    thead { display: none; }
+    .preview :global(tr) { display: flex; flex-wrap: wrap; gap: 4px 0; padding: 10px 16px 10px 64px; border-bottom: 1px solid var(--cream); }
+    .preview :global(td) { display: block; padding: 0; border: 0; width: auto; }
+    .preview :global(td:first-child) { flex: none; width: 48px; margin-left: -48px; }
+    .preview :global(td:not(:first-child):not(:last-child)) { margin-right: 12px; }
+    .preview :global(tr:has(td:nth-child(3)) td:last-child) { flex-basis: 100%; }
+    .preview :global(tr:not(:has(td:nth-child(3))) td:last-child) { flex: 1; min-width: 0; }
+    .preview :global(td[data-label]::before) { content: attr(data-label) ' '; color: var(--graphite); }
+  }
 </style>

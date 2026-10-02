@@ -1,4 +1,4 @@
-# Subtitle Tools
+# SubtitleMate
 
 Browser-first website with small tools that fix, convert, and re-time existing subtitle files. Files are processed in the visitor's browser and never uploaded.
 

@@ -1,59 +1,82 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
 import { defaultCleanOptions } from '../engine/clean.ts';
 
 const d = defaultCleanOptions;
-const safe = [
-  ['htmlTags', 'Remove HTML tags'],
-  ['assTags', 'Remove ASS tags like {\\an8}'],
-  ['parens', 'Remove text in ( )'],
-  ['brackets', 'Remove text in [ ]'],
-  ['braces', 'Remove text in { }'],
-  ['asterisks', 'Remove text between *asterisks*'],
-  ['hashtags', 'Remove text between #hashtags#'],
-  ['musicNotes', 'Remove cues with music notes ♪'],
-  ['duplicates', 'Remove duplicate cues'],
-  ['lineBreaks', 'Remove unnecessary line breaks'],
-  ['uppercase', 'Change ALL-CAPS cues to normal case'],
-  ['empty', 'Remove empty cues'],
-] as const;
-const keep = [['i', 'italic'], ['b', 'bold'], ['font', 'font']] as const;
-const guesswork = [
-  ['sdh', 'Remove SDH descriptions like [DOOR SLAMS]'],
-  ['speakers', 'Remove speaker labels like JOHN:'],
-  ['watermarks', 'Remove subtitle-site credits and links'],
-  ['merge', 'Merge neighbouring cues with the same text'],
-] as const;
+type Opt = readonly [name: string, label: string, value?: string];
+type Row = readonly [legend: string, opts: readonly Opt[], id?: string];
+const on = ([name, , value]: Opt) => (value ? d.keep.includes(value as never) : Boolean(d[name as keyof typeof d]));
+// Only the common rules show. The rest wait behind More options, in the same rows.
+const main: Row[] = [
+  ['Remove', [['htmlTags', 'HTML tags'], ['musicNotes', 'Music cues ♪'], ['duplicates', 'Duplicate cues'], ['empty', 'Empty cues']]],
+  ['Risky', [['sdh', 'SDH notes like [DOOR SLAMS]'], ['speakers', 'Speaker labels like JOHN:']]],
+];
+const more: Row[] = [
+  ['Keep tags', [['keep', 'italic', 'i'], ['keep', 'bold', 'b'], ['keep', 'font', 'font']], 'keep'],
+  ['Remove text in', [['parens', '( )'], ['brackets', '[ ]'], ['braces', '{ }'], ['asterisks', '*asterisks*'], ['hashtags', '#hashtags#']]],
+  ['Also remove', [['assTags', 'ASS tags like {\\an8}'], ['watermarks', 'Subtitle-site credits']]],
+  ['Fix', [['lineBreaks', 'Unnecessary line breaks'], ['uppercase', 'ALL-CAPS to normal case'], ['merge', 'Merge back-to-back repeats']]],
+];
 ---
 
 <Layout title="SRT cleaner: remove tags, SDH and junk from subtitles" description="Clean up SRT, WebVTT and other subtitle files: remove HTML and ASS tags, bracketed text, music cues, duplicates and empty cues. Your file stays on your device.">
   <h1>SRT cleaner</h1>
-  <p class="lede">Strip tags, notes and junk from a subtitle file, and see every change before you download.</p>
+  <p class="lede">Remove HTML tags, SDH notes, speaker labels, music cues, and other junk from SRT subtitles.</p>
 
   <ToolShell columns={['#', 'Before', 'After']}>
     <form id="opts">
-      <fieldset>
-        <legend>Clean</legend>
-        {safe.map(([k, label]) => <label><input type="checkbox" name={k} checked={d[k]} /> {label}</label>)}
-        <p class="keep">Keep these tags:
-          {keep.map(([k, label]) => <label><input type="checkbox" name="keep" value={k} checked={d.keep.includes(k)} /> {label}</label>)}
-        </p>
-      </fieldset>
-      <fieldset>
-        <legend>Guesswork</legend>
-        <p class="note">These can delete real dialogue, so they're off. Check the preview if you turn them on.</p>
-        {guesswork.map(([k, label]) => <label><input type="checkbox" name={k} checked={d[k]} /> {label}</label>)}
-      </fieldset>
+      {main.map(([legend, opts]) => (
+        <fieldset>
+          <legend>{legend}</legend>
+          {opts.map((o) => <label class="chip"><input type="checkbox" name={o[0]} value={o[2]} checked={on(o)} /> {o[1]}</label>)}
+          {legend === 'Risky' && <span class="hint">Can cut real dialogue. Check the preview.</span>}
+        </fieldset>
+      ))}
+      <details>
+        <summary>More options</summary>
+        <div class="rows">
+          {more.map(([legend, opts, id]) => (
+            // Keep tags only applies to HTML tag removal, so it switches off with it.
+            <fieldset id={id} disabled={id === 'keep' && !d.htmlTags}>
+              <legend>{legend}</legend>
+              {opts.map((o) => <label class="chip"><input type="checkbox" name={o[0]} value={o[2]} checked={on(o)} /> {o[1]}</label>)}
+            </fieldset>
+          ))}
+        </div>
+      </details>
     </form>
   </ToolShell>
 
   <section class="help">
     <h2>How to use it</h2>
-    <p>Tick what you want removed. The preview shows each cue before and after, and marks cues that changed or were removed.</p>
-    <p>Options run in a fixed order, and removing empty cues runs last. So a cue that only held <code>[music]</code> goes away when you remove text in [ ] and empty cues.</p>
-    <p>The download is saved as UTF-8 in the same format you uploaded.</p>
+    <p>Choose the cleanup rules, then compare every changed cue in the preview. Safe formatting rules are on by default. Guesswork rules stay off because they can delete real dialogue.</p>
+    <h2>Supported formats and cleanup rules</h2>
+    <p>Clean SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2 files. Remove HTML and ASS tags, bracketed descriptions, music-note cues, duplicate cues, empty cues, unnecessary line breaks, or ALL-CAPS text. Keep italic, bold, or font tags when the output format supports them.</p>
+    <h2>Before and after</h2>
+    <p>Turn on speaker-label or SDH removal only when you have checked the preview. A line such as <code>[I agree]</code> may be dialogue, while <code>[DOOR SLAMS]</code> is a description.</p>
+    <pre><code>Before: &lt;i&gt;JOHN:&lt;/i&gt; [DOOR SLAMS]
+After:  JOHN:</code></pre>
+    <h2>How the rules run</h2>
+    <p>Rules run in a fixed order. Removing empty cues runs last, so a cue that becomes empty after removing <code>[music]</code> is removed too. The download stays in the same format and is saved as UTF-8.</p>
+    <h2>Common problems</h2>
+    <p>If tags still show, enable both HTML and ASS tag removal. If text disappeared, turn off the guesswork rule that removed it and download again. If the cleaned file has timing errors, <a href="/subtitle-validator">validate it</a> before conversion.</p>
   </section>
+
+  <Faq items={[
+    { question: 'What can the SRT cleaner remove?', answer: 'It can remove HTML and ASS tags, bracketed notes, music cues, duplicate cues, empty cues, extra line breaks, and ALL-CAPS text.' },
+    { question: 'Will it remove real dialogue?', answer: 'Safe rules are on by default. Speaker labels and SDH notes stay off, along with watermarks or merged cues, because they can remove useful text.' },
+    { question: 'Does cleaning change subtitle timing?', answer: 'No. The cleaner changes subtitle text and keeps the original timing and file format.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/subtitle-validator', label: 'Validate the cleaned file', description: 'Find empty cues and overlap or malformed-timestamp problems.' },
+    { href: '/convert-to-plain-text', label: 'Extract dialogue', description: 'Remove all timing and formatting to make a transcript.' },
+    { href: '/utf-8-converter', label: 'Repair garbled text', description: 'Convert the source encoding before you clean it.' },
+    { href: '/subtitle-shifter', label: 'Fix subtitle timing', description: 'Move every cue earlier or later by one offset.' },
+  ]} />
 </Layout>
 
 <script>
@@ -71,26 +94,47 @@ const guesswork = [
   }
 
   const render = mountTool({
-    view({ file }) {
+    view({ file }, { previewLimit = 200 } = {}) {
       const r = clean(file, options());
-      const warnings = [`${r.changed.length} cues changed, ${r.removed.length} removed.`];
-      const rows = file.cues.map((c, i) => ({
-        cells: [String(i + 1), c.text, r.after[i] ?? 'removed'],
-        flag: r.after[i] !== c.text || r.changed.includes(i + 1),
-      }));
-      return { warnings, rows };
+      // Only changed cues: an unchanged Before/After pair tells you nothing.
+      const changed = file.cues
+        .map((c, i) => ({ cells: [String(i + 1), c.text, r.after[i] ?? 'removed'], flag: r.after[i] !== c.text || r.changed.includes(i + 1) }))
+        .filter((row) => row.flag);
+      const rows = changed.length ? changed.slice(0, previewLimit) : [{ cells: ['', 'No cues change with these settings.'] }];
+      return { warnings: [], rows, result: `${r.changed.length} cues changed, ${r.removed.length} removed.`, total: changed.length };
     },
     output: ({ file }) => write(clean(file, options()).file),
   });
 
-  form.addEventListener('change', render);
+  const html = form.elements.namedItem('htmlTags') as HTMLInputElement;
+  const keep = document.getElementById('keep') as HTMLFieldSetElement;
+  form.addEventListener('change', () => {
+    keep.disabled = !html.checked;
+    render();
+  });
 </script>
 
 <style>
-  form { display: grid; gap: 16px; }
-  fieldset { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; }
-  legend { font-weight: 600; margin-bottom: 8px; }
-  label { display: flex; gap: 8px; align-items: center; }
-  .keep, .note { grid-column: 1 / -1; margin: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
-  .note { color: var(--graphite); font-size: 14px; }
+  /* Every row: a fixed label column on the left, pill toggles flowing right. Checked pills get a cream fill. */
+  form, .rows { display: grid; gap: 12px; }
+  .rows { margin-top: 12px; }
+  fieldset { border: 0; padding: 0 0 0 128px; margin: 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; position: relative; }
+  legend { position: absolute; left: 0; top: 9px; padding: 0; font-size: 14px; color: var(--graphite); }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--ink); border-radius: var(--pill); font-size: 16px; cursor: pointer; }
+  .chip:hover { background: var(--cream); }
+  .chip:has(:checked) { background: var(--cream); box-shadow: 0 0 0 1px var(--ink); }
+  .hint { font-size: 14px; color: var(--graphite); }
+  fieldset { transition: opacity .2s; }
+  fieldset:disabled { opacity: 0.4; }
+  fieldset:disabled .chip:active { scale: 1; }
+  fieldset:disabled .chip { cursor: default; }
+  summary { margin-left: 128px; font-size: 14px; color: var(--graphite); cursor: pointer; width: fit-content; }
+  summary:hover { color: var(--ink); }
+
+  @media (max-width: 640px) {
+    form, .rows { gap: 20px; }
+    fieldset { padding-left: 0; }
+    summary { margin-left: 0; }
+    legend { position: static; width: 100%; margin-bottom: 4px; }
+  }
 </style>

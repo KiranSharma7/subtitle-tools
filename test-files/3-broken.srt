@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:03,000
+Numbering starts fine.
+
+5
+00:00:02,500 --> 00:00:05,000
+This overlaps the one before and has a wrong number.
+
+3
+00:00:06,000 --> 00:00:05,000
+End is before start.
+
+4
+00:00:07,000 --> 00:00:08,000
+

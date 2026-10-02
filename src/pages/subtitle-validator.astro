@@ -1,20 +1,54 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
 ---
 
 <Layout title="Subtitle validator: find errors in SRT and WebVTT files" description="Check an SRT or WebVTT file for bad numbering, cues out of order, overlaps, empty cues and broken timestamps, and fix the safe ones in one click. Your file stays on your device.">
   <h1>Subtitle validator</h1>
-  <p class="lede">Find what's wrong with a subtitle file, and fix the safe problems in one click.</p>
+  <p class="lede">Check an SRT or WebVTT for broken timestamps, bad numbering, overlaps, empty cues, and other errors.</p>
 
   <ToolShell columns={['Cue', 'Problem']} />
 
   <section class="help">
     <h2>How to use it</h2>
-    <p>Upload a file to see every problem, listed by cue number. Cue numbers count the cues as they appear in the file.</p>
-    <p><strong>Fix and download</strong> renumbers the cues, puts them in time order, removes empty cues, and adds a missing WEBVTT line. Cues with timestamps that can't be read are dropped.</p>
-    <p>Overlapping cues and cues that end before they start are never changed. Fix those by hand, because only you know which time is right.</p>
+    <p>Upload a file to see each issue with its cue number and a plain-language explanation. Cue numbers refer to the order in the file, so they still point to the right line when numbering is broken.</p>
+    <h2>Errors this validator checks</h2>
+    <ul>
+      <li><strong>Bad timestamps:</strong> a time cannot be read or uses the wrong separator.</li>
+      <li><strong>Numbering:</strong> an SRT cue is missing a number or uses the wrong number.</li>
+      <li><strong>Order:</strong> a cue starts before the previous cue.</li>
+      <li><strong>Overlaps:</strong> two cues are on screen at the same time.</li>
+      <li><strong>Empty cues:</strong> a cue has no readable subtitle text.</li>
+      <li><strong>Zero length:</strong> a cue starts and ends at the same time.</li>
+      <li><strong>End before start:</strong> the end time is earlier than the start time.</li>
+      <li><strong>Missing WebVTT header:</strong> a VTT file does not begin with <code>WEBVTT</code>.</li>
+    </ul>
+    <h2>Safe fixes</h2>
+    <p><strong>Fix and download</strong> renumbers SRT cues, sorts cues by start time, removes empty cues, adds a missing WebVTT header, and drops blocks with unreadable timestamps. These changes do not guess which time is correct.</p>
+    <h2>Why overlaps stay visible</h2>
+    <p>An overlap may be intentional, or one of two timestamps may be wrong. The validator reports it instead of silently changing a line that could be correct. Edit the flagged cue, then run the file through the validator again.</p>
+    <h2>Example</h2>
+    <pre><code>2
+00:00:04,000 --> 00:00:03,000
+This ends before it starts.</code></pre>
+    <p>The report points to cue 2 and tells you which timestamp relationship is invalid. After fixing it, use the <a href="/subtitle-shifter">subtitle shifter</a> for a consistent delay or the <a href="/srt-cleaner">SRT cleaner</a> for text cleanup.</p>
   </section>
+
+  <Faq items={[
+    { question: 'What does the subtitle validator check?', answer: 'It checks timestamps, numbering, cue order, overlaps, empty cues, zero-length cues, reversed times, and the WebVTT header.' },
+    { question: 'Can it fix every subtitle error?', answer: 'It fixes safe problems such as numbering, order, empty cues, unreadable blocks, and a missing WebVTT header. It leaves bad overlaps and times for you to review.' },
+    { question: 'Why are overlaps not fixed automatically?', answer: 'An overlap may be intentional. The validator reports it so you can choose the correct time instead of losing a subtitle.' },
+    { question: 'Does it upload my subtitle file?', answer: 'No. The file is processed in your browser and stays on your device.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/subtitle-shifter', label: 'Fix a constant delay', description: 'Move every cue earlier or later by seconds or milliseconds.' },
+    { href: '/partial-subtitle-shifter', label: 'Fix one section', description: 'Apply a different offset after a scene or ad break.' },
+    { href: '/srt-cleaner', label: 'Clean subtitle text', description: 'Remove tags and SDH descriptions, plus duplicate or empty cues.' },
+    { href: '/utf-8-converter', label: 'Fix garbled text', description: 'Save an old encoding as UTF-8 when letters look wrong.' },
+  ]} />
 </Layout>
 
 <script>
@@ -25,12 +59,13 @@ import ToolShell from '../components/ToolShell.astro';
   document.getElementById('download')!.textContent = 'Fix and download';
 
   mountTool({
-    view(parsed) {
+    view(parsed, { previewLimit = 200 } = {}) {
       const issues = validate(parsed);
       if (!issues.length) return { warnings: [], rows: [{ cells: ['', 'No problems found.'] }] };
       return {
         warnings: [`${issues.length} problems found.`],
-        rows: issues.map((i) => ({ cells: [i.cue === null ? 'File' : String(i.cue), i.message], flag: i.kind === 'overlap' || i.kind === 'end-before-start' })),
+        rows: issues.slice(0, previewLimit).map((i) => ({ cells: [i.cue === null ? 'File' : String(i.cue), i.message], flag: i.kind === 'overlap' || i.kind === 'end-before-start' })),
+        total: issues.length,
       };
     },
     output: (parsed) => write(fixSafe(parsed)),

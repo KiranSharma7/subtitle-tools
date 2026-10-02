@@ -30,6 +30,7 @@ test('plain text input is refused with a reason', async ({ page }) => {
 
 test('plain text converter is in the nav and on the homepage', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'All tools' }).click();
   await expect(page.getByRole('navigation').getByRole('link', { name: 'Convert to plain text' })).toBeVisible();
   await expect(page.getByRole('main').getByRole('link', { name: 'Convert to plain text' })).toBeVisible();
 });

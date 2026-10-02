@@ -1,0 +1,10 @@
+WEBVTT
+
+NOTE a comment that SRT can't keep
+
+intro
+00:00:01.000 --> 00:00:03.000 align:start position:10%
+<v Anna>Hi, I'm Anna.
+
+00:00:04.000 --> 00:00:06.000
+<b>Bold</b> and <c.yellow>yellow</c>

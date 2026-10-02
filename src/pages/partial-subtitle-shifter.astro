@@ -1,11 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
 ---
 
 <Layout title="Partial subtitle shifter: re-time part of an SRT, VTT or ASS file" description="Move only some subtitles earlier or later, with a different offset for each part of the video. Works on SRT, WebVTT, ASS, SAMI, MicroDVD and MPL2. Your file stays on your device.">
   <h1>Partial subtitle shifter</h1>
-  <p class="lede">Subtitles only drift after an ad break or a cut scene? Move just that part.</p>
+  <p class="lede">Fix a subtitle section that is out of sync after an ad break, cut, or scene change.</p>
 
   <ToolShell columns={['#', 'Before', 'After', 'Range', 'Text']}>
     <div id="ranges"></div>
@@ -23,11 +25,31 @@ import ToolShell from '../components/ToolShell.astro';
 
   <section class="help">
     <h2>How to use it</h2>
-    <p>Add a range for each part of the video that is out of sync. Type times the way the preview shows them. A negative shift moves subtitles earlier.</p>
-    <p>A subtitle belongs to the range its start time falls in, and moves as a whole. One that starts exactly on a range's To time is not moved. Ranges can't overlap.</p>
-    <p>Cues that would start before 0:00 are moved to 0:00, and cues that would end before 0:00 are removed. If a moved cue now overlaps one outside its range, it's listed so you can check it.</p>
-    <p>The download is saved as UTF-8 in the same format you uploaded.</p>
+    <p>Add a range for each section that needs a different offset. Type the start and end times shown in the preview. A positive value moves cues later; a negative value moves them earlier.</p>
+    <pre><code>00:00:00–00:18:42   0 seconds
+00:18:42–00:42:10  -1.5 seconds</code></pre>
+    <h2>Supported formats</h2>
+    <p>Use SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, or MPL2. The downloaded file keeps its original format and filename.</p>
+    <h2>How ranges are applied</h2>
+    <p>A cue belongs to the range where its start time falls. A cue starting exactly at the <strong>To</strong> time belongs outside that range. Ranges cannot overlap, and each cue moves as a whole.</p>
+    <h2>When to use a different fix</h2>
+    <p>Partial shifting fits a clean break in the timeline. If the subtitle slowly drifts further out of sync, use a frame-rate retime instead. If one offset fixes the whole file, the <a href="/subtitle-shifter">subtitle shifter</a> is faster.</p>
+    <h2>Warnings you may see</h2>
+    <p>Cues moved before 0:00 are clamped. Cues ending before 0:00 are removed, and new overlaps are flagged for review. <a href="/subtitle-validator">Validate the final file</a> after checking those rows.</p>
   </section>
+
+  <Faq items={[
+    { question: 'When should I use a partial subtitle shift?', answer: 'Use it when one part of the video is out of sync after a cut, ad break, or scene change.' },
+    { question: 'Does a cue move if it starts at the To time?', answer: 'No. A cue starting at the To time belongs outside that range.' },
+    { question: 'Can this fix slow timing drift?', answer: 'No. Slow drift usually needs a frame-rate retime. Use a partial shift when the timing changes at a clear point.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/subtitle-shifter', label: 'Shift the whole file', description: 'Apply one delay when every cue is early or late.' },
+    { href: '/subtitle-validator', label: 'Validate the result', description: 'Check ordering and overlap, timestamp, or empty-cue problems.' },
+    { href: '/srt-cleaner', label: 'Clean the file', description: 'Remove tags and notes after the timing is fixed.' },
+    { href: '/convert-to-srt', label: 'Convert to SRT', description: 'Change the format once the timing is right.' },
+  ]} />
 </Layout>
 
 <script>
@@ -58,10 +80,10 @@ import ToolShell from '../components/ToolShell.astro';
   }
 
   const render = mountTool({
-    view({ file }) {
+    view({ file }, { previewLimit = 200 } = {}) {
       const t = (ms: number) => formatTime(ms, file.format === 'srt' ? ',' : '.');
       const r = run(file);
-      if ('error' in r) return { warnings: [`${r.error} Nothing is shifted.`], rows: file.cues.map((c, i) => ({ cells: [String(i + 1), t(c.start), t(c.start), '', c.text] })) };
+      if ('error' in r) return { warnings: [`${r.error} Nothing is shifted.`], rows: file.cues.slice(0, previewLimit).map((c, i) => ({ cells: [String(i + 1), t(c.start), t(c.start), '', c.text] })), total: file.cues.length };
 
       const warnings: string[] = [];
       if (r.clamped.length) warnings.push(`Moved to 0:00 because they would start too early: cue ${r.clamped.join(', ')}.`);
@@ -70,7 +92,7 @@ import ToolShell from '../components/ToolShell.astro';
 
       const removed = new Set(r.removed);
       let j = 0;
-      const rows = file.cues.map((c, i) => {
+      const rows = file.cues.slice(0, previewLimit).map((c, i) => {
         const after = removed.has(i + 1) ? 'removed' : t(r.file.cues[j++].start);
         const k = r.range[i];
         return {
@@ -78,7 +100,7 @@ import ToolShell from '../components/ToolShell.astro';
           flag: removed.has(i + 1) || r.clamped.includes(i + 1) || r.overlaps.includes(i + 1),
         };
       });
-      return { warnings, rows };
+      return { warnings, rows, total: file.cues.length };
     },
     output({ file }) {
       const r = run(file);
@@ -110,6 +132,9 @@ import ToolShell from '../components/ToolShell.astro';
   label { display: flex; gap: 8px; align-items: center; }
   .from, .to { width: 9em; font-variant-numeric: tabular-nums; }
   input[type='number'] { width: 6em; }
-  #add, .remove { justify-self: start; background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); padding: 8px 16px; cursor: pointer; }
-  .tool :global(td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  #add, .remove { justify-self: start; background: transparent; color: var(--ink); border: 1px solid var(--ink); border-radius: var(--radius); padding: 7px 16px; font-weight: 500; cursor: pointer; }
+  #add:hover, .remove:hover { background: var(--cream); }
+  #ranges fieldset { animation: rise .3s var(--spring) both; }
+  :global(.tool td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
 </style>

@@ -1,20 +1,42 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
 ---
 
-<Layout title="Convert to SRT: turn VTT, ASS, SAMI and other subtitles into SRT" description="Convert WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2 subtitles to SRT in your browser. See exactly what gets dropped before you download. Free, and your file stays on your device.">
+<Layout title="Convert to SRT: turn VTT, ASS, SAMI and other subtitles into SRT" description="Convert WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2 subtitles to SRT in your browser. See exactly what gets dropped before you download. Your file stays on your device.">
   <h1>Convert to SRT</h1>
-  <p class="lede">Turn a WebVTT, ASS or other subtitle file into SRT, the format almost every video player reads.</p>
+  <p class="lede">Convert subtitles to SRT when a player, editor, or upload form will not accept your original format.</p>
 
   <ToolShell columns={['#', 'Start', 'End', 'Text']} />
 
   <section class="help">
     <h2>How to use it</h2>
-    <p>Choose a WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2 file. The preview shows the cues as they will be written, numbered from 1.</p>
-    <p>SRT has no cue ids, positions or styles. Italic, bold and underline are kept. Anything that gets dropped is listed above the preview, with the cue numbers it affects.</p>
-    <p>The download is saved as UTF-8 with the same name and a <code>.srt</code> extension.</p>
+    <p>Choose a file and check the preview before downloading. The output keeps cue times and dialogue, with SRT numbering added from 1.</p>
+    <h2>Supported input formats</h2>
+    <p>Use WebVTT (<code>.vtt</code>), ASS or SSA (<code>.ass</code>, <code>.ssa</code>), SAMI (<code>.smi</code>, <code>.sami</code>), MicroDVD (<code>.sub</code>), or MPL2 (<code>.txt</code>). MicroDVD files without a frame rate need the video frame rate selected in the file panel.</p>
+    <h2>What can change during conversion?</h2>
+    <p>SRT stores timestamps and a small set of inline tags. Cue ids, positions, alignment, karaoke timing, and format-specific styles have no SRT equivalent. The loss report names each dropped item and its cue number, so you can decide whether SRT is the right output.</p>
+    <pre><code>Input: 00:01:02.500 --> 00:01:04.000
+Output: 00:01:02,500 --> 00:01:04,000</code></pre>
+    <h2>Common conversion problems</h2>
+    <p>If letters look wrong, choose the source encoding under <strong>Read as</strong>, then convert again. If a MicroDVD preview has the wrong times, choose the video's frame rate. For image subtitles such as SUP/PGS or VobSub, use OCR first because this tool reads text subtitle formats.</p>
+    <p>After conversion, <a href="/subtitle-validator">validate the SRT</a> to catch malformed cues, or <a href="/srt-cleaner">clean tags and SDH notes</a> before sending it to a player.</p>
   </section>
+
+  <Faq items={[
+    { question: 'What files can I convert to SRT?', answer: 'You can convert WebVTT, ASS, SSA, and SAMI files. MicroDVD and MPL2 files also work.' },
+    { question: 'Will the conversion keep subtitle styles?', answer: 'Cue times and dialogue are kept. SRT cannot keep some positions, karaoke timing, or format-specific styles. The loss report shows what changed.' },
+    { question: 'Why does my converted file look wrong?', answer: 'Try a different source encoding or choose the correct frame rate for a MicroDVD file. Image subtitles need OCR before conversion.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/subtitle-validator', label: 'Validate the SRT', description: 'Find bad timestamps and overlap or empty-cue problems.' },
+    { href: '/srt-cleaner', label: 'Clean the subtitles', description: 'Remove tags, music notes, labels, or duplicate cues.' },
+    { href: '/utf-8-converter', label: 'Fix garbled text', description: 'Read an old encoding and save the file as UTF-8.' },
+    { href: '/subtitle-shifter', label: 'Fix subtitle timing', description: 'Move every cue earlier or later by one offset.' },
+  ]} />
 </Layout>
 
 <script>
@@ -23,5 +45,6 @@ import ToolShell from '../components/ToolShell.astro';
 </script>
 
 <style>
-  .tool :global(td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
 </style>

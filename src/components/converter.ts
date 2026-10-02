@@ -24,13 +24,13 @@ export const lossWarnings = (losses: Loss[]) =>
 // Shared script for the Convert to SRT / Convert to WebVTT pages.
 export function mountConverter(to: Format) {
   mountTool({
-    view({ file }) {
+    view({ file }, { previewLimit = 200 } = {}) {
       const r = convert(file, to);
       const warnings = lossWarnings(r.losses);
       const hit = new Set(r.losses.flatMap((l) => l.cues));
       const t = (ms: number) => formatTime(ms, to === 'srt' ? ',' : '.');
-      const rows = r.file.cues.map((c, i) => ({ cells: [String(i + 1), t(c.start), t(c.end), c.text], flag: hit.has(i + 1) }));
-      return { warnings, rows };
+      const rows = r.file.cues.slice(0, previewLimit).map((c, i) => ({ cells: [String(i + 1), t(c.start), t(c.end), c.text], flag: hit.has(i + 1) }));
+      return { warnings, rows, total: r.file.cues.length };
     },
     output: ({ file }) => write(convert(file, to).file),
     filename: (name) => name.replace(/\.[^.]*$/, '') + '.' + to,

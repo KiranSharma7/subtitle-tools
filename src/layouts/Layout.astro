@@ -1,14 +1,15 @@
 ---
-import { site } from '../site.ts';
-import { tools } from '../tools.ts';
+import { site, cleanPath } from '../site.ts';
+import Header from '../components/Header.astro';
 
 interface Props {
   title: string;
   description: string;
 }
 const { title, description } = Astro.props;
-const fullTitle = Astro.url.pathname === '/' ? title : `${title} | ${site.name}`;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const path = cleanPath(Astro.url.pathname);
+const fullTitle = path === '/' ? title : `${title} | ${site.name}`;
+const canonical = new URL(path, Astro.site);
 ---
 
 <!doctype html>
@@ -24,15 +25,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:url" content={canonical} />
     <meta property="og:type" content="website" />
     <link rel="sitemap" href="/sitemap.xml" />
-    <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>
-    <header class="wrap">
-      <a class="brand" href="/">{site.name}</a>
-      <nav aria-label="Tools">
-        {tools.map((t) => <a href={t.href} aria-current={Astro.url.pathname === t.href ? 'page' : undefined}>{t.name}</a>)}
-      </nav>
-    </header>
+    <Header />
     <main class="wrap">
       <slot />
     </main>
@@ -62,27 +58,26 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 </html>
 
 <style is:global>
-  /* Inter variable, Latin subset (OFL), from @fontsource-variable/inter */
+  /* DM Sans variable, Latin subset (OFL), from @fontsource-variable/dm-sans */
   @font-face {
-    font-family: 'Inter';
-    src: url('/fonts/inter-latin.woff2') format('woff2');
-    font-weight: 100 900;
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-latin.woff2') format('woff2');
+    font-weight: 100 1000;
     font-display: swap;
   }
   /* Tokens from docs/DESIGN.md */
   :root {
-    --ember: #ff5900;
-    --abyss: #000710;
+    --sun: #ffda6e;
+    --mint: #6ece9d;
+    --cream: #f8f5ed;
     --ink: #000000;
+    --graphite: #707070;
     --paper: #ffffff;
-    --fog: #f3f3f7;
-    --mist: #b9bbc6;
-    --steel: #8b8d98;
-    --pewter: #6f737b;
-    --graphite: #60646c;
     --error: #c62828;
-    --radius: 12px;
-    --radius-tag: 6px;
+    --radius: 24px;
+    --radius-sm: 12px;
+    --radius-input: 6px;
+    --pill: 9999px;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
@@ -90,38 +85,91 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     margin: 0;
     background: var(--paper);
     color: var(--ink);
-    font: 16px/1.5 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-    font-feature-settings: 'calt' 0, 'liga' 0, 'ss03', 'cv01', 'cv10';
-    letter-spacing: -0.01em;
+    font: 16px/1.5 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-feature-settings: 'ss03', 'ss04';
   }
   .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
-  main.wrap { max-width: 880px; }
   a { color: var(--ink); }
-  header { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: baseline; padding-block: 24px; }
-  .brand { font-weight: 600; color: var(--ink); text-decoration: none; }
-  nav { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 14px; font-weight: 500; }
-  nav a { color: var(--graphite); text-decoration: none; }
-  nav a[aria-current='page'], nav a:hover { color: var(--ink); }
-  h1 { font-size: clamp(36px, 6vw, 48px); line-height: 1.2; letter-spacing: -0.025em; font-weight: 600; margin: 48px 0 16px; }
-  h2 { font-size: 24px; line-height: 1.33; font-weight: 600; }
-  .lede { color: var(--graphite); margin: 0 0 32px; font-size: 20px; line-height: 1.4; max-width: 640px; }
-  footer { background: var(--abyss); color: var(--mist); font-size: 14px; margin-top: 80px; }
+  h1 { font-size: clamp(40px, 6vw, 64px); line-height: 1.15; letter-spacing: -0.016em; font-weight: 500; margin: 64px 0 16px; }
+  h2 { font-size: 24px; line-height: 1.5; font-weight: 500; }
+  h1, h2, h3, summary, .tools a, .related a { text-wrap: balance; }
+  p, li { text-wrap: pretty; }
+  .lede { color: var(--graphite); margin: 0 auto 48px; font-size: 18px; max-width: 640px; }
+  main > h1, .lede { text-align: center; }
+  footer { border-top: 1px solid var(--ink); color: var(--graphite); font-size: 14px; margin-top: 128px; }
   footer .wrap { padding-block: 48px; display: flex; flex-wrap: wrap; gap: 16px 32px; justify-content: space-between; }
   footer p { margin: 0; }
-  footer nav a { color: var(--mist); }
-  footer nav a:hover { color: var(--paper); }
-  .link { background: none; border: 0; padding: 0; color: var(--mist); text-decoration: underline; cursor: pointer; font-size: inherit; }
-  .link:hover { color: var(--paper); }
-  .consent { position: fixed; inset: auto 16px 16px; max-width: 640px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; background: var(--paper); border: 1px solid var(--mist); border-radius: var(--radius); padding: 16px 24px; box-shadow: 0 8px 24px rgb(0 7 16 / 0.12); font-size: 14px; }
+  footer nav { display: flex; flex-wrap: wrap; gap: 8px 24px; font-weight: 500; }
+  footer nav a { color: var(--ink); text-decoration: none; }
+  footer nav a:hover, footer .link:hover { text-decoration: underline; }
+  .link { background: none; border: 0; padding: 0; color: var(--ink); cursor: pointer; font-size: inherit; font-weight: 500; }
+  .consent { position: fixed; inset: auto 16px 16px; max-width: 640px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 16px 24px; font-size: 14px; }
   .consent[hidden] { display: none; }
   .consent p { margin: 0; flex: 1 1 280px; color: var(--graphite); }
   .consent div { display: flex; gap: 8px; }
-  .consent button { border-radius: var(--radius); padding: 8px 16px; font-weight: 600; cursor: pointer; border: 1px solid var(--ink); background: var(--paper); }
-  #consent-accept { background: var(--ember); border-color: var(--ember); color: var(--paper); }
+  .consent button { border-radius: var(--radius); padding: 8px 20px; font-weight: 500; cursor: pointer; border: 1px solid var(--ink); background: transparent; }
+  #consent-accept { background: var(--sun); }
   .doc { max-width: 640px; }
   .doc p { color: var(--graphite); }
-  .help { margin-top: 80px; max-width: 640px; }
-  .help p { color: var(--graphite); }
-  button, input, select { font: inherit; color: inherit; letter-spacing: inherit; }
-  :focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  /* Help: one column, one ink line above each topic. */
+  .help { margin: 128px auto 0; max-width: 900px; }
+  .help > * { max-width: 720px; margin: 0 0 24px; }
+  .help > h2 { font-size: 20px; line-height: 1.4; margin: 0 0 12px; padding-top: 32px; border-top: 1px solid var(--ink); max-width: none; }
+  .help > h2:first-child { border-top: 0; padding-top: 0; }
+  .help > :has(+ h2) { margin-bottom: 32px; }
+  .help p, .help li { color: var(--graphite); }
+  .help strong, .help code { color: var(--ink); }
+  .help ul { padding-left: 20px; }
+  .help pre { overflow-x: auto; background: var(--cream); border-radius: var(--radius-sm); padding: 16px; font-size: 14px; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* Motion: 150ms press/hover feedback, 300ms springy entrances. See docs/DESIGN.md. */
+  :root { --spring: cubic-bezier(.3, 1.3, .6, 1); }
+  button, summary, input, .chip { transition: background-color .15s, box-shadow .15s, border-color .15s, color .15s, scale .15s; }
+  button:active:not(:disabled), .chip:active { scale: .97; }
+  summary:active { scale: .99; }
+  .consent button:hover { background: var(--cream); }
+  #consent-accept:hover, .primary:hover { background: var(--sun); box-shadow: inset 0 0 0 1px var(--ink); }
+  .consent:not([hidden]) { animation: rise .4s var(--spring) both; }
+  @keyframes rise { from { opacity: 0; translate: 0 8px; } }
+
+  /* Details open and close smoothly where ::details-content is supported; elsewhere they snap. */
+  details { interpolate-size: allow-keywords; }
+  details::details-content { block-size: 0; overflow: clip; transition: block-size .3s var(--spring), content-visibility .3s allow-discrete; }
+  details[open]::details-content { block-size: auto; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+
+  /* Selects. Browsers with customizable select (Chrome/Edge 135+) get the animated picker; others keep the native list. */
+  select { padding: 8px 12px; border: 1px solid var(--ink); border-radius: var(--radius-input); background: var(--paper); color: var(--ink); cursor: pointer; transition: background-color .15s, scale .15s; }
+  select:hover { background: var(--cream); }
+  select:active { scale: .97; }
+  @supports (appearance: base-select) {
+    select, ::picker(select) { appearance: base-select; }
+    select { display: inline-flex; align-items: center; gap: 8px; }
+    select:open { background: var(--cream); }
+    select::picker-icon { content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); display: flex; transition: rotate .4s cubic-bezier(.3, 1.4, .6, 1); }
+    select:open::picker-icon { rotate: 180deg; }
+    ::picker(select) {
+      margin-top: 6px; padding: 6px; border: 1px solid var(--ink); border-radius: var(--radius-sm); background: var(--paper);
+      transform-origin: top; opacity: 0; translate: 0 -5px; scale: .95; filter: blur(4px);
+      transition: opacity .2s, translate .3s cubic-bezier(.3, 1.3, .6, 1), scale .3s cubic-bezier(.3, 1.3, .6, 1), filter .2s, overlay .2s allow-discrete, display .2s allow-discrete;
+    }
+    select:open::picker(select) { opacity: 1; translate: 0; scale: 1; filter: none; }
+    @starting-style { select:open::picker(select) { opacity: 0; translate: 0 -5px; scale: .95; filter: blur(4px); } }
+    option { padding: 8px 12px; border-radius: var(--radius-input); cursor: pointer; transition: background-color .15s, scale .15s; }
+    option::checkmark { display: none; }
+    option:hover, option:focus-visible { background: var(--cream); outline: none; }
+    option:active { scale: .98; }
+    option:checked { background: var(--sun); font-weight: 500; }
+    select:open option { animation: dropdown-item .3s cubic-bezier(.3, 1.3, .6, 1) both; animation-delay: calc(sibling-index() * 25ms); }
+  }
+  @keyframes dropdown-item { from { opacity: 0; translate: 6px 0; filter: blur(4px); } }
+  @media (prefers-reduced-motion: reduce) {
+    select, select::picker-icon, ::picker(select), option { transition: none; }
+    select:open option { animation: none; }
+  }
 </style>
