@@ -36,7 +36,7 @@ This ends before it starts.</code></pre>
     <p>The report points to cue 2 and names the invalid timestamp relationship. After fixing it, use the <a href="/subtitle-shifter">subtitle delay fixer</a> for a constant offset or the <a href="/srt-cleaner">SRT cleaner</a> for text cleanup.</p>
   </section>
 
-  <Faq items={[
+  <Faq title="SRT validator FAQ" items={[
     { question: 'What does an SRT validator check?', answer: 'It checks timestamps, numbering, cue order, overlaps, empty cues, zero-length cues, reversed times, and the WebVTT header.' },
     { question: 'Can it fix every subtitle error?', answer: 'It fixes safe problems such as numbering, order, empty cues, unreadable blocks, and a missing WebVTT header. It leaves bad overlaps and times for you to review.' },
     { question: 'Why are overlaps not fixed automatically?', answer: 'An overlap may be intentional. The validator reports it so you can choose the correct time instead of losing a subtitle.' },

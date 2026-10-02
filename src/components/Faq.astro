@@ -1,7 +1,7 @@
 ---
 type FaqItem = { question: string; answer: string };
-type Props = { items: FaqItem[] };
-const { items } = Astro.props;
+type Props = { title: string; items: FaqItem[] };
+const { title, items } = Astro.props;
 const structuredData = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -14,7 +14,7 @@ const structuredData = JSON.stringify({
 ---
 
 <section class="faq" aria-labelledby="faq-title">
-  <h2 id="faq-title">Subtitle tool FAQ</h2>
+  <h2 id="faq-title">{title}</h2>
   <div class="faq-list">
     {items.map((item) => (
       <details>

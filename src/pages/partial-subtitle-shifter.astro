@@ -38,7 +38,7 @@ import RelatedTools from '../components/RelatedTools.astro';
     <p>Cues moved before 0:00 are clamped. Cues ending before 0:00 are removed, and new overlaps are flagged for review. <a href="/subtitle-validator">Validate the final file</a> after checking those rows.</p>
   </section>
 
-  <Faq items={[
+  <Faq title="Partial shifter FAQ" items={[
     { question: 'When should I shift part of a subtitle file?', answer: 'Use it when one section is out of sync after a cut, ad break, or scene change.' },
     { question: 'Does a cue move if it starts at the To time?', answer: 'No. A cue starting at the To time belongs outside that range.' },
     { question: 'Can this fix slow timing drift?', answer: 'No. Slow drift usually needs a frame-rate retime. Use a partial shift when the timing changes at a clear point.' },

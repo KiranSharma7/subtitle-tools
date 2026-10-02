@@ -6,7 +6,7 @@ import RelatedTools from '../components/RelatedTools.astro';
 ---
 
 <Layout title="Fix garbled subtitles and convert to UTF-8" description="Fix garbled SRT and text subtitles. Pick the right source encoding, like Windows-1251, Shift-JIS, GBK or Big5, and save as UTF-8 in your browser.">
-  <h1>Fix garbled subtitles</h1>
+  <h1>Fix garbled subtitles and convert to UTF-8</h1>
   <p class="lede">Fix garbled subtitle text such as <code>Ã©</code>, <code>ÐŸÑ€Ð¸Ð²ÐµÑ‚</code>, or <code>????</code> by saving the file as UTF-8.</p>
 
   <ToolShell columns={['Line', 'Text']} label="Upload a text or subtitle file" accept="" hint="SRT, WebVTT, ASS, scripts, lyrics, or TXT" />
@@ -15,7 +15,7 @@ import RelatedTools from '../components/RelatedTools.astro';
     <h2>How to convert SRT to UTF-8</h2>
     <p>Upload the subtitle or text file and inspect the preview. Under <strong>Read as</strong>, try another source encoding until accents, Cyrillic, Japanese, Korean, or Chinese text looks correct.</p>
     <h2>Encodings to try</h2>
-    <p>Common fixes include Windows-1252 for Western European text, Windows-1251 for Cyrillic, Shift-JIS for Japanese, GBK for Simplified Chinese, Big5 for Traditional Chinese, and EUC-KR for Korean.</p>
+    <p>Common fixes include Windows-1252 for Western European text, Windows-1251 for Cyrillic, Shift-JIS for Japanese, GBK for Simplified Chinese, Big5 for Traditional Chinese, and EUC-KR for Korean. The <a href="https://encoding.spec.whatwg.org/#names-and-labels">WHATWG Encoding Standard</a> lists every encoding browsers can read.</p>
     <h2>Garbled text examples</h2>
     <pre><code>Wrong UTF-8 read as Windows-1252: Ã©
 Correct text:                       é
@@ -28,7 +28,7 @@ Correct text:                      Привет</code></pre>
     <p>If every option produces replacement characters such as <code>�</code> or question marks, the source may already have lost its original bytes. Reopen the original file, choose the encoding that makes the preview readable, then <a href="/subtitle-validator">validate the subtitle</a> or <a href="/srt-cleaner">clean its tags</a>.</p>
   </section>
 
-  <Faq items={[
+  <Faq title="UTF-8 converter FAQ" items={[
     { question: 'How do I fix garbled subtitle text?', answer: 'Upload the original file and try another source encoding until the preview reads correctly. Then download the UTF-8 file.' },
     { question: 'Which encoding should I try for Japanese or Chinese?', answer: 'Try Shift-JIS for Japanese, GBK for Simplified Chinese, and Big5 for Traditional Chinese. Try Windows-1251 for Cyrillic text.' },
     { question: 'Does this change my subtitle timing?', answer: 'No. It saves the same text as UTF-8. It does not change subtitle times, line endings, or other characters.' },

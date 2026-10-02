@@ -6,7 +6,7 @@ import RelatedTools from '../components/RelatedTools.astro';
 ---
 
 <Layout title="Fix subtitle delay online" description="Fix out-of-sync SRT, WebVTT, ASS, SAMI, MicroDVD, or MPL2 subtitles. Shift every cue earlier or later by seconds or milliseconds in your browser.">
-  <h1>Fix subtitle delay</h1>
+  <h1>Fix subtitle delay in SRT and VTT files</h1>
   <p class="lede">Move every subtitle earlier or later by the same amount to fix a constant delay.</p>
 
   <ToolShell columns={['#', 'Start', 'Text']}>
@@ -38,7 +38,7 @@ Subtitle is 1.5 seconds early →  shift later by 1.5 seconds</code></pre>
     <p>When the timing looks right, <a href="/subtitle-validator">validate the shifted file</a> before sharing it.</p>
   </section>
 
-  <Faq items={[
+  <Faq title="Subtitle delay FAQ" items={[
     { question: 'How do I fix subtitles that are too early or too late?', answer: 'Shift late subtitles earlier. Shift early subtitles later.' },
     { question: 'Can this fix subtitles that drift over time?', answer: 'It fixes one constant delay. If the delay grows during the video, the subtitle and video may use different frame rates.' },
     { question: 'What happens to cues before zero?', answer: 'Cues that start before 0:00 are moved to 0:00. Cues that end before 0:00 are removed and listed above the preview.' },

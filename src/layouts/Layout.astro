@@ -13,10 +13,13 @@ const path = cleanPath(Astro.url.pathname);
 const fullTitle = path === '/' ? title : `${title} | ${site.name}`;
 const canonical = new URL(path, Astro.site);
 const tool = tools.find((t) => t.href === path);
-// Home describes the site, each tool page describes itself as a free web app.
+// Home describes the site and who runs it, each tool page describes itself as a free web app.
+const org = { '@type': 'Organization', '@id': `${site.url}/#org`, name: site.name, url: site.url, logo: `${site.url}/apple-touch-icon.png`, email: site.email, founder: { '@type': 'Person', name: site.author } };
 const schema = path === '/'
-  ? { '@context': 'https://schema.org', '@type': 'WebSite', name: site.name, url: site.url }
-  : tool && { '@context': 'https://schema.org', '@type': 'WebApplication', name: tool.name, description, url: canonical.href, applicationCategory: 'MultimediaApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } };
+  ? { '@context': 'https://schema.org', '@graph': [org, { '@type': 'WebSite', name: site.name, url: site.url, publisher: { '@id': org['@id'] } }] }
+  : path === '/about'
+  ? { '@context': 'https://schema.org', '@type': 'AboutPage', url: canonical.href, mainEntity: org }
+  : tool &&{ '@context': 'https://schema.org', '@type': 'WebApplication', name: tool.name, description, url: canonical.href, applicationCategory: 'MultimediaApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } };
 ---
 
 <!doctype html>
@@ -51,6 +54,7 @@ const schema = path === '/'
       <div class="wrap">
         <p>Files are processed in your browser and never uploaded.</p>
         <nav aria-label="Site">
+          <a href="/about">About</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
           <a href="/contact">Contact</a>

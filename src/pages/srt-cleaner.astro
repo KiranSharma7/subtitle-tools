@@ -23,7 +23,7 @@ const more: Row[] = [
 ---
 
 <Layout title="SRT cleaner online: remove tags and SDH" description="Clean SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, or MPL2 files. Remove HTML tags, SDH notes, labels, music cues, duplicates, and empty cues in your browser.">
-  <h1>SRT cleaner</h1>
+  <h1>SRT cleaner: remove tags and SDH notes</h1>
   <p class="lede">Clean subtitle text by removing tags, SDH notes, speaker labels, music cues, duplicates, and empty cues.</p>
 
   <ToolShell columns={['#', 'Before', 'After']}>
@@ -58,14 +58,14 @@ const more: Row[] = [
     <h2>Before and after</h2>
     <p>Turn on speaker-label or SDH removal only when you have checked the preview. A line such as <code>[I agree]</code> may be dialogue, while <code>[DOOR SLAMS]</code> is a description.</p>
     <pre><code>Before: &lt;i&gt;JOHN:&lt;/i&gt; [DOOR SLAMS]
-After:  JOHN:</code></pre>
+After:  JOHN:        (speaker labels kept)</code></pre>
     <h2>How cleanup works</h2>
     <p>Rules run in a fixed order. Removing empty cues runs last, so a cue that becomes empty after removing <code>[music]</code> is removed too. The download stays in the same format and is saved as UTF-8.</p>
     <h2>If the result needs another pass</h2>
-    <p>If tags still show, enable both HTML and ASS tag removal. If text disappeared, turn off the guesswork rule that removed it and download again. If the cleaned file has timing errors, <a href="/subtitle-validator">validate it</a> before conversion.</p>
+    <p>If tags still show, enable both HTML and ASS tag removal. If text disappeared, turn off the risky rule that removed it and download again. If the cleaned file has timing errors, <a href="/subtitle-validator">validate it</a> before conversion.</p>
   </section>
 
-  <Faq items={[
+  <Faq title="SRT cleaner FAQ" items={[
     { question: 'What can an SRT cleaner remove?', answer: 'It can remove HTML and ASS tags, SDH notes, speaker labels, bracketed text, music cues, duplicate cues, empty cues, extra line breaks, and ALL-CAPS text.' },
     { question: 'Will it remove real dialogue?', answer: 'Safe rules are on by default. Speaker labels and SDH notes stay off, along with watermarks or merged cues, because they can remove useful text.' },
     { question: 'Does cleaning change subtitle timing?', answer: 'No. The cleaner changes subtitle text and keeps the original timing and file format.' },

@@ -29,21 +29,6 @@ const current = cleanPath(Astro.url.pathname);
           ))}
         </div>
       </div>
-      <span class="menu-link soon" title="Coming soon">
-        <svg class="star" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" fill="#ffda6e" stroke="#000" stroke-width="1" stroke-linejoin="round"/>
-        </svg>
-        <span class="optional-text">Premium</span>
-        <span class="badge">Coming soon</span>
-      </span>
-      <span class="menu-link outline soon" title="Coming soon">
-        <svg class="user" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/>
-          <path d="M5 20c1.2-3.4 4-5 7-5s5.8 1.6 7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span class="optional-text">Login</span>
-        <span class="badge">Coming soon</span>
-      </span>
     </nav>
   </div>
 </header>
@@ -106,7 +91,6 @@ const current = cleanPath(Astro.url.pathname);
     font-size: 16px;
     font-weight: 500;
   }
-  .menu-link,
   .menu-btn {
     display: inline-flex;
     align-items: center;
@@ -123,11 +107,9 @@ const current = cleanPath(Astro.url.pathname);
     white-space: nowrap;
     transition: background-color .15s, border-color .15s, scale .15s;
   }
-  .menu-link:hover,
   .menu-btn:hover {
     background: var(--cream);
   }
-  .menu-link:active,
   .menu-btn:active {
     scale: .96;
   }
@@ -141,15 +123,10 @@ const current = cleanPath(Astro.url.pathname);
   .menu-btn[aria-expanded='true'] .chev {
     rotate: 180deg;
   }
-  .outline {
-    border-color: var(--ink);
-  }
   .dropdown-wrap {
     position: relative;
   }
-  .chev,
-  .star,
-  .user {
+  .chev {
     flex: none;
   }
   .dropdown {
@@ -208,7 +185,7 @@ const current = cleanPath(Astro.url.pathname);
     font-weight: 500;
   }
   @media (prefers-reduced-motion: reduce) {
-    .menu-link, .menu-btn, .chev, .dropdown, .dropdown a {
+    .menu-btn, .chev, .dropdown, .dropdown a {
       transition: none;
       animation: none;
     }
@@ -221,13 +198,6 @@ const current = cleanPath(Astro.url.pathname);
     .brand {
       font-size: 18px;
     }
-    .optional-text {
-      display: none;
-    }
-    .badge {
-      display: none;
-    }
-    .menu-link,
     .menu-btn {
       padding: 8px 10px;
     }

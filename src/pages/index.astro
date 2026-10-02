@@ -5,7 +5,7 @@ import { tools } from '../tools.ts';
 ---
 
 <Layout title={`${site.name}: fix, convert and sync subtitle files`} description="Free online subtitle tools for converting, syncing, cleaning, and validating SRT, WebVTT, ASS, SSA, SAMI, SUB, and MPL2 files. Files stay in your browser.">
-  <h1>Online subtitle tools that get the job done</h1>
+  <h1>Convert, sync and clean subtitle files online</h1>
   <p class="lede">Convert, sync, clean, and validate subtitle files in your browser. Your files stay on your device.</p>
   <div class="tool-groups">
     {['Convert', 'Sync', 'Clean and validate'].map((category) => (
@@ -22,6 +22,14 @@ import { tools } from '../tools.ts';
       </section>
     ))}
   </div>
+  <section class="help">
+    <h2>Which subtitle files work</h2>
+    <p>Every tool reads SRT, WebVTT, ASS, SSA, SAMI, MicroDVD (.sub) and MPL2. The converters write SRT, WebVTT or plain text. When a format has something the output can't hold, like ASS positions or karaoke timing, the tool lists what was dropped before you download.</p>
+    <h2>Why files never leave your device</h2>
+    <p>The tools run as code in your browser tab. Your subtitle file is read, changed and saved on your own computer, so there is no upload, no waiting on a server and no copy left behind. Subtitles for unreleased or private videos stay private.</p>
+    <h2>Where to start</h2>
+    <p>Subtitles out of sync by the same amount the whole way through? Use the <a href="/subtitle-shifter">subtitle shifter</a>. Only one part drifts? Use the <a href="/partial-subtitle-shifter">partial shifter</a>. Strange characters like <code>Ã©</code> instead of <code>é</code> mean the file needs <a href="/utf-8-converter">converting to UTF-8</a> first. A player that refuses the file usually means a broken timestamp, which the <a href="/subtitle-validator">validator</a> finds.</p>
+  </section>
 </Layout>
 
 <style>

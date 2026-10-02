@@ -23,10 +23,10 @@ VTT:  00:00:12.400 --> 00:00:14.800</code></pre>
     <h2>What happens to styles?</h2>
     <p>Bold, italic, and underline can stay. ASS positions, karaoke timing, and other ASS-only styles are removed and listed because WebVTT cannot represent them the same way.</p>
     <h2>When a browser rejects the file</h2>
-    <p>Check that the download ends in <code>.vtt</code> and starts with <code>WEBVTT</code>. If times look wrong, check the source encoding or frame rate. Then <a href="/subtitle-validator">validate the WebVTT file</a>.</p>
+    <p>Check that the download ends in <code>.vtt</code> and starts with <code>WEBVTT</code>, as the <a href="https://www.w3.org/TR/webvtt1/">W3C WebVTT specification</a> requires. If times look wrong, check the source encoding or frame rate. Then <a href="/subtitle-validator">validate the WebVTT file</a>.</p>
   </section>
 
-  <Faq items={[
+  <Faq title="WebVTT converter FAQ" items={[
     { question: 'Can I convert SRT to WebVTT?', answer: 'Yes. Upload the SRT file and download a WebVTT file with the required WEBVTT header.' },
     { question: 'Why do WebVTT timestamps use dots?', answer: 'SRT uses a comma before milliseconds. WebVTT uses a period. The converter changes this for you.' },
     { question: 'Will ASS styles work in WebVTT?', answer: 'Basic bold, italic, and underline can stay. ASS positions, karaoke timing, and other ASS-only styles are removed and listed.' },
