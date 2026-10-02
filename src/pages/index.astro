@@ -4,15 +4,15 @@ import { site } from '../site.ts';
 import { tools } from '../tools.ts';
 ---
 
-<Layout title={`${site.name}: fix, convert and sync subtitle files`} description="Fast, private tools for fixing subtitle files. Shift timing, convert SRT and WebVTT, clean and validate, all in your browser.">
-  <h1>Fast, private tools for fixing subtitle files</h1>
-  <p class="lede">Your file never leaves your device. Everything runs in your browser.</p>
+<Layout title={`${site.name}: fix, convert and sync subtitle files`} description="Free online subtitle tools for converting, syncing, cleaning, and validating SRT, WebVTT, ASS, SSA, SAMI, SUB, and MPL2 files. Files stay in your browser.">
+  <h1>Online subtitle tools that get the job done</h1>
+  <p class="lede">Convert, sync, clean, and validate subtitle files in your browser. Your files stay on your device.</p>
   <div class="tool-groups">
-    {['Converters', 'Syncing', 'Fixing and cleaning'].map((category) => (
+    {['Convert', 'Sync', 'Clean and validate'].map((category) => (
       <section class="tool-group" aria-labelledby={`tools-${category.toLowerCase().replaceAll(' ', '-')}`}>
         <h2 id={`tools-${category.toLowerCase().replaceAll(' ', '-')}`}>{category}</h2>
         <ul class="tools">
-          {tools.filter((t) => t.category === category).map((t) => (
+          {tools.filter((t) => (category === 'Convert' ? t.category === 'Converters' : category === 'Sync' ? t.category === 'Syncing' : t.category === 'Fixing and cleaning')).map((t) => (
             <li>
               <a href={t.href}>{t.name}</a>
               <p>{t.blurb}</p>

@@ -29,25 +29,21 @@ const current = cleanPath(Astro.url.pathname);
           ))}
         </div>
       </div>
-      <a class="menu-link" href="#" aria-label="Get premium">
+      <span class="menu-link soon" title="Coming soon">
         <svg class="star" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z"
-            fill="#ffda6e"
-            stroke="#000"
-            stroke-width="1"
-            stroke-linejoin="round"
-          />
+          <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" fill="#ffda6e" stroke="#000" stroke-width="1" stroke-linejoin="round"/>
         </svg>
-        <span class="optional-text">Get premium</span>
-      </a>
-      <a class="menu-link outline" href="#" aria-label="Login">
+        <span class="optional-text">Premium</span>
+        <span class="badge">Coming soon</span>
+      </span>
+      <span class="menu-link outline soon" title="Coming soon">
         <svg class="user" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/>
           <path d="M5 20c1.2-3.4 4-5 7-5s5.8 1.6 7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
         <span class="optional-text">Login</span>
-      </a>
+        <span class="badge">Coming soon</span>
+      </span>
     </nav>
   </div>
 </header>
@@ -226,6 +222,9 @@ const current = cleanPath(Astro.url.pathname);
       font-size: 18px;
     }
     .optional-text {
+      display: none;
+    }
+    .badge {
       display: none;
     }
     .menu-link,

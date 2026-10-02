@@ -5,9 +5,9 @@ import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 ---
 
-<Layout title="Subtitle shifter: fix out-of-sync SRT, VTT and ASS subtitles" description="Move every subtitle in an SRT, WebVTT, ASS, SAMI, MicroDVD or MPL2 file earlier or later by seconds or milliseconds. Free, and your file stays on your device.">
-  <h1>Subtitle shifter</h1>
-  <p class="lede">Fix subtitles that are out of sync by moving every cue earlier or later by the same amount.</p>
+<Layout title="Fix subtitle delay online" description="Fix out-of-sync SRT, WebVTT, ASS, SAMI, MicroDVD, or MPL2 subtitles. Shift every cue earlier or later by seconds or milliseconds in your browser.">
+  <h1>Fix subtitle delay</h1>
+  <p class="lede">Move every subtitle earlier or later by the same amount to fix a constant delay.</p>
 
   <ToolShell columns={['#', 'Start', 'Text']}>
     <fieldset>
@@ -25,21 +25,21 @@ import RelatedTools from '../components/RelatedTools.astro';
   </ToolShell>
 
   <section class="help">
-    <h2>How to use it</h2>
-    <p>Find one spoken line and compare it with its subtitle. If the subtitle appears two seconds late, shift <strong>earlier</strong> by 2 seconds. If it appears early, shift <strong>later</strong> by 2 seconds.</p>
+    <h2>How to fix a subtitle delay</h2>
+    <p>Compare one spoken line with its subtitle. A late subtitle needs an earlier shift. An early subtitle needs a later shift.</p>
     <pre><code>Subtitle is 2 seconds late  →  shift earlier by 2 seconds
 Subtitle is 1.5 seconds early →  shift later by 1.5 seconds</code></pre>
-    <h2>Supported formats</h2>
+    <h2>Supported subtitle formats</h2>
     <p>Shift SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2 files. The download keeps the uploaded format, styles, cue settings, and filename.</p>
-    <h2>Fixed delay or timing drift?</h2>
-    <p>This tool applies one fixed offset to the whole file. It works when every subtitle is early or late by roughly the same amount. If subtitles start in sync and drift further out over time, the video and subtitle may use different frame rates. Try the <a href="/partial-subtitle-shifter">partial subtitle shifter</a> for a cut or ad break, or retime the file for the correct frame rate.</p>
+    <h2>Constant delay or timing drift?</h2>
+    <p>This tool applies one fixed offset to the whole file. If subtitles start in sync and drift over time, the video and subtitle may use different frame rates. Use the <a href="/partial-subtitle-shifter">partial subtitle shifter</a> after a cut or ad break.</p>
     <h2>Warnings you may see</h2>
     <p>Cues moved before 0:00 are clamped to 0:00. Cues that end before 0:00 are removed. Both changes are listed above the preview. MicroDVD uses frames, so choose the video's frame rate when the file does not state one.</p>
-    <p>When the timing looks right, <a href="/subtitle-validator">validate the shifted file</a> before you share it.</p>
+    <p>When the timing looks right, <a href="/subtitle-validator">validate the shifted file</a> before sharing it.</p>
   </section>
 
   <Faq items={[
-    { question: 'Should I shift subtitles earlier or later?', answer: 'If a subtitle appears late, shift it earlier. If it appears early, shift it later.' },
+    { question: 'How do I fix subtitles that are too early or too late?', answer: 'Shift late subtitles earlier. Shift early subtitles later.' },
     { question: 'Can this fix subtitles that drift over time?', answer: 'It fixes one constant delay. If the delay grows during the video, the subtitle and video may use different frame rates.' },
     { question: 'What happens to cues before zero?', answer: 'Cues that start before 0:00 are moved to 0:00. Cues that end before 0:00 are removed and listed above the preview.' },
   ]} />

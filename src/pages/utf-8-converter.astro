@@ -5,14 +5,14 @@ import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 ---
 
-<Layout title="UTF-8 converter: fix garbled subtitle and text files" description="Turn a subtitle or text file saved in Windows-1251, Shift-JIS, GBK or another old encoding into UTF-8, so accents and non-Latin letters show up right. Your file stays on your device.">
-  <h1>UTF-8 converter</h1>
+<Layout title="Fix garbled subtitles and convert to UTF-8" description="Fix garbled SRT and text subtitles. Pick the right source encoding, like Windows-1251, Shift-JIS, GBK or Big5, and save as UTF-8 in your browser.">
+  <h1>Fix garbled subtitles</h1>
   <p class="lede">Fix garbled subtitle text such as <code>Ã©</code>, <code>ÐŸÑ€Ð¸Ð²ÐµÑ‚</code>, or <code>????</code> by saving the file as UTF-8.</p>
 
-  <ToolShell columns={['Line', 'Text']} label="Choose a file" accept="" hint="Any text file: subtitles, scripts, lyrics" />
+  <ToolShell columns={['Line', 'Text']} label="Upload a text or subtitle file" accept="" hint="SRT, WebVTT, ASS, scripts, lyrics, or TXT" />
 
   <section class="help">
-    <h2>How to use it</h2>
+    <h2>How to convert SRT to UTF-8</h2>
     <p>Upload the subtitle or text file and inspect the preview. Under <strong>Read as</strong>, try another source encoding until accents, Cyrillic, Japanese, Korean, or Chinese text looks correct.</p>
     <h2>Encodings to try</h2>
     <p>Common fixes include Windows-1252 for Western European text, Windows-1251 for Cyrillic, Shift-JIS for Japanese, GBK for Simplified Chinese, Big5 for Traditional Chinese, and EUC-KR for Korean.</p>
@@ -22,9 +22,9 @@ Correct text:                       é
 
 Wrong Cyrillic read as UTF-8: ÐŸÑ€Ð¸Ð²ÐµÑ‚
 Correct text:                      Привет</code></pre>
-    <h2>What the download changes</h2>
+    <h2>What the UTF-8 download changes</h2>
     <p>The download contains the same text saved as UTF-8 without a byte order mark. Line endings and every other character stay unchanged. This works for SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, scripts or other text files.</p>
-    <h2>Common errors</h2>
+    <h2>If the text is still garbled</h2>
     <p>If every option produces replacement characters such as <code>�</code> or question marks, the source may already have lost its original bytes. Reopen the original file, choose the encoding that makes the preview readable, then <a href="/subtitle-validator">validate the subtitle</a> or <a href="/srt-cleaner">clean its tags</a>.</p>
   </section>
 

@@ -5,8 +5,8 @@ import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 ---
 
-<Layout title="Partial subtitle shifter: re-time part of an SRT, VTT or ASS file" description="Move only some subtitles earlier or later, with a different offset for each part of the video. Works on SRT, WebVTT, ASS, SAMI, MicroDVD and MPL2. Your file stays on your device.">
-  <h1>Partial subtitle shifter</h1>
+<Layout title="Shift part of an SRT file" description="Fix one section of an SRT, WebVTT, ASS, SAMI, MicroDVD, or MPL2 file with a different timing offset. Files stay on your device.">
+  <h1>Shift part of a subtitle file</h1>
   <p class="lede">Fix a subtitle section that is out of sync after an ad break, cut, or scene change.</p>
 
   <ToolShell columns={['#', 'Before', 'After', 'Range', 'Text']}>
@@ -24,22 +24,22 @@ import RelatedTools from '../components/RelatedTools.astro';
   </ToolShell>
 
   <section class="help">
-    <h2>How to use it</h2>
+    <h2>How to shift part of a subtitle file</h2>
     <p>Add a range for each section that needs a different offset. Type the start and end times shown in the preview. A positive value moves cues later; a negative value moves them earlier.</p>
     <pre><code>00:00:00–00:18:42   0 seconds
 00:18:42–00:42:10  -1.5 seconds</code></pre>
-    <h2>Supported formats</h2>
+    <h2>Supported subtitle formats</h2>
     <p>Use SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, or MPL2. The downloaded file keeps its original format and filename.</p>
-    <h2>How ranges are applied</h2>
+    <h2>How time ranges work</h2>
     <p>A cue belongs to the range where its start time falls. A cue starting exactly at the <strong>To</strong> time belongs outside that range. Ranges cannot overlap, and each cue moves as a whole.</p>
     <h2>When to use a different fix</h2>
-    <p>Partial shifting fits a clean break in the timeline. If the subtitle slowly drifts further out of sync, use a frame-rate retime instead. If one offset fixes the whole file, the <a href="/subtitle-shifter">subtitle shifter</a> is faster.</p>
+    <p>Use a frame-rate retime when subtitles drift slowly from start to finish. If one offset fixes the whole file, the <a href="/subtitle-shifter">subtitle delay fixer</a> is faster.</p>
     <h2>Warnings you may see</h2>
     <p>Cues moved before 0:00 are clamped. Cues ending before 0:00 are removed, and new overlaps are flagged for review. <a href="/subtitle-validator">Validate the final file</a> after checking those rows.</p>
   </section>
 
   <Faq items={[
-    { question: 'When should I use a partial subtitle shift?', answer: 'Use it when one part of the video is out of sync after a cut, ad break, or scene change.' },
+    { question: 'When should I shift part of a subtitle file?', answer: 'Use it when one section is out of sync after a cut, ad break, or scene change.' },
     { question: 'Does a cue move if it starts at the To time?', answer: 'No. A cue starting at the To time belongs outside that range.' },
     { question: 'Can this fix slow timing drift?', answer: 'No. Slow drift usually needs a frame-rate retime. Use a partial shift when the timing changes at a clear point.' },
   ]} />

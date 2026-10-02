@@ -5,16 +5,16 @@ import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 ---
 
-<Layout title="Subtitle validator: find errors in SRT and WebVTT files" description="Check an SRT or WebVTT file for bad numbering, cues out of order, overlaps, empty cues and broken timestamps, and fix the safe ones in one click. Your file stays on your device.">
-  <h1>Subtitle validator</h1>
+<Layout title="SRT validator and subtitle checker" description="Validate SRT and WebVTT files for bad timestamps, numbering, order, overlaps, empty cues, and missing headers. Fix safe errors in your browser.">
+  <h1>SRT validator and subtitle checker</h1>
   <p class="lede">Check an SRT or WebVTT for broken timestamps, bad numbering, overlaps, empty cues, and other errors.</p>
 
   <ToolShell columns={['Cue', 'Problem']} />
 
   <section class="help">
-    <h2>How to use it</h2>
+    <h2>How to validate an SRT file</h2>
     <p>Upload a file to see each issue with its cue number and a plain-language explanation. Cue numbers refer to the order in the file, so they still point to the right line when numbering is broken.</p>
-    <h2>Errors this validator checks</h2>
+    <h2>Errors this subtitle checker finds</h2>
     <ul>
       <li><strong>Bad timestamps:</strong> a time cannot be read or uses the wrong separator.</li>
       <li><strong>Numbering:</strong> an SRT cue is missing a number or uses the wrong number.</li>
@@ -27,17 +27,17 @@ import RelatedTools from '../components/RelatedTools.astro';
     </ul>
     <h2>Safe fixes</h2>
     <p><strong>Fix and download</strong> renumbers SRT cues, sorts cues by start time, removes empty cues, adds a missing WebVTT header, and drops blocks with unreadable timestamps. These changes do not guess which time is correct.</p>
-    <h2>Why overlaps stay visible</h2>
+    <h2>Why overlaps need a review</h2>
     <p>An overlap may be intentional, or one of two timestamps may be wrong. The validator reports it instead of silently changing a line that could be correct. Edit the flagged cue, then run the file through the validator again.</p>
     <h2>Example</h2>
     <pre><code>2
 00:00:04,000 --> 00:00:03,000
 This ends before it starts.</code></pre>
-    <p>The report points to cue 2 and tells you which timestamp relationship is invalid. After fixing it, use the <a href="/subtitle-shifter">subtitle shifter</a> for a consistent delay or the <a href="/srt-cleaner">SRT cleaner</a> for text cleanup.</p>
+    <p>The report points to cue 2 and names the invalid timestamp relationship. After fixing it, use the <a href="/subtitle-shifter">subtitle delay fixer</a> for a constant offset or the <a href="/srt-cleaner">SRT cleaner</a> for text cleanup.</p>
   </section>
 
   <Faq items={[
-    { question: 'What does the subtitle validator check?', answer: 'It checks timestamps, numbering, cue order, overlaps, empty cues, zero-length cues, reversed times, and the WebVTT header.' },
+    { question: 'What does an SRT validator check?', answer: 'It checks timestamps, numbering, cue order, overlaps, empty cues, zero-length cues, reversed times, and the WebVTT header.' },
     { question: 'Can it fix every subtitle error?', answer: 'It fixes safe problems such as numbering, order, empty cues, unreadable blocks, and a missing WebVTT header. It leaves bad overlaps and times for you to review.' },
     { question: 'Why are overlaps not fixed automatically?', answer: 'An overlap may be intentional. The validator reports it so you can choose the correct time instead of losing a subtitle.' },
     { question: 'Does it upload my subtitle file?', answer: 'No. The file is processed in your browser and stays on your device.' },
