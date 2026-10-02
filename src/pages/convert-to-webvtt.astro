@@ -5,31 +5,31 @@ import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 ---
 
-<Layout title="Convert SRT to WebVTT: make subtitles for HTML5 video" description="Convert SRT, ASS, SSA, SAMI, MicroDVD or MPL2 subtitles to WebVTT for HTML5 video in your browser. Check timestamp and style changes before downloading.">
-  <h1>Convert to WebVTT</h1>
-  <p class="lede">Convert SRT to WebVTT for an HTML5 <code>&lt;track&gt;</code>, a web video player, or a caption upload that requires <code>.vtt</code>.</p>
+<Layout title="SRT to WebVTT converter online" description="Convert SRT, ASS, SSA, SAMI, MicroDVD, or MPL2 subtitles to WebVTT for HTML5 video. Preview changes before download.">
+  <h1>Convert SRT to WebVTT</h1>
+  <p class="lede">Convert SRT to WebVTT for an HTML5 <code>&lt;track&gt;</code>, a web video player, or any upload that needs <code>.vtt</code>.</p>
 
   <ToolShell columns={['#', 'Start', 'End', 'Text']} />
 
   <section class="help">
-    <h2>How to use it</h2>
+    <h2>How to convert SRT to WebVTT</h2>
     <p>Upload the subtitle file, review the cue preview, and download a UTF-8 WebVTT file. The converter adds the required <code>WEBVTT</code> header.</p>
     <h2>Supported input formats</h2>
     <p>Convert SRT, ASS, SSA, SAMI, MicroDVD, or MPL2. SRT is the common choice for web captions. MicroDVD uses video frames, so select the video's frame rate when the file does not include one.</p>
     <h2>SRT and WebVTT timestamps</h2>
-    <p>SRT uses a comma for milliseconds. WebVTT uses a period. The converter changes the separator and keeps the cue start and end times.</p>
+    <p>SRT uses a comma before milliseconds. WebVTT uses a period. The converter changes the separator and keeps each cue's start and end time.</p>
     <pre><code>SRT:  00:00:12,400 --> 00:00:14,800
 VTT:  00:00:12.400 --> 00:00:14.800</code></pre>
     <h2>What happens to styles?</h2>
-    <p>Inline bold or italic tags can be kept, along with underlining. ASS positions, alignment, karaoke timing, and other ASS-only styles are reported and removed because WebVTT cannot represent them the same way. Review the loss report before publishing captions.</p>
-    <h2>Common errors</h2>
-    <p>If a browser rejects the file, check that the download has a <code>.vtt</code> extension and starts with <code>WEBVTT</code>. If cue times look wrong, the input may use the wrong frame rate or encoding. <a href="/subtitle-validator">Run the WebVTT validator</a> to find header errors and timestamp, overlap, or empty-cue problems.</p>
+    <p>Bold, italic, and underline can stay. ASS positions, karaoke timing, and other ASS-only styles are removed and listed because WebVTT cannot represent them the same way.</p>
+    <h2>When a browser rejects the file</h2>
+    <p>Check that the download ends in <code>.vtt</code> and starts with <code>WEBVTT</code>. If times look wrong, check the source encoding or frame rate. Then <a href="/subtitle-validator">validate the WebVTT file</a>.</p>
   </section>
 
   <Faq items={[
     { question: 'Can I convert SRT to WebVTT?', answer: 'Yes. Upload the SRT file and download a WebVTT file with the required WEBVTT header.' },
-    { question: 'Why do WebVTT times use dots?', answer: 'SRT uses a comma before milliseconds. WebVTT uses a period. The converter changes this for you.' },
-    { question: 'Will ASS styles work in WebVTT?', answer: 'Some inline bold or italic tags can stay. ASS positions, karaoke timing, and other ASS-only styles are removed and listed in the report.' },
+    { question: 'Why do WebVTT timestamps use dots?', answer: 'SRT uses a comma before milliseconds. WebVTT uses a period. The converter changes this for you.' },
+    { question: 'Will ASS styles work in WebVTT?', answer: 'Basic bold, italic, and underline can stay. ASS positions, karaoke timing, and other ASS-only styles are removed and listed.' },
   ]} />
 
   <RelatedTools tools={[

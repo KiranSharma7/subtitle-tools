@@ -1,0 +1,16 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { tools } from '../tools.ts';
+---
+
+<Layout noindex title="Page not found" description="This page does not exist. Choose an online subtitle tool instead.">
+  <h1>Page not found</h1>
+  <p class="lede">That link is broken or the page moved. Choose a subtitle tool or return to the <a href="/">home page</a>.</p>
+  <ul class="doc">
+    {tools.map((t) => <li><a href={t.href}>{t.name}</a></li>)}
+  </ul>
+</Layout>
+
+<style>
+  .doc { margin: 0 auto; }
+</style>

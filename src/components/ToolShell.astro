@@ -2,18 +2,18 @@
 // Shared file loading, encoding picker, warnings, preview and download for every Tool.
 // The page puts its own controls in the slot and wires them up with mountTool().
 type Props = { columns: string[]; accept?: string; hint?: string; label?: string };
-const { columns, label = 'Choose a subtitle file', accept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt', hint = 'SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2' } = Astro.props;
+const { columns, label = 'Upload a subtitle file', accept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt', hint = 'SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, or TXT' } = Astro.props;
 
 const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'windows-1253', 'windows-1254', 'windows-1255', 'windows-1256', 'iso-8859-2', 'gbk', 'big5', 'shift_jis', 'euc-kr'];
 ---
 
 <section class="tool">
   <label class="drop" id="drop">
-    <input type="file" id="file" accept={accept} />
+    <input type="file" id="file" accept={accept} aria-label={accept === '' ? 'Choose a file' : 'Choose a subtitle file'} />
     <svg class="drop-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
     <span class="drop-text">
-      <span class="drop-idle"><strong>{label}</strong><span class="drop-or"> or drag it here</span></span>
-      <strong class="drop-over" aria-hidden="true">Drop it here</strong>
+      <span class="drop-idle"><strong>{label}</strong><span class="drop-or"> or drop it here</span></span>
+      <strong class="drop-over" aria-hidden="true">Release to upload</strong>
     </span>
     <span class="drop-hint">{hint}</span>
   </label>
@@ -26,7 +26,7 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
       <button id="cancel" class="quiet" type="button">Cancel</button>
     </div>
     <progress id="progress" max="1" value="0" aria-label="File processing progress"></progress>
-    <span id="processing-detail">Your file stays in this browser.</span>
+    <span id="processing-detail">Your file stays on this device.</span>
   </div>
 
   <div id="loaded" hidden>

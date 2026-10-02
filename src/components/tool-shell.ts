@@ -104,8 +104,8 @@ export function mountTool(tool: Tool): () => void {
     text = '';
     error.hidden = true;
     setProcessing(true);
-    processingPhase.textContent = 'Reading file…';
-    processingDetail.textContent = `${name} · ${formatBytes(file.size)}. Your file stays in this browser.`;
+    processingPhase.textContent = 'Reading file...';
+    processingDetail.textContent = `${name} · ${formatBytes(file.size)}. Your file stays on this device.`;
     progress.value = 0;
 
     try {
@@ -120,7 +120,7 @@ export function mountTool(tool: Tool): () => void {
       const message = event.data;
       if (message.type === 'progress') {
         progress.value = message.progress ?? 0;
-        processingPhase.textContent = message.phase === 'reading' ? 'Reading file…' : message.phase === 'decoding' ? 'Decoding text…' : 'Parsing cues…';
+        processingPhase.textContent = message.phase === 'reading' ? 'Reading file...' : message.phase === 'decoding' ? 'Decoding text...' : 'Reading subtitle cues...';
         return;
       }
       if (message.type === 'error') {

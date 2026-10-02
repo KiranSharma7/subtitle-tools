@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 
 // Every .astro page, built at build time. Add a filter here if a page should stay out.
-const pages = Object.keys(import.meta.glob('./**/*.astro')).map((p) => p.replace(/^\.\//, '/').replace(/(index)?\.astro$/, ''));
+const pages = Object.keys(import.meta.glob('./**/*.astro')).map((p) => p.replace(/^\.\//, '/').replace(/(index)?\.astro$/, '')).filter((p) => p !== '/404');
 
 export const GET: APIRoute = ({ site }) => {
   const urls = pages.sort().map((p) => `<url><loc>${new URL(p, site)}</loc></url>`).join('');

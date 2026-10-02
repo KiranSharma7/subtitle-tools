@@ -5,31 +5,31 @@ import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 ---
 
-<Layout title="Convert subtitles to plain text: get the dialogue as a .txt file" description="Turn SRT, WebVTT, ASS, SAMI and other subtitles into plain text. Timing, cue numbers and formatting tags are removed. Free, and your file stays on your device.">
-  <h1>Convert to plain text</h1>
-  <p class="lede">Convert SRT to TXT and keep the dialogue for a transcript, printout, notes, or language study.</p>
+<Layout title="Convert SRT to text online" description="Convert SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, or MPL2 subtitles to plain text. Remove timestamps and cue numbers in your browser.">
+  <h1>Convert SRT to plain text</h1>
+  <p class="lede">Extract a clean transcript from SRT and other subtitle files. Timings and cue numbers are removed.</p>
 
   <ToolShell columns={['#', 'Text']}>
     <label class="option"><input id="keep" type="checkbox" checked /> Keep line breaks</label>
   </ToolShell>
 
   <section class="help">
-    <h2>How to use it</h2>
-    <p>Upload SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2. The preview keeps dialogue and removes timestamps, cue numbers, WebVTT settings and file headers, along with formatting tags.</p>
+    <h2>How to convert SRT to TXT</h2>
+    <p>Upload SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, or MPL2. The preview keeps dialogue and removes timestamps, cue numbers, WebVTT settings, headers, and formatting tags.</p>
     <h2>Choose your text layout</h2>
-    <p>Keep line breaks to preserve two-line subtitle cues and separate cues with a blank line. Turn it off to put each cue on one line, which is useful for a clean transcript or language-study notes.</p>
+    <p>Keep line breaks to preserve two-line cues and separate cues with a blank line. Turn it off to put each cue on one line for a compact transcript.</p>
     <pre><code>Keep line breaks:  I wanted to tell you something.
                   But I did not know how.
 
 One line per cue: I wanted to tell you something. But I did not know how.</code></pre>
-    <h2>What is removed?</h2>
+    <h2>What gets removed?</h2>
     <p>Timing, cue numbers, IDs, WebVTT settings and file headers are removed, along with ASS formatting tags. A cue that has no text left is left out. Plain text has no timing, so it cannot be converted back into subtitles without adding timings again.</p>
-    <h2>Common problems</h2>
-    <p>If the transcript contains tags or SDH descriptions you do not want, <a href="/srt-cleaner">clean the subtitle first</a>. If accents or non-Latin text look garbled, use the <a href="/utf-8-converter">UTF-8 converter</a>, then extract the transcript again.</p>
+    <h2>If the transcript needs cleanup</h2>
+    <p>If the transcript contains tags or SDH descriptions, <a href="/srt-cleaner">clean the subtitle first</a>. If accents or non-Latin text look garbled, use the <a href="/utf-8-converter">UTF-8 converter</a> and try again.</p>
   </section>
 
   <Faq items={[
-    { question: 'Can I convert SRT to TXT?', answer: 'Yes. Upload the SRT file and download a plain text file with the dialogue.' },
+    { question: 'Can I convert SRT to TXT?', answer: 'Yes. Upload the SRT file and download a plain text file with its dialogue.' },
     { question: 'Are timestamps kept in the text file?', answer: 'No. Timestamps and cue numbers are removed. Header lines and WebVTT settings are removed too. Formatting tags are removed as well.' },
     { question: 'What does Keep line breaks do?', answer: 'It keeps the lines inside each subtitle cue. Turn it off to put each cue on one line.' },
   ]} />
