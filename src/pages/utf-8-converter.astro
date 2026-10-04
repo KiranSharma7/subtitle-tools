@@ -45,22 +45,20 @@ Correct text:                      Привет</code></pre>
 <script>
   import { mountTool } from '../components/tool-shell.ts';
 
-  const encoding = document.getElementById('encoding') as HTMLSelectElement;
-  let text = '';
-
+  // The decoded text rides in the header, so each file in a batch keeps its own.
   mountTool({
-    parse: (t) => ((text = t), { file: { format: 'txt', cues: [] }, problems: [] }),
-    view(_parsed, { previewLimit = 200 } = {}) {
-      const lines = text.split(/\r\n?|\n/);
-      const utf8 = encoding.value === 'UTF-8';
+    parse: (text) => ({ file: { format: 'txt', header: text, cues: [] }, problems: [] }),
+    view({ file }, { previewLimit = 200, encoding = 'UTF-8' } = {}) {
+      const lines = (file.header ?? '').split(/\r\n?|\n/);
+      const utf8 = encoding === 'UTF-8';
       return {
-        summary: `${lines.length} lines, read as ${encoding.value}.`,
+        summary: `${lines.length} lines, read as ${encoding}.`,
         warnings: utf8 ? ['This file is already UTF-8. You can still download it with any byte order mark removed.'] : [],
         rows: lines.slice(0, previewLimit).map((l, i) => ({ cells: [String(i + 1), l] })),
         total: lines.length,
       };
     },
-    output: () => text,
+    output: ({ file }) => file.header ?? '',
   });
 </script>
 

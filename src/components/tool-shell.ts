@@ -1,20 +1,25 @@
 import type { ParseResult } from '../engine/formats.ts';
 import type { Format } from '../engine/types.ts';
 import { track } from './analytics.ts';
+import { makeZip, readZip } from './zip.ts';
 
 const formatNames: Record<Format, string> = { srt: 'SRT', vtt: 'VTT', ass: 'ASS', ssa: 'SSA', sami: 'SAMI', microdvd: 'MicroDVD', mpl2: 'MPL2', txt: 'TXT' };
 
 export type Row = { cells: string[]; flag?: boolean };
-export type ViewOptions = { previewLimit?: number };
+export type ViewOptions = { previewLimit?: number; encoding?: string };
 
 export type Tool = {
   // Tool-specific warnings (parser problems are added by the shell) and preview rows.
   // summary replaces the "name: N cues, SRT." line. result is the bold line next to Download.
+  // In a batch, view and output run once per file, so keep per-file state in the ParseResult, not in the closure.
   view: (parsed: ParseResult, options?: ViewOptions) => { warnings: string[]; rows: Row[]; summary?: string; result?: string; total?: number };
   output: (parsed: ParseResult) => string;
   filename?: (name: string) => string; // download name; defaults to the uploaded name
   parse?: (text: string) => ParseResult; // for tools that take any text, not only subtitles
 };
+
+type Loaded = { parsed: ParseResult; encoding: string };
+type BatchItem = { file: File; error?: string } & Partial<Loaded>;
 
 const PREVIEW_LIMIT = 200;
 const LARGE_FILE_BYTES = 25 * 1024 * 1024;
@@ -27,6 +32,7 @@ function formatBytes(bytes: number): string {
 }
 
 // Wires up the markup from ToolShell.astro. Call the returned render() when the tool's own controls change.
+// One file gets the preview table. Several files, or a zip, are a batch (ADR 0006): one row per file and a zip download.
 export function mountTool(tool: Tool): () => void {
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const fileInput = $<HTMLInputElement>('file');
@@ -42,19 +48,27 @@ export function mountTool(tool: Tool): () => void {
   const replace = $<HTMLButtonElement>('replace');
   const encoding = $<HTMLSelectElement>('encoding');
   const warnings = $('warnings');
+  const preview = $('preview');
   const rows = $('rows');
   const previewNote = $('preview-note');
+  const batchList = $('batch');
+  const download = $<HTMLButtonElement>('download');
   // Mobile shows these next to each value, since the header row is hidden there.
   // The first column and a Text column need no label; neither do two-column lists.
   const headers = [...document.querySelectorAll('.preview th')].map((th) => th.textContent ?? '');
   const labels = headers.map((h, i) => (i === 0 || h === 'Text' || headers.length < 3 ? '' : h));
+  // What to take out of a zip. A zip inside a zip is skipped.
+  const accept = fileInput.accept.split(',').filter((e) => e.trim().toLowerCase() !== '.zip').join(',');
+  const toolName = location.pathname.slice(1);
 
   const fps = $<HTMLSelectElement>('fps');
 
   let sourceFile: File | null = null;
   let name = '';
-  let text = '';
   let parsed: ParseResult | null = null;
+  let batch: BatchItem[] = [];
+  let batchReady: (BatchItem & { parsed: ParseResult })[] = []; // files whose view ran cleanly at the last render
+  let singleLabel = '';
   let worker: Worker | null = null;
   let request = 0;
 
@@ -76,72 +90,149 @@ export function mountTool(tool: Tool): () => void {
     error.hidden = false;
   }
 
-  function finish(t: string, enc: string, result: ParseResult | undefined, token: number) {
-    if (token !== request) return;
-    try {
-      text = t;
-      encoding.value = enc;
-      parsed = tool.parse ? tool.parse(text) : result ?? null;
-      if (!parsed) throw new Error('The file could not be parsed.');
-      error.hidden = true;
-      setProcessing(false);
-      loaded.hidden = false;
-      drop.hidden = true;
-      render();
-      if (parsed) track('file_loaded', { tool: location.pathname.slice(1), input_format: parsed.file.format });
-    } catch (e) {
-      fail((e as Error).message, token);
-    }
+  function show() {
+    error.hidden = true;
+    setProcessing(false);
+    loaded.hidden = false;
+    drop.hidden = true;
+    render();
   }
 
-  function open(file: File, requestedEncoding?: string) {
+  // Reads, decodes and parses one file in the worker. Never settles once a newer request has started.
+  function read(file: File, requestedEncoding: string | undefined, token: number, onProgress: (phase?: string, value?: number) => void): Promise<Loaded> {
+    return new Promise((resolve, reject) => {
+      worker?.terminate();
+      try {
+        worker = new Worker(new URL('./file-worker.ts', import.meta.url), { type: 'module' });
+      } catch {
+        reject(new Error('This browser could not start the file processor.'));
+        return;
+      }
+      const done = () => {
+        worker?.terminate();
+        worker = null;
+      };
+      worker.onmessage = (event: MessageEvent<{ type: string; phase?: string; progress?: number; text?: string; encoding?: string; parsed?: ParseResult; message?: string }>) => {
+        if (token !== request) return;
+        const message = event.data;
+        if (message.type === 'progress') {
+          onProgress(message.phase, message.progress);
+        } else if (message.type === 'error') {
+          done();
+          reject(new Error(message.message ?? 'The file could not be processed.'));
+        } else if (message.type === 'result' && message.encoding && (message.text != null || message.parsed)) {
+          done();
+          try {
+            const result = tool.parse ? tool.parse(message.text ?? '') : message.parsed;
+            if (!result) throw new Error('The file could not be parsed.');
+            resolve({ parsed: result, encoding: message.encoding });
+          } catch (e) {
+            reject(e);
+          }
+        }
+      };
+      worker.onerror = () => {
+        if (token !== request) return;
+        done();
+        reject(new Error('The file could not be processed. Try a smaller file or another encoding.'));
+      };
+      worker.postMessage({ file, encoding: requestedEncoding, parseSubtitle: !tool.parse, fps: +fps.value });
+    });
+  }
+
+  // Zips are opened here and replaced by the files inside them.
+  async function load(list: File[]) {
     request += 1;
     const token = request;
-    worker?.terminate();
+    const files: File[] = [];
+    try {
+      for (const f of list) {
+        if (!/\.zip$/i.test(f.name)) files.push(f);
+        else files.push(...readZip(new Uint8Array(await f.arrayBuffer()), accept).map((e) => new File([e.data as BlobPart], e.name)));
+      }
+    } catch {
+      fail('This zip file could not be read.', token);
+      return;
+    }
+    if (token !== request) return;
+    if (!files.length) fail('This zip has no files this tool can open.', token);
+    else if (files.length === 1) open(files[0]);
+    else openBatch(files);
+  }
+
+  async function open(file: File, requestedEncoding?: string) {
+    request += 1;
+    const token = request;
     sourceFile = file;
     name = file.name;
     parsed = null;
-    text = '';
+    batch = [];
     error.hidden = true;
     setProcessing(true);
     processingPhase.textContent = 'Reading file...';
     processingDetail.textContent = `${name} · ${formatBytes(file.size)}. Your file stays on this device.`;
     progress.value = 0;
-
     try {
-      worker = new Worker(new URL('./file-worker.ts', import.meta.url), { type: 'module' });
-    } catch {
-      fail('This browser could not start the file processor.', token);
-      return;
-    }
-
-    worker.onmessage = (event: MessageEvent<{ type: string; phase?: string; progress?: number; text?: string; encoding?: string; parsed?: ParseResult; message?: string }>) => {
+      const result = await read(file, requestedEncoding, token, (phase, value) => {
+        progress.value = value ?? 0;
+        processingPhase.textContent = phase === 'reading' ? 'Reading file...' : phase === 'decoding' ? 'Decoding text...' : 'Reading subtitle cues...';
+      });
       if (token !== request) return;
-      const message = event.data;
-      if (message.type === 'progress') {
-        progress.value = message.progress ?? 0;
-        processingPhase.textContent = message.phase === 'reading' ? 'Reading file...' : message.phase === 'decoding' ? 'Decoding text...' : 'Reading subtitle cues...';
-        return;
+      parsed = result.parsed;
+      encoding.value = result.encoding;
+      show();
+      track('file_loaded', { tool: toolName, input_format: parsed.file.format });
+    } catch (e) {
+      fail((e as Error).message, token);
+    }
+  }
+
+  // Files are read one after another. A file that fails gets its error in its row; the rest carry on.
+  async function openBatch(files: File[]) {
+    request += 1;
+    const token = request;
+    sourceFile = null;
+    parsed = null;
+    batch = files.map((file) => ({ file }));
+    error.hidden = true;
+    setProcessing(true);
+    progress.value = 0;
+    for (const [i, item] of batch.entries()) {
+      processingPhase.textContent = `Reading file ${i + 1} of ${batch.length}...`;
+      processingDetail.textContent = `${item.file.name} · ${formatBytes(item.file.size)}. Your files stay on this device.`;
+      try {
+        Object.assign(item, await read(item.file, undefined, token, (_, value) => (progress.value = (i + (value ?? 0)) / batch.length)));
+      } catch (e) {
+        item.error = (e as Error).message;
       }
-      if (message.type === 'error') {
-        fail(message.message ?? 'The file could not be processed.', token);
-        return;
-      }
-      if (message.type === 'result' && message.encoding && (message.text != null || message.parsed)) {
-        finish(message.text ?? '', message.encoding, message.parsed, token);
-        worker?.terminate();
-        worker = null;
-      }
-    };
-    worker.onerror = () => fail('The file could not be processed. Try a smaller file or another encoding.', token);
-    worker.postMessage({ file, encoding: requestedEncoding, parseSubtitle: !tool.parse, fps: +fps.value });
+      if (token !== request) return;
+    }
+    show();
+    for (const item of batch) if (item.parsed) track('file_loaded', { tool: toolName, input_format: item.parsed.file.format });
   }
 
   function render() {
+    const isBatch = batch.length > 0;
+    preview.hidden = isBatch;
+    batchList.hidden = !isBatch;
+    $('encoding-picker').hidden = isBatch;
+    replace.textContent = isBatch ? 'Replace files' : 'Replace file';
+    // A page may rename Download (the validator's "Fix and download"); a batch swaps the label and puts it back after.
+    if (isBatch) {
+      singleLabel ||= download.textContent ?? '';
+      download.textContent = 'Download all (.zip)';
+    } else if (singleLabel) {
+      download.textContent = singleLabel;
+    }
+    if (isBatch) renderBatch();
+    else renderSingle();
+  }
+
+  function renderSingle() {
     if (!parsed) return;
     try {
       const { file, problems } = parsed;
-      const view = tool.view(parsed, { previewLimit: PREVIEW_LIMIT });
+      const view = tool.view(parsed, { previewLimit: PREVIEW_LIMIT, encoding: encoding.value });
       const fromFile = file.format === 'microdvd' && file.header ? `, ${file.fps} fps from the file` : '';
       $('fps-picker').hidden = file.format !== 'microdvd' || !!file.header;
       $('summary').textContent = view.summary ?? `${name}: ${file.cues.length} cues, ${formatNames[file.format]}${fromFile}.`;
@@ -149,6 +240,7 @@ export function mountTool(tool: Tool): () => void {
         ? `This is a large file (${formatBytes(sourceFile.size)}). Processing may use extra memory.`
         : '';
       largeWarning.hidden = !sourceFile || sourceFile.size < LARGE_FILE_BYTES;
+      download.disabled = false;
 
       $('result').textContent = view.result ?? 'Ready to download.';
 
@@ -180,7 +272,50 @@ export function mountTool(tool: Tool): () => void {
     }
   }
 
-  fileInput.addEventListener('change', () => fileInput.files?.[0] && open(fileInput.files[0]));
+  // One row per file: its name, what was read and the tool's result line, then its error or warnings.
+  function renderBatch() {
+    const items = batch.map((item) => {
+      if (!item.parsed) return { item, detail: '', notes: [] as string[], error: item.error };
+      try {
+        const { file, problems } = item.parsed;
+        const view = tool.view(item.parsed, { previewLimit: 0, encoding: item.encoding });
+        const readAs = !tool.parse && item.encoding !== 'UTF-8' ? `, read as ${item.encoding}` : '';
+        const fromFile = file.format === 'microdvd' && file.header ? `, ${file.fps} fps from the file` : '';
+        const detail = [view.summary ?? `${file.cues.length} cues, ${formatNames[file.format]}${readAs}${fromFile}.`, view.result].filter(Boolean).join(' ');
+        return { item, detail, notes: [...problems, ...view.warnings], error: undefined };
+      } catch (e) {
+        return { item, detail: '', notes: [], error: (e as Error).message };
+      }
+    });
+
+    batchReady = items.flatMap(({ item, error: e }) => (e || !item.parsed ? [] : [{ ...item, parsed: item.parsed }]));
+    const ready = batchReady.length;
+    const failed = items.length - ready;
+    $('summary').textContent = `${items.length} files${failed ? `, ${failed} could not be read` : ''}.`;
+    $('fps-picker').hidden = !batch.some(({ parsed: p }) => p?.file.format === 'microdvd' && !p.file.header);
+    largeWarning.hidden = true;
+    warnings.hidden = true;
+    previewNote.hidden = true;
+    $('result').textContent = ready ? `${ready} ${ready === 1 ? 'file' : 'files'} ready to download.` : 'No files to download.';
+    download.disabled = !ready;
+
+    batchList.replaceChildren(
+      ...items.map(({ item, detail, notes, error: message }) => {
+        const li = document.createElement('li');
+        const head = document.createElement('div');
+        head.className = 'batch-head';
+        head.append(Object.assign(document.createElement('strong'), { textContent: item.file.name }));
+        if (detail) head.append(Object.assign(document.createElement('span'), { textContent: detail }));
+        li.append(head);
+        if (message) li.append(Object.assign(document.createElement('p'), { className: 'batch-error', textContent: message }));
+        li.append(...notes.map((n) => Object.assign(document.createElement('p'), { textContent: n })));
+        return li;
+      }),
+    );
+  }
+
+  const pick = (files: FileList | null | undefined) => files?.length && load([...files]);
+  fileInput.addEventListener('change', () => pick(fileInput.files));
   replace.addEventListener('click', () => {
     fileInput.value = '';
     fileInput.click();
@@ -191,6 +326,7 @@ export function mountTool(tool: Tool): () => void {
     worker = null;
     sourceFile = null;
     parsed = null;
+    batch = [];
     setProcessing(false);
     loaded.hidden = true;
     error.textContent = 'Processing cancelled.';
@@ -202,29 +338,43 @@ export function mountTool(tool: Tool): () => void {
   panel.addEventListener('drop', (e) => {
     e.preventDefault();
     panel.classList.remove('over');
-    const f = e.dataTransfer?.files[0];
-    if (f) open(f);
+    pick(e.dataTransfer?.files);
   });
-  fps.addEventListener('change', () => sourceFile && open(sourceFile, encoding.value));
+  fps.addEventListener('change', () => {
+    if (batch.length) openBatch(batch.map((item) => item.file));
+    else if (sourceFile) open(sourceFile, encoding.value);
+  });
   encoding.addEventListener('change', () => {
     if (sourceFile) open(sourceFile, encoding.value);
   });
 
-  let doneTimer = 0;
-  $('download').addEventListener('click', (e) => {
-    if (!parsed) return;
-    const button = e.currentTarget as HTMLElement;
-    button.classList.add('done');
-    clearTimeout(doneTimer);
-    doneTimer = window.setTimeout(() => button.classList.remove('done'), 1500);
+  function save(blob: Blob, filename: string) {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([tool.output(parsed)], { type: 'text/plain;charset=utf-8' }));
-    a.download = tool.filename?.(name) ?? name;
-    // Only converters rename the file, and their extension is the output format.
-    const output_format = tool.filename ? a.download.split('.').pop()! : parsed.file.format;
-    track('download', { tool: location.pathname.slice(1), input_format: parsed.file.format, output_format });
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+
+  // Only converters rename the file, and their extension is the output format.
+  const outputFormat = (original: string, p: ParseResult) => (tool.filename ? tool.filename(original).split('.').pop()! : p.file.format);
+
+  let doneTimer = 0;
+  download.addEventListener('click', () => {
+    const ready = batch.length ? batchReady : [];
+    if (!parsed && !ready.length) return;
+    download.classList.add('done');
+    clearTimeout(doneTimer);
+    doneTimer = window.setTimeout(() => download.classList.remove('done'), 1500);
+
+    if (!parsed) {
+      const files = ready.map((item) => ({ name: tool.filename?.(item.file.name) ?? item.file.name, text: tool.output(item.parsed) }));
+      for (const item of ready) track('download', { tool: toolName, input_format: item.parsed.file.format, output_format: outputFormat(item.file.name, item.parsed) });
+      save(new Blob([makeZip(files) as BlobPart], { type: 'application/zip' }), 'subtitles.zip');
+      return;
+    }
+    track('download', { tool: toolName, input_format: parsed.file.format, output_format: outputFormat(name, parsed) });
+    save(new Blob([tool.output(parsed)], { type: 'text/plain;charset=utf-8' }), tool.filename?.(name) ?? name);
   });
 
   return render;

@@ -1,15 +1,16 @@
 ---
 // Shared file loading, encoding picker, warnings, preview and download for every Tool.
 // The page puts its own controls in the slot and wires them up with mountTool().
+// Several files or a zip at once are a batch (ADR 0006): a row per file instead of the preview, and a zip download.
 type Props = { columns: string[]; accept?: string; hint?: string; label?: string };
-const { columns, label = 'Upload a subtitle file', accept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt', hint = 'SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, or TXT' } = Astro.props;
+const { columns, label = 'Upload a subtitle file', accept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt,.zip', hint = 'SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, or TXT. Several files or a zip work too.' } = Astro.props;
 
 const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'windows-1253', 'windows-1254', 'windows-1255', 'windows-1256', 'iso-8859-2', 'gbk', 'big5', 'shift_jis', 'euc-kr'];
 ---
 
 <section class="tool">
   <label class="drop" id="drop">
-    <input type="file" id="file" accept={accept} aria-label={accept === '' ? 'Choose a file' : 'Choose a subtitle file'} />
+    <input type="file" id="file" multiple accept={accept} aria-label={accept === '' ? 'Choose a file' : 'Choose a subtitle file'} />
     <svg class="drop-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
     <span class="drop-text">
       <span class="drop-idle"><strong>{label}</strong><span class="drop-or"> or drop it here</span></span>
@@ -33,7 +34,7 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
     <div class="file-row">
       <strong id="summary" class="file-summary"></strong>
       <div class="file-actions">
-        <label>Read as
+        <label id="encoding-picker">Read as
           <select id="encoding">{encodings.map((e) => <option>{e}</option>)}</select>
         </label>
         <label id="fps-picker" hidden>Frame rate
@@ -52,7 +53,8 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
         <button id="download" class="primary">Download</button>
       </div>
       <div id="warnings" class="warnings" role="status" hidden></div>
-      <div class="preview">
+      <ul id="batch" class="batch" hidden></ul>
+      <div id="preview" class="preview">
         <table>
           <thead><tr>{columns.map((c) => <th scope="col">{c}</th>)}</tr></thead>
           <tbody id="rows"></tbody>
@@ -94,7 +96,7 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
   .primary { display: inline-flex; align-items: center; gap: 8px; }
   .primary::before { content: ''; width: 0; height: 14px; background: currentColor; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat; opacity: 0; transition: width .3s var(--spring), opacity .2s; margin-right: -8px; }
   .primary.done::before { width: 14px; opacity: 1; margin-right: 0; }
-  #loaded[hidden], .drop[hidden], .processing[hidden], .error[hidden], .warnings[hidden], .large-warning[hidden], .preview-note[hidden] { display: none; }
+  #loaded[hidden], .drop[hidden], .processing[hidden], .error[hidden], .warnings[hidden], .large-warning[hidden], .preview-note[hidden], .preview[hidden], .batch[hidden] { display: none; }
 
   .processing { display: grid; gap: 10px; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-sm); padding: 16px; }
   .processing-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
@@ -114,6 +116,7 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
   .tool :global(input[type='checkbox']), .tool :global(input[type='radio']) { accent-color: var(--ink); }
   .quiet { border: 1px solid var(--ink); border-radius: var(--radius); background: transparent; padding: 7px 16px; color: var(--ink); font-weight: 500; cursor: pointer; }
   .quiet:hover { background: var(--cream); }
+  .primary:disabled { opacity: .5; cursor: not-allowed; }
   .primary { background: var(--sun); color: var(--ink); border: 0; border-radius: var(--radius); padding: 12px 24px; font-size: 16px; font-weight: 500; cursor: pointer; }
 
   /* One result box: status and Download, then warnings, then the cues. Hairlines split it. */
@@ -122,8 +125,18 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
   #result { flex: 1; font-weight: 500; }
   .warnings { padding: 12px 16px; border-bottom: 1px solid var(--ink); font-size: 14px; display: grid; gap: 6px; }
   .warnings :global(p) { margin: 0; display: flex; gap: 10px; align-items: baseline; }
-  .warnings :global(p)::before, .preview :global(td:first-child)::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: var(--pill); background: var(--sun); border: 1px solid var(--ink); }
+  .warnings :global(p)::before, .batch :global(p)::before, .preview :global(td:first-child)::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: var(--pill); background: var(--sun); border: 1px solid var(--ink); }
   .preview-note { padding: 12px 16px; border-top: 1px solid var(--cream); }
+
+  /* Batch: one row per file, name and result on top, its warnings below with the same Sunshine dot. */
+  .batch { list-style: none; margin: 0; padding: 0; max-height: min(60vh, 520px); overflow: auto; font-size: 14px; }
+  .batch :global(li) { display: grid; gap: 6px; padding: 12px 16px; border-bottom: 1px solid var(--cream); }
+  .batch :global(li:last-child) { border-bottom: 0; }
+  .batch :global(.batch-head) { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+  .batch :global(.batch-head strong) { font-weight: 500; overflow-wrap: anywhere; }
+  .batch :global(.batch-head span) { color: var(--graphite); }
+  .batch :global(p) { margin: 0; display: flex; gap: 10px; align-items: baseline; }
+  .batch :global(p.batch-error) { color: var(--error); }
 
   .preview { max-height: min(60vh, 520px); overflow: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -147,7 +160,7 @@ const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'win
 
     /* Warnings, then the list, then the bar pinned to the bottom of the screen while the result is in view. */
     .warnings { order: 1; }
-    .preview { order: 2; max-height: none; overflow: visible; }
+    .preview, .batch { order: 2; max-height: none; overflow: visible; }
     .preview-note { order: 3; }
     .result-bar { order: 4; position: sticky; bottom: 0; z-index: 2; border-bottom: 0; border-top: 1px solid var(--ink); }
     .warnings, .preview-note { border-top: 0; }
