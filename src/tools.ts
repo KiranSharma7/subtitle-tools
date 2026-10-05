@@ -47,4 +47,10 @@ export const tools = [
     category: 'Fixing and cleaning',
     blurb: 'Read old encodings and save subtitle text as UTF-8.',
   },
+  {
+    name: 'Subtitle position changer',
+    href: '/change-subtitle-position',
+    category: 'Merge and style',
+    blurb: 'Move subtitles to the top, middle, or a corner of the screen.',
+  },
 ];

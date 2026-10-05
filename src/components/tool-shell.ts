@@ -14,7 +14,7 @@ export type Tool = {
   // In a batch, view and output run once per file, so keep per-file state in the ParseResult, not in the closure.
   view: (parsed: ParseResult, options?: ViewOptions) => { warnings: string[]; rows: Row[]; summary?: string; result?: string; total?: number };
   output: (parsed: ParseResult) => string;
-  filename?: (name: string) => string; // download name; defaults to the uploaded name
+  filename?: (name: string, parsed: ParseResult) => string; // download name; defaults to the uploaded name
   parse?: (text: string) => ParseResult; // for tools that take any text, not only subtitles
 };
 
@@ -356,8 +356,8 @@ export function mountTool(tool: Tool): () => void {
     URL.revokeObjectURL(a.href);
   }
 
-  // Only converters rename the file, and their extension is the output format.
-  const outputFormat = (original: string, p: ParseResult) => (tool.filename ? tool.filename(original).split('.').pop()! : p.file.format);
+  // Only converters (and Save as ASS) rename the file, and their extension is the output format.
+  const outputFormat = (original: string, p: ParseResult) => (tool.filename ? tool.filename(original, p).split('.').pop()! : p.file.format);
 
   let doneTimer = 0;
   download.addEventListener('click', () => {
@@ -368,13 +368,13 @@ export function mountTool(tool: Tool): () => void {
     doneTimer = window.setTimeout(() => download.classList.remove('done'), 1500);
 
     if (!parsed) {
-      const files = ready.map((item) => ({ name: tool.filename?.(item.file.name) ?? item.file.name, text: tool.output(item.parsed) }));
+      const files = ready.map((item) => ({ name: tool.filename?.(item.file.name, item.parsed) ?? item.file.name, text: tool.output(item.parsed) }));
       for (const item of ready) track('download', { tool: toolName, input_format: item.parsed.file.format, output_format: outputFormat(item.file.name, item.parsed) });
       save(new Blob([makeZip(files) as BlobPart], { type: 'application/zip' }), 'subtitles.zip');
       return;
     }
     track('download', { tool: toolName, input_format: parsed.file.format, output_format: outputFormat(name, parsed) });
-    save(new Blob([tool.output(parsed)], { type: 'text/plain;charset=utf-8' }), tool.filename?.(name) ?? name);
+    save(new Blob([tool.output(parsed)], { type: 'text/plain;charset=utf-8' }), tool.filename?.(name, parsed) ?? name);
   });
 
   return render;

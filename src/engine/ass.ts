@@ -111,3 +111,36 @@ export function assToCommon(c: Cue): { text: string; lost: string[] } {
   text = text.replace(/\\[Nn]/g, '\n').replace(/\\h/g, ' ') + ends(open);
   return { text, lost: [...lost] };
 }
+
+// The header a file gets when it's converted to ASS: one Default style, bottom center.
+export const defaultAssHeader = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 384
+PlayResY: 288
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,20,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,1,1,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
+
+export const defaultAssExtras = { layer: '0', style: 'Default', name: '', marginl: '0', marginr: '0', marginv: '0', effect: '' };
+
+const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', nbsp: '\\h' };
+
+// SRT/WebVTT cue text in ASS terms: <i> <b> <u> become override tags, line breaks become \N, other tags are dropped.
+// An SRT {\an#} is already ASS and stays.
+export function commonToAss(text: string): { text: string; lost: string[] } {
+  const lost = new Set<string>();
+  const out = text
+    .replace(/<(\/?)([ibu])>|<\/?[a-z][^<>\n]*>|<[\d:.]+>/gi, (_, close: string | undefined, t: string | undefined) => {
+      if (t) return `{\\${t.toLowerCase()}${close ? 0 : 1}}`;
+      lost.add('formatting');
+      return '';
+    })
+    .replace(/&(amp|lt|gt|nbsp);/g, (_, e: string) => entities[e])
+    .replace(/\n/g, '\\N');
+  return { text: out, lost: [...lost] };
+}

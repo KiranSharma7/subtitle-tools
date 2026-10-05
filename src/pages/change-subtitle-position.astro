@@ -1,0 +1,129 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+
+// Numbered like a numpad and ASS \an, listed top row first so the grid reads like the screen.
+const positions = [
+  [7, 'Top left'], [8, 'Top center'], [9, 'Top right'],
+  [4, 'Middle left'], [5, 'Middle center'], [6, 'Middle right'],
+  [1, 'Bottom left'], [2, 'Bottom center'], [3, 'Bottom right'],
+] as const;
+---
+
+<Layout title="Change subtitle position online" description="Move SRT, WebVTT, ASS or SSA subtitles to the top, middle or a corner of the screen, or remove position tags. Runs in your browser, nothing is uploaded.">
+  <h1>Change subtitle position</h1>
+  <p class="lede">Move subtitles to the top of the screen, the middle, or a corner. Useful when they cover on-screen text.</p>
+
+  <ToolShell columns={['#', 'Position', 'Text']} accept=".srt,.vtt,.ass,.ssa,.zip" hint="SRT, WebVTT, ASS or SSA. Several files or a zip work too.">
+    <div class="controls">
+      <fieldset>
+        <legend>Position</legend>
+        <div class="grid">
+          {positions.map(([n, label]) => (
+            <label class="cell" title={label}>
+              <input type="radio" name="position" value={n} checked={n === 8} aria-label={label} />
+            </label>
+          ))}
+        </div>
+        <label class="chip"><input type="radio" name="position" value="" /> Remove position</label>
+      </fieldset>
+      <label class="chip"><input id="as-ass" type="checkbox" /> Save SRT and WebVTT as ASS</label>
+      <p class="hint">ASS is the format players are most likely to position correctly.</p>
+    </div>
+  </ToolShell>
+
+  <section class="help">
+    <h2>How subtitle position is stored</h2>
+    <p>Each format keeps position in its own way. Unless you save as ASS, the download stays in the uploaded format:</p>
+    <ul>
+      <li><strong>SRT</strong> gets an <code>{'{\\an8}'}</code> tag at the start of every cue. The number follows a phone keypad: 7, 8, 9 along the top, 1, 2, 3 along the bottom.</li>
+      <li><strong>WebVTT</strong> gets <code>line</code>, <code>position</code> and <code>align</code> cue settings. Other settings, like <code>size</code>, stay.</li>
+      <li><strong>ASS and SSA</strong> get a new <code>Alignment</code> in every style. Cues that set their own alignment with <code>\an</code> are changed too. Cues placed at an exact spot with <code>\pos</code> or <code>\move</code> keep that spot, and are listed above the preview.</li>
+    </ul>
+    <h2>Will my player show it?</h2>
+    <p>VLC, MPC-HC, mpv and most desktop players follow SRT <code>{'{\\an}'}</code> tags. Many TVs, game consoles and streaming sticks ignore them and show every subtitle at the bottom. Browsers follow WebVTT settings. ASS is the most reliable format for styling, so if a player ignores the position, tick <em>Save SRT and WebVTT as ASS</em>. Anything ASS can't hold, like WebVTT cue settings, is listed before you download.</p>
+    <h2>Removing positions</h2>
+    <p><em>Remove position</em> takes out <code>{'{\\an}'}</code> tags in SRT, <code>line</code>, <code>position</code> and <code>align</code> settings in WebVTT, and <code>\an</code> and <code>\pos</code> overrides in ASS. ASS styles keep their alignment.</p>
+  </section>
+
+  <Faq title="Subtitle position FAQ" items={[
+    { question: 'How do I move subtitles to the top of the screen?', answer: 'Load the file, pick Top center and download. SRT files get an {\\an8} tag on each cue, which VLC and most desktop players follow.' },
+    { question: 'Why do my subtitles still show at the bottom?', answer: 'Some players, especially TVs, ignore position tags in SRT files. Save the file as ASS instead, or try another player.' },
+    { question: 'Can I move only some subtitles?', answer: 'No. This tool moves every cue. In ASS files, cues placed at an exact spot with \\pos keep their spot.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/srt-cleaner', label: 'Clean the file', description: 'Remove tags, SDH notes, and duplicate cues.' },
+    { href: '/convert-to-webvtt', label: 'Convert to WebVTT', description: 'Prepare subtitles for HTML5 video.' },
+    { href: '/subtitle-shifter', label: 'Fix the timing', description: 'Move every cue earlier or later.' },
+    { href: '/subtitle-validator', label: 'Check the result', description: 'Find overlaps, bad timestamps, and empty cues.' },
+  ]} />
+</Layout>
+
+<script>
+  import { plainText, write } from '../engine/formats.ts';
+  import { convert } from '../engine/convert.ts';
+  import { setPosition, type Position } from '../engine/style.ts';
+  import type { SubtitleFile } from '../engine/types.ts';
+  import { mountTool } from '../components/tool-shell.ts';
+  import { lossWarnings } from '../components/converter.ts';
+
+  const asAss = document.getElementById('as-ass') as HTMLInputElement;
+  const radios = [...document.querySelectorAll<HTMLInputElement>('input[name="position"]')];
+
+  const picked = () => {
+    const value = radios.find((r) => r.checked)?.value;
+    return value ? (+value as Position) : null;
+  };
+  const label = () => radios.find((r) => r.checked)?.getAttribute('aria-label') ?? 'Default';
+  const toAss = (file: SubtitleFile) => asAss.checked && (file.format === 'srt' || file.format === 'vtt');
+
+  // Converting first means Save as ASS sets the position in the new file's Default style.
+  function run(file: SubtitleFile) {
+    const converted = toAss(file) ? convert(file, 'ass') : { file, losses: [] };
+    return { ...setPosition(converted.file, picked()), losses: converted.losses };
+  }
+
+  const render = mountTool({
+    view({ file }, { previewLimit = 200 } = {}) {
+      const r = run(file);
+      const warnings = lossWarnings(r.losses);
+      if (r.pinned.length) warnings.push(`Placed at an exact spot with \\pos or \\move, so they keep it: cue ${r.pinned.join(', ')}.`);
+      const pinned = new Set(r.pinned);
+      const rows = file.cues.slice(0, previewLimit).map((c, i) => ({
+        cells: [String(i + 1), pinned.has(i + 1) ? 'Kept (\\pos)' : label(), plainText(c.text)],
+        flag: pinned.has(i + 1),
+      }));
+      const n = file.cues.length;
+      const cues = `${n} ${n === 1 ? 'cue' : 'cues'}`;
+      const result = picked() === null ? `Position removed from ${cues}.` : `${cues} moved to the ${label().toLowerCase()}.`;
+      return { warnings, rows, result, total: n };
+    },
+    output: ({ file }) => write(run(file).file),
+    filename: (name, { file }) => (toAss(file) ? name.replace(/\.[^.]*$/, '') + '.ass' : name),
+  });
+
+  for (const el of [asAss, ...radios]) el.addEventListener('change', render);
+</script>
+
+<style>
+  .controls { display: grid; gap: 12px; justify-items: start; }
+  fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+  legend { float: left; margin-right: 8px; font-weight: 500; }
+  /* A small screen: three rows of three, the picked spot filled with ink (Sunshine is kept for Download). */
+  .grid { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 28px); gap: 4px; padding: 4px; border: 1px solid var(--ink); border-radius: var(--radius-sm); }
+  .cell { display: grid; place-items: center; border-radius: var(--radius-input); cursor: pointer; }
+  .cell:hover { background: var(--cream); }
+  .cell:has(:checked) { background: var(--ink); }
+  .cell input { appearance: none; margin: 0; width: 100%; height: 100%; cursor: pointer; border-radius: var(--radius-input); }
+  .cell input:focus-visible { outline: 2px solid var(--ink); }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--ink); border-radius: var(--pill); font-size: 16px; cursor: pointer; }
+  .chip:hover { background: var(--cream); }
+  .chip:has(:checked) { background: var(--cream); box-shadow: 0 0 0 1px var(--ink); }
+  .hint { margin: 0; font-size: 14px; color: var(--graphite); }
+  :global(.tool td:first-child) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:nth-child(2)) { white-space: nowrap; }
+  :global(.tool td:last-child) { width: 100%; }
+</style>

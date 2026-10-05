@@ -7,6 +7,7 @@ import { parseTime } from './time.ts';
 import { decode } from './decode.ts';
 import { clean, defaultCleanOptions, type CleanOptions } from './clean.ts';
 import { validate, fixSafe } from './validate.ts';
+import { setPosition } from './style.ts';
 import { readFile } from 'node:fs/promises';
 
 const SRT = '﻿1\r\n00:00:01,000 --> 00:00:02,500\r\n<i>Hello</i>\r\nthere\r\n\r\n2\r\n00:00:03,000 --> 00:00:04,000\r\nBye\r\n';
@@ -393,4 +394,80 @@ test('decode: legacy fixtures come out as the expected UTF-8, line endings kept'
   }
   const names = await Promise.all(['cp1251', 'shift-jis', 'gbk'].map(async (n) => (await decode(await fixture(`${n}.srt`))).encoding));
   assert.deepEqual(names, ['windows-1251', 'shift_jis', 'gbk']);
+});
+
+test('position: srt gets {\\an#} in front, replacing any it had; remove strips them', () => {
+  const { file } = parse('1\n00:00:01,000 --> 00:00:02,000\n{\\an8}Top\n\n2\n00:00:03,000 --> 00:00:04,000\n<i>Plain</i>\n');
+  assert.deepEqual(setPosition(file, 7).file.cues.map((c) => c.text), ['{\\an7}Top', '{\\an7}<i>Plain</i>']);
+  assert.deepEqual(setPosition(file, null).file.cues.map((c) => c.text), ['Top', '<i>Plain</i>']);
+  assert.equal(file.cues[0].text, '{\\an8}Top', 'input is not changed');
+  const mixed = parse('1\n00:00:01,000 --> 00:00:02,000\n{\\an8\\i1}A{\\a6}B\n').file;
+  assert.equal(setPosition(mixed, 1).file.cues[0].text, '{\\an1}{\\i1}AB');
+});
+
+test('position: webvtt line, position and align settings replace the old ones, other settings stay', () => {
+  const vtt = 'WEBVTT\n\nintro\n00:01.000 --> 00:02.000 align:start line:0 size:80%\nA\n\n00:03.000 --> 00:04.000\nB\n';
+  const { file } = parse(vtt);
+  const top = setPosition(file, 9).file;
+  assert.deepEqual(top.cues.map((c) => c.extras), [
+    { id: 'intro', settings: 'size:80% line:0% position:90%,line-right align:right' },
+    { settings: 'line:0% position:90%,line-right align:right' },
+  ]);
+  assert.deepEqual(setPosition(file, 4).file.cues[1].extras, { settings: 'line:50%,center position:10%,line-left align:left' });
+  assert.deepEqual(setPosition(file, 2).file.cues[1].extras, { settings: 'line:100%,end position:50%,center align:center' });
+  const removed = setPosition(file, null).file;
+  assert.deepEqual(removed.cues.map((c) => c.extras), [{ id: 'intro', settings: 'size:80%' }, undefined]);
+});
+
+test('position: ass changes Alignment in every style, inline \\an only where a cue has one; \\pos cues are pinned', async () => {
+  const ass = await fixture('sample.ass');
+  const r = setPosition(parse(ass).file, 9);
+  assert.deepEqual(r.pinned, [2]);
+  assert.equal(write(r.file), ass
+    .replace(',1,2,2,2,10,10,10,1', ',1,2,2,9,10,10,10,1')
+    .replace(',1,2,2,8,10,10,10,1', ',1,2,2,9,10,10,10,1'));
+  const inline = setPosition(parse(ass.replace('{\\an8\\pos(960,50)}', '{\\an8}').replace('{\\i1}Hello', '{\\a6\\i1}Hello')).file, 7).file;
+  assert.deepEqual(inline.cues.map((c) => c.text.slice(0, 10)), ['{\\a5\\i1}He', '{\\an7}EXIT', '{\\k20}Sing']);
+});
+
+test('position: remove strips ass \\an, \\a and \\pos overrides, keeps the styles', async () => {
+  const ass = await fixture('sample.ass');
+  const r = setPosition(parse(ass).file, null);
+  assert.deepEqual(r.pinned, []);
+  assert.equal(write(r.file), ass.replace('{\\an8\\pos(960,50)}', ''));
+  const keepsOthers = setPosition(parse(ass.replace('{\\an8\\pos(960,50)}', '{\\a6\\b1}')).file, null);
+  assert.equal(keepsOthers.file.cues[1].text, '{\\b1}EXIT');
+});
+
+test('position: ssa uses the legacy alignment numbers in V4 Styles and \\a tags', async () => {
+  const ssa = await fixture('sample.ssa');
+  const top = setPosition(parse(ssa).file, 8).file;
+  assert.equal(write(top), ssa.replace(',1,2,2,2,10,10,10,0,0', ',1,2,2,6,10,10,10,0,0'));
+  const middle = setPosition(parse(ssa.replace('Bye, now', '{\\a1}Bye, now')).file, 6).file;
+  assert.match(write(middle), /,1,2,2,11,10,10,10,0,0/);
+  assert.equal(middle.cues[1].text, '{\\a11}Bye, now');
+});
+
+test('position: formats with no position support throw', () => {
+  assert.throws(() => setPosition(parse('[1][20]Hi\n').file, 8), /SRT, WebVTT, ASS and SSA/);
+});
+
+test('convert srt to ass: default header and style, tags mapped, unmapped formatting reported', () => {
+  const r = convert(parse('1\n00:00:01,000 --> 00:00:02,500\n{\\an8}<i>Hello</i>\nthere\n\n2\n00:00:03,000 --> 00:00:04,000\n<font color="#ff0000">Red</font> &amp; <b>bold</b>\n').file, 'ass');
+  assert.deepEqual(r.losses, [{ kind: 'formatting', cues: [2] }]);
+  const out = write(r.file);
+  assert.match(out, /^\[Script Info\]\nScriptType: v4\.00\+\n/);
+  assert.match(out, /\nStyle: Default,Arial,20,&H00FFFFFF,[^\n]*,2,10,10,10,1\n/);
+  assert.ok(out.endsWith(
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n' +
+    'Dialogue: 0,0:00:01.00,0:00:02.50,Default,,0,0,0,,{\\an8}{\\i1}Hello{\\i0}\\Nthere\n' +
+    'Dialogue: 0,0:00:03.00,0:00:04.00,Default,,0,0,0,,Red & {\\b1}bold{\\b0}\n'));
+  assert.deepEqual(parse(out).file.cues.map((c) => [c.start, c.end]), [[1000, 2500], [3000, 4000]]);
+});
+
+test('convert vtt to ass: header and cue settings reported, then a position can be set', () => {
+  const r = convert(parse('WEBVTT\n\nSTYLE\n::cue { color: red }\n\n00:01.000 --> 00:02.000 line:0\n<v Anna>Hi</v>\n').file, 'ass');
+  assert.deepEqual(r.losses, [{ kind: 'header', cues: [] }, { kind: 'formatting', cues: [1] }, { kind: 'settings', cues: [1] }]);
+  assert.equal(r.file.cues[0].text, 'Hi');
+  assert.match(write(setPosition(r.file, 8).file), /\nStyle: Default,[^\n]*,8,10,10,10,1\n/);
 });
