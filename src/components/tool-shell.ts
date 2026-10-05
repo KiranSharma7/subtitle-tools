@@ -3,7 +3,7 @@ import type { Format } from '../engine/types.ts';
 import { track } from './analytics.ts';
 import { makeZip, readZip } from './zip.ts';
 
-const formatNames: Record<Format, string> = { srt: 'SRT', vtt: 'VTT', ass: 'ASS', ssa: 'SSA', sami: 'SAMI', microdvd: 'MicroDVD', mpl2: 'MPL2', txt: 'TXT' };
+const formatNames: Record<Format, string> = { srt: 'SRT', vtt: 'VTT', ass: 'ASS', ssa: 'SSA', sami: 'SAMI', microdvd: 'MicroDVD', mpl2: 'MPL2', lrc: 'LRC', txt: 'TXT' };
 
 export type Row = { cells: string[]; flag?: boolean };
 export type ViewOptions = { previewLimit?: number; encoding?: string; name?: string }; // name: the uploaded file's name

@@ -17,8 +17,8 @@ Static Astro site of small subtitle tools (shift, convert). Everything runs in t
 
 - `src/engine/`: the **engine**, plain TypeScript with no DOM code. Every tool goes through it.
   - `types.ts`: shared `SubtitleFile` / `Cue` model. Format-specific per-cue data lives in `cue.extras`, file-level data in `header` as raw text (ADR 0002).
-  - `formats.ts`: `detect`, `parse`, `write`, `plainText`. Handles SRT/WebVTT/txt itself and dispatches to one file per other format (`ass.ts`, `sami.ts`, `microdvd.ts`, `mpl2.ts`). Parsers return `{ file, problems }` and don't throw.
-  - `convert.ts`: cross-format conversion (only to SRT, WebVTT, txt, and ASS for the style tools' "Save as ASS"). Each format supplies a `*ToCommon` function that returns SRT-style text plus what was lost. Losses must always be reported, never dropped silently.
+  - `formats.ts`: `detect`, `parse`, `write`, `plainText`. Handles SRT/WebVTT/txt itself and dispatches to one file per other format (`ass.ts`, `sami.ts`, `microdvd.ts`, `mpl2.ts`, `lrc.ts`). Parsers return `{ file, problems }` and don't throw.
+  - `convert.ts`: cross-format conversion (only to SRT, WebVTT, txt, LRC for the timed lyrics editor, and ASS for the style tools' "Save as ASS"). Each format supplies a `*ToCommon` function that returns SRT-style text plus what was lost. Losses must always be reported, never dropped silently.
   - `decode.ts`: byte decoding / charset detection (jschardet). `shift.ts`, `time.ts`: re-timing and timestamp parse/format.
   - All tests are in `engine.test.ts`.
 - `src/components/`: `ToolShell.astro` is the shared upload/preview/download markup. `tool-shell.ts` `mountTool()` wires it up; each tool supplies `view` (warnings + preview rows) and `output`. `converter.ts` is the shared script for the convert pages.

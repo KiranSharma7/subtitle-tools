@@ -10,7 +10,7 @@ import { site } from '../site.ts';
     <h2>Why it runs in your browser</h2>
     <p>Most online subtitle tools upload your file to a server. {site.name} doesn't. Each tool reads the file in your browser tab, changes it there and saves the result back to your device. Nothing is sent to us, so there is nothing for us to store or lose.</p>
     <h2>How the tools are built</h2>
-    <p>All tools share one engine that reads SRT, WebVTT, ASS, SSA, SAMI, MicroDVD and MPL2. It doesn't stop on a bad file. It reads what it can and tells you which lines it couldn't. When a conversion drops something, like ASS styling that SRT can't hold, the tool lists it instead of removing it without telling you.</p>
+    <p>All tools share one engine that reads SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2 and LRC. It doesn't stop on a bad file. It reads what it can and tells you which lines it couldn't. When a conversion drops something, like ASS styling that SRT can't hold, the tool lists it instead of removing it without telling you.</p>
     <p>The engine has automated tests for parsing, timing, conversion and cleanup in every supported format. Every tool page is also tested in a real browser: upload a file, change it, download it.</p>
     <h2>Problems and requests</h2>
     <p>If a file won't open or the output looks wrong, email <a href={`mailto:${site.email}`}>{site.email}</a> and describe what happened. Requests for new tools and formats go to the same address.</p>

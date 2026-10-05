@@ -16,7 +16,9 @@ export default defineConfig({
       directives: [
         "default-src 'self'",
         `img-src 'self' data: ${google.join(' ')}`,
-        `connect-src 'self' ${google.join(' ')}`,
+        // lrclib.net: the timed lyrics editor's "Find lyrics online". blob: plays the visitor's own audio file.
+        `connect-src 'self' https://lrclib.net ${google.join(' ')}`,
+        "media-src 'self' blob:",
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",

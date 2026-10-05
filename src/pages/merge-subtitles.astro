@@ -4,7 +4,7 @@ import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 
-const mergeAccept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt,.zip';
+const mergeAccept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.lrc,.txt,.zip';
 ---
 
 <Layout title="Merge two subtitle files online" description="Merge two SRT, WebVTT, ASS or SSA subtitle files into one, for dual-language subtitles or CD1 + CD2. Pairs whole seasons by episode. Runs in your browser.">
@@ -15,7 +15,7 @@ const mergeAccept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt,.zip';
     <div class="controls">
       <div class="merge-pick">
         <label class="pick">Choose merge file <input id="merge-file" type="file" multiple accept={mergeAccept} aria-label="Choose a merge file" /></label>
-        <span id="merge-status" class="hint">The merge file can be SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2. Several files or a zip work too.</span>
+        <span id="merge-status" class="hint">The merge file can be SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2 or LRC. Several files or a zip work too.</span>
       </div>
       <div id="merge-errors" class="merge-errors" role="alert" hidden></div>
 

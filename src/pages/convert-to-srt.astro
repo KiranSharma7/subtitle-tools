@@ -7,7 +7,7 @@ import RelatedTools from '../components/RelatedTools.astro';
 
 <Layout title="Convert subtitles to SRT online" description="Convert VTT, ASS, SSA, SAMI, MicroDVD, or MPL2 subtitles to SRT online. Preview changes before download. Files stay on your device.">
   <h1>Convert subtitles to SRT</h1>
-  <p class="lede">Convert VTT, ASS, SSA, SAMI, SUB, or MPL2 files to SRT for players, editors, and uploads.</p>
+  <p class="lede">Convert VTT, ASS, SSA, SAMI, SUB, MPL2, or LRC files to SRT for players, editors, and uploads.</p>
 
   <ToolShell columns={['#', 'Start', 'End', 'Text']} />
 
@@ -15,7 +15,7 @@ import RelatedTools from '../components/RelatedTools.astro';
     <h2>How to convert a subtitle file to SRT</h2>
     <p>Upload a file, check the cue preview, then download the SRT. Cue times and dialogue stay in place, and the converter adds clean SRT numbering.</p>
     <h2>Supported formats</h2>
-    <p>Convert WebVTT, ASS, SSA, SAMI, MicroDVD, and MPL2. MicroDVD files use video frames, so select the video's frame rate when the file does not include one.</p>
+    <p>Convert WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, and LRC lyrics. MicroDVD files use video frames, so select the video's frame rate when the file does not include one.</p>
     <h2>What SRT keeps</h2>
     <p>SRT keeps cue times, text, and basic bold, italic, or underline tags. Positions, karaoke timing, and format-specific styles have no SRT equivalent. The preview lists anything the conversion drops.</p>
     <pre><code>Input: 00:01:02.500 --> 00:01:04.000

@@ -1,0 +1,433 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+---
+
+<Layout title="Timed lyrics editor: make LRC files online" description="Sync lyrics to a song line by line and download an LRC file. Load MP3, WAV, OGG, FLAC or M4A audio and an existing LRC. Audio stays in your browser.">
+  <h1>Timed lyrics editor</h1>
+  <p class="lede">Play a song, tap a key as each line starts, and download synced LRC lyrics. Your audio never leaves this device.</p>
+
+  <section class="editor" id="editor">
+    <div class="inputs">
+      <label class="pick">Choose audio <input id="audio-file" type="file" accept="audio/*,.mp3,.wav,.ogg,.oga,.flac,.m4a,.aac" aria-label="Choose an audio file" /></label>
+      <label class="pick">Open lyrics file <input id="lyrics-file" type="file" accept=".lrc,.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt" aria-label="Open a lyrics file" /></label>
+      <span id="audio-name" class="hint">MP3, WAV, OGG, FLAC, M4A or AAC. An LRC, SRT or other subtitle file opens as lyrics.</span>
+    </div>
+    <audio id="player" controls preload="metadata" hidden></audio>
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <div class="meta">
+      <label>Artist <input id="artist" autocomplete="off" /></label>
+      <label>Song title <input id="title" autocomplete="off" /></label>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Editor steps">
+      <button role="tab" id="tab-lyrics" aria-controls="panel-lyrics" aria-selected="true">1. Lyrics</button>
+      <button role="tab" id="tab-sync" aria-controls="panel-sync" aria-selected="false" tabindex="-1">2. Sync</button>
+      <button role="tab" id="tab-preview" aria-controls="panel-preview" aria-selected="false" tabindex="-1">3. Preview</button>
+    </div>
+
+    <div role="tabpanel" id="panel-lyrics" aria-labelledby="tab-lyrics" class="panel">
+      <textarea id="lyrics" rows="12" aria-label="Lyrics, one line per row" placeholder="Paste the lyrics here, one line per row."></textarea>
+      <div class="find">
+        <button id="find" class="quiet" type="button">Find lyrics online</button>
+        <span class="hint">Sends only the artist and title above to <a href="https://lrclib.net" rel="noopener">lrclib.net</a>. See the <a href="/privacy">privacy policy</a>.</span>
+      </div>
+      <div id="found" class="found" role="status" hidden>
+        <span id="found-text"></span>
+        <button id="use-found" class="quiet" type="button" hidden>Use these lyrics</button>
+      </div>
+    </div>
+
+    <div role="tabpanel" id="panel-sync" aria-labelledby="tab-sync" class="panel" hidden>
+      <p class="hint">Play the song and press <kbd>R</kbd> (or Stamp line) as each line starts. <kbd>Space</kbd> plays and pauses, <kbd>←</kbd> <kbd>→</kbd> seek 5 seconds, <kbd>↑</kbd> <kbd>↓</kbd> pick the line. Stamp an empty line to end the line above it.</p>
+      <div class="transport">
+        <button class="quiet" type="button" data-seek="-5">−5 s</button>
+        <button class="quiet" type="button" id="play">Play</button>
+        <button class="quiet" type="button" data-seek="5">+5 s</button>
+        <button class="quiet stamp" type="button" id="stamp">Stamp line (R)</button>
+      </div>
+      <ol id="sync-lines" class="lines"></ol>
+    </div>
+
+    <div role="tabpanel" id="panel-preview" aria-labelledby="tab-preview" class="panel" hidden>
+      <div class="shift">
+        <label>Shift all lines by <input id="shift" type="number" step="0.1" value="0" /> s</label>
+        <button id="apply-shift" class="quiet" type="button">Apply</button>
+        <span class="hint">Negative moves lines earlier.</span>
+      </div>
+      <ol id="preview-lines" class="lines"></ol>
+    </div>
+
+    <div class="result">
+      <div class="result-bar">
+        <strong id="result">No lines yet.</strong>
+        <button id="download" class="primary" disabled>Download .lrc</button>
+      </div>
+      <div id="warnings" class="warnings" role="status" hidden></div>
+    </div>
+  </section>
+
+  <section class="help">
+    <h2>How to make an LRC file</h2>
+    <ol>
+      <li>Choose the song's audio file. Artist and title are read from its tags or file name.</li>
+      <li>Paste the lyrics, open an existing .lrc, or press <em>Find lyrics online</em>.</li>
+      <li>On <strong>Sync</strong>, play the song and press <kbd>R</kbd> as each line starts.</li>
+      <li>On <strong>Preview</strong>, play it back, nudge any line by 0.1 seconds, then download the .lrc.</li>
+    </ol>
+    <h2>What an LRC file looks like</h2>
+    <p>Each line starts with the minute, second and hundredth of a second it appears. Tag lines at the top name the artist and title. An empty timed line ends the line before it, for instrumental breaks.</p>
+    <pre><code>[ar:Artist]
+[ti:Song title]
+[00:12.40]First line of the song
+[00:17.85]Second line
+[00:23.10]</code></pre>
+    <h2>Editing an existing LRC</h2>
+    <p>Open the .lrc to load its lines and times. Edit the text on the Lyrics tab: lines you keep keep their time, new lines wait to be stamped. Word-by-word timings from enhanced LRC files are kept and move with their line. SRT, WebVTT and other subtitle files open too; anything LRC can't hold, like formatting or line breaks, is listed before you download.</p>
+    <h2>What the LRC file keeps</h2>
+    <p>Line times to the hundredth of a second, the artist and title, and any other tags from an opened file, like <code>[al:]</code> or <code>[offset:]</code>. Lines that aren't timed yet are left out of the download and listed above it. When you open an SRT or other subtitle file, its formatting tags, line breaks inside a cue and end times that overlap the next line can't be kept: LRC lines are one line each and end where the next one starts. Each of these is listed before you download.</p>
+    <h2>When something goes wrong</h2>
+    <p>If the song won't play, the browser can't decode that file: try an MP3, WAV or OGG copy. If lyrics look garbled, the file uses an old encoding; open it in the <a href="/utf-8-converter">UTF-8 converter</a> first. If <em>Find lyrics online</em> finds nothing, check the spelling of the artist and title, or paste the lyrics yourself. A line stamped at the wrong moment can be stamped again on Sync, or nudged on Preview.</p>
+    <h2>Your audio stays private</h2>
+    <p>The song plays straight from your device in this browser tab and is never uploaded. <em>Find lyrics online</em> sends only the artist and title to lrclib.net, a free lyrics database, and only when you press it.</p>
+  </section>
+
+  <Faq title="Timed lyrics FAQ" items={[
+    { question: 'What is an LRC file?', answer: 'A text file of song lyrics where each line starts with a timestamp like [01:02.50]. Music players use it to show the lyrics in time with the song.' },
+    { question: 'Which audio files work?', answer: 'Anything your browser can play: usually MP3, WAV, OGG, FLAC, M4A and AAC.' },
+    { question: 'Can I fix the timing of a whole LRC file?', answer: 'Yes. Open it, go to Preview and shift all lines earlier or later. To shift by a fixed amount without the audio, the subtitle shifter reads LRC too.' },
+    { question: 'Can I time each word?', answer: 'Not yet. The editor times whole lines. Word timings already in an enhanced LRC file are kept.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/subtitle-shifter', label: 'Shift an LRC file', description: 'Move every line earlier or later by one offset.' },
+    { href: '/convert-to-srt', label: 'Convert LRC to SRT', description: 'Turn timed lyrics into a subtitle file for video.' },
+    { href: '/utf-8-converter', label: 'Fix garbled lyrics', description: 'Read an old encoding and save the file as UTF-8.' },
+  ]} />
+</Layout>
+
+<script>
+  import { decode } from '../engine/decode.ts';
+  import { parse, write } from '../engine/formats.ts';
+  import { convert } from '../engine/convert.ts';
+  import { fromStamps, lrcTime, toStamps, type Stamp } from '../engine/lrc.ts';
+  import { lossWarnings } from '../components/converter.ts';
+  import { songInfo } from '../components/audio-tags.ts';
+  import { activeLine, lrcHeader, lrcName, pickLyrics, retext, splitTags } from '../components/lyrics.ts';
+  import { track } from '../components/analytics.ts';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const player = $<HTMLAudioElement>('player');
+  const lyrics = $<HTMLTextAreaElement>('lyrics');
+  const artist = $<HTMLInputElement>('artist');
+  const title = $<HTMLInputElement>('title');
+  const error = $('error');
+  const syncList = $('sync-lines');
+  const previewList = $('preview-lines');
+  const download = $<HTMLButtonElement>('download');
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+
+  let lines: Stamp[] = [];
+  let cursor = 0; // the line R stamps next
+  let tags: string[] = []; // tag lines from an opened LRC other than artist and title, kept on download
+  let fileWarnings: string[] = [];
+  let audioName = '';
+  let found: Stamp[] | null = null;
+  let tab = 'lyrics';
+
+  const now = () => Math.round(player.currentTime * 1000);
+  const show = (message = '') => ((error.textContent = message), (error.hidden = !message));
+
+  function lineItem(l: Stamp, i: number, list: 'sync' | 'preview'): HTMLLIElement {
+    const li = document.createElement('li');
+    li.dataset.i = String(i);
+    const time = Object.assign(document.createElement('span'), { className: 'time', textContent: l.time == null ? '--:--.--' : lrcTime(l.time) });
+    const text = Object.assign(document.createElement('button'), { type: 'button', className: 'text', textContent: l.text || '(end of line above)' });
+    if (!l.text) text.classList.add('gap');
+    li.append(time, text);
+    if (list === 'sync') {
+      text.addEventListener('click', () => ((cursor = i), renderLines()));
+    } else {
+      text.addEventListener('click', () => l.time != null && (player.currentTime = l.time / 1000));
+      for (const [label, delta] of [['−', -100], ['+', 100]] as const) {
+        const b = Object.assign(document.createElement('button'), { type: 'button', className: 'nudge', textContent: label });
+        b.setAttribute('aria-label', `${delta < 0 ? 'Earlier' : 'Later'} by 0.1 s: line ${i + 1}`);
+        b.disabled = l.time == null;
+        b.addEventListener('click', () => {
+          l.time = Math.max(0, l.time! + delta);
+          renderAll();
+        });
+        li.append(b);
+      }
+    }
+    return li;
+  }
+
+  function renderLines() {
+    cursor = Math.min(cursor, Math.max(0, lines.length - 1));
+    syncList.replaceChildren(...lines.map((l, i) => lineItem(l, i, 'sync')));
+    syncList.children[cursor]?.setAttribute('aria-current', 'step');
+    // The preview lists only timed lines; untimed ones aren't in the download.
+    previewList.replaceChildren(...lines.flatMap((l, i) => (l.time == null ? [] : [lineItem(l, i, 'preview')])));
+    highlight();
+    if (tab === 'sync') (syncList.children[cursor] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function highlight() {
+    const at = activeLine(lines, now());
+    for (const li of previewList.children) li.classList.toggle('active', (li as HTMLElement).dataset.i === String(at));
+  }
+
+  function renderResult() {
+    const text = lines.filter((l) => l.text);
+    const timed = text.filter((l) => l.time != null).length;
+    $('result').textContent = text.length ? `${timed} of ${text.length} lines timed.` : 'No lines yet.';
+    download.disabled = !timed;
+    const untimed = lines.flatMap((l, i) => (l.text && l.time == null ? [i + 1] : []));
+    const notes = [...fileWarnings];
+    if (timed && untimed.length) notes.push(`Not timed yet, left out of the download: line ${untimed.join(', ')}.`);
+    const warnings = $('warnings');
+    warnings.replaceChildren(...notes.map((n) => Object.assign(document.createElement('p'), { textContent: n })));
+    warnings.hidden = !notes.length;
+  }
+
+  function renderAll() {
+    renderLines();
+    renderResult();
+  }
+
+  function setLines(next: Stamp[]) {
+    lines = next;
+    cursor = Math.max(0, lines.findIndex((l) => l.time == null));
+    lyrics.value = lines.map((l) => l.text).join('\n');
+    renderAll();
+  }
+
+  function select(name: string) {
+    tab = name;
+    for (const t of tabs) {
+      const on = t.id === `tab-${name}`;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      $(t.getAttribute('aria-controls')!).hidden = !on;
+    }
+    renderLines();
+  }
+
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t.id.slice(4)));
+    t.addEventListener('keydown', (e) => {
+      const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const next = tabs[(i + step + tabs.length) % tabs.length];
+      next.focus();
+      select(next.id.slice(4));
+    });
+  });
+
+  lyrics.addEventListener('input', () => {
+    lines = retext(lines, lyrics.value);
+    renderAll();
+  });
+
+  function stamp() {
+    if (!lines.length) return;
+    if (!player.src) return show('Choose the song\'s audio file first, so there is a time to stamp.');
+    lines[cursor].time = now();
+    cursor = Math.min(cursor + 1, lines.length - 1);
+    renderAll();
+  }
+
+  const togglePlay = () => (player.paused ? player.play().catch(() => show('This audio file could not be played.')) : player.pause());
+  const seek = (s: number) => (player.currentTime = Math.max(0, player.currentTime + s));
+
+  $('stamp').addEventListener('click', stamp);
+  $('play').addEventListener('click', togglePlay);
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-seek]')) b.addEventListener('click', () => seek(+b.dataset.seek!));
+  player.addEventListener('play', () => ($('play').textContent = 'Pause'));
+  player.addEventListener('pause', () => ($('play').textContent = 'Play'));
+  player.addEventListener('timeupdate', highlight);
+  player.addEventListener('seeked', highlight);
+  player.addEventListener('error', () => player.src && show('This browser cannot play this audio file. Try MP3, WAV or OGG.'));
+
+  // Shortcuts work on the Sync and Preview tabs, except while typing in a field.
+  // The audio controls handle Space and the arrows themselves when focused. Tabs use Left/Right to switch.
+  let swallowSpace = false;
+  document.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement;
+    const key = e.key;
+    if (tab === 'lyrics' || e.ctrlKey || e.metaKey || e.altKey || t.closest('input, textarea, select')) return;
+    if (t === player && (key === ' ' || key === 'ArrowLeft' || key === 'ArrowRight')) return;
+    if (key === ' ') togglePlay();
+    else if (key === 'ArrowLeft') seek(-5);
+    else if (key === 'ArrowRight') seek(5);
+    // Holding R would stamp line after line at almost the same time.
+    else if (tab === 'sync' && (key === 'r' || key === 'R')) e.repeat || stamp();
+    else if (tab === 'sync' && (key === 'ArrowUp' || key === 'ArrowDown')) {
+      cursor = Math.max(0, Math.min(lines.length - 1, cursor + (key === 'ArrowUp' ? -1 : 1)));
+      renderLines();
+    } else return;
+    e.preventDefault();
+    // A focused button clicks on Space's keyup; that would toggle play a second time.
+    swallowSpace = key === ' ';
+  });
+  document.addEventListener('keyup', (e) => {
+    if (e.key === ' ' && swallowSpace) e.preventDefault();
+    swallowSpace = false;
+  });
+
+  $('apply-shift').addEventListener('click', () => {
+    const by = Math.round(+($<HTMLInputElement>('shift').value) * 1000);
+    if (!by) return;
+    for (const l of lines) if (l.time != null) l.time = Math.max(0, l.time + by);
+    renderAll();
+  });
+
+  $<HTMLInputElement>('audio-file').addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    show();
+    if (player.src) URL.revokeObjectURL(player.src);
+    player.src = URL.createObjectURL(file);
+    player.hidden = false;
+    audioName = file.name;
+    $('audio-name').textContent = file.name;
+    const info = songInfo(new Uint8Array(await file.slice(0, 512 * 1024).arrayBuffer()), file.name);
+    if (info.artist) artist.value = info.artist;
+    if (info.title) title.value = info.title;
+  });
+
+  $<HTMLInputElement>('lyrics-file').addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    show();
+    try {
+      const { text } = await decode(new Uint8Array(await file.arrayBuffer()));
+      const parsed = parse(text);
+      const { file: lrc, losses } = convert(parsed.file, 'lrc');
+      fileWarnings = [...parsed.problems, ...lossWarnings(losses)];
+      const split = splitTags(lrc.header);
+      if (split.artist) artist.value = split.artist;
+      if (split.title) title.value = split.title;
+      tags = split.others;
+      setLines(toStamps(lrc));
+      track('file_loaded', { tool: 'timed-lyrics', input_format: parsed.file.format });
+    } catch (err) {
+      show((err as Error).message);
+    }
+  });
+
+  $('find').addEventListener('click', async () => {
+    const box = $('found');
+    const use = $('use-found');
+    found = null;
+    use.hidden = true;
+    box.hidden = false;
+    if (!title.value.trim()) {
+      $('found-text').textContent = 'Type the song title first.';
+      return;
+    }
+    $('found-text').textContent = 'Searching lrclib.net...';
+    try {
+      const q = new URLSearchParams({ track_name: title.value.trim(), ...(artist.value.trim() && { artist_name: artist.value.trim() }) });
+      const res = await fetch(`https://lrclib.net/api/search?${q}`);
+      if (!res.ok) throw new Error();
+      const hit = pickLyrics(await res.json());
+      if (!hit) {
+        $('found-text').textContent = 'No lyrics found. Check the artist and title, or paste the lyrics.';
+        return;
+      }
+      found = hit.lines;
+      $('found-text').textContent = `Found ${hit.synced ? 'synced' : 'plain'} lyrics for "${hit.title}" by ${hit.artist}, ${hit.lines.filter((l) => l.text).length} lines.`;
+      use.hidden = false;
+    } catch {
+      $('found-text').textContent = 'lrclib.net could not be reached. Try again later, or paste the lyrics.';
+    }
+  });
+
+  $('use-found').addEventListener('click', () => {
+    if (!found) return;
+    fileWarnings = [];
+    setLines(found);
+    $('found').hidden = true;
+    found = null;
+  });
+
+  download.addEventListener('click', () => {
+    const text = write(fromStamps(lines, lrcHeader(artist.value, title.value, tags)));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    a.download = lrcName(artist.value, title.value, audioName);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    track('download', { tool: 'timed-lyrics', input_format: 'lrc', output_format: 'lrc' });
+  });
+
+  renderAll();
+</script>
+
+<style>
+  .editor { display: grid; gap: 24px; }
+  .inputs, .find, .shift, .transport, .found { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .hint { color: var(--graphite); font-size: 14px; }
+  .pick { position: relative; border: 1px solid var(--ink); border-radius: var(--radius); padding: 7px 16px; font-weight: 500; cursor: pointer; }
+  .pick:hover { background: var(--cream); }
+  .pick:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .pick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  audio { width: 100%; }
+  audio[hidden], [hidden] { display: none !important; }
+  .error { color: var(--error); margin: 0; }
+
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .meta label, .shift label { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--graphite); }
+  .meta input { flex: 1; min-width: 0; }
+  input:not([type='file']), textarea { padding: 8px 12px; border: 1px solid var(--ink); border-radius: var(--radius-input); background: var(--paper); color: var(--ink); font: inherit; }
+  .shift input { width: 6em; }
+  textarea { width: 100%; box-sizing: border-box; resize: vertical; line-height: 1.6; }
+
+  .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--ink); }
+  .tabs button { border: 1px solid transparent; border-bottom: 0; border-radius: var(--radius-sm) var(--radius-sm) 0 0; background: transparent; padding: 10px 20px; font: inherit; font-weight: 500; color: var(--graphite); cursor: pointer; margin-bottom: -1px; }
+  .tabs button:hover { background: var(--cream); }
+  .tabs button[aria-selected='true'] { color: var(--ink); border-color: var(--ink); background: var(--paper); }
+  .panel { display: grid; gap: 16px; }
+  .panel > p { margin: 0; }
+  kbd { font: inherit; font-size: 13px; border: 1px solid var(--ink); border-radius: 4px; padding: 0 5px; }
+
+  .quiet { border: 1px solid var(--ink); border-radius: var(--radius); background: transparent; padding: 7px 16px; color: var(--ink); font: inherit; font-weight: 500; cursor: pointer; }
+  .quiet:hover { background: var(--cream); }
+  /* The key action of the Sync tab, lifted with a thicker ink line. Sunshine is for Download and the highlighted row. */
+  .stamp { box-shadow: 0 0 0 1px var(--ink); }
+  .quiet:active, .stamp:active, .primary:active { scale: .97; }
+
+  /* Line rows are built by the script, so their selectors are global. */
+  .lines { list-style: none; margin: 0; padding: 0; max-height: min(60vh, 520px); overflow: auto; border: 1px solid var(--ink); border-radius: var(--radius-sm); font-size: 16px; }
+  .lines:empty { display: none; }
+  .lines :global(li) { display: flex; gap: 12px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--cream); }
+  .lines :global(li:last-child) { border-bottom: 0; }
+  .lines :global(.time) { flex: none; width: 5.5em; font-variant-numeric: tabular-nums; color: var(--graphite); font-size: 14px; }
+  .lines :global(.text) { flex: 1; text-align: left; background: none; border: 0; padding: 4px 0; font: inherit; color: var(--ink); cursor: pointer; }
+  .lines :global(.text.gap) { color: var(--graphite); font-style: italic; font-size: 14px; }
+  .lines :global(li[aria-current]), .lines :global(li.active) { background: var(--sun); }
+  .lines :global(li[aria-current] .time), .lines :global(li.active .time) { color: var(--ink); }
+  .lines :global(.nudge) { flex: none; width: 32px; height: 32px; border: 1px solid var(--ink); border-radius: var(--pill); background: var(--paper); font: inherit; cursor: pointer; }
+  .lines :global(.nudge:disabled) { opacity: .4; cursor: default; }
+
+  .result { display: flex; flex-direction: column; border: 1px solid var(--ink); border-radius: var(--radius-sm); overflow: clip; }
+  .result-bar { display: flex; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 12px 12px 12px 16px; }
+  #result { flex: 1; font-weight: 500; }
+  .primary { background: var(--sun); color: var(--ink); border: 0; border-radius: var(--radius); padding: 12px 24px; font-size: 16px; font-weight: 500; cursor: pointer; }
+  .primary:disabled { opacity: .5; cursor: not-allowed; }
+  .warnings { padding: 12px 16px; border-top: 1px solid var(--ink); font-size: 14px; display: grid; gap: 6px; }
+  .warnings :global(p) { margin: 0; display: flex; gap: 10px; align-items: baseline; }
+  .warnings :global(p)::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: var(--pill); background: var(--sun); border: 1px solid var(--ink); }
+
+  @media (max-width: 640px) {
+    .meta { grid-template-columns: 1fr; }
+    .tabs button { padding: 10px 12px; }
+    .result-bar { position: sticky; bottom: 0; background: var(--paper); }
+  }
+</style>

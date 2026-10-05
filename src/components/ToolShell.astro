@@ -3,7 +3,7 @@
 // The page puts its own controls in the slot and wires them up with mountTool().
 // Several files or a zip at once are a batch (ADR 0006): a row per file instead of the preview, and a zip download.
 type Props = { columns: string[]; accept?: string; hint?: string; label?: string };
-const { columns, label = 'Upload a subtitle file', accept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt,.zip', hint = 'SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, or TXT. Several files or a zip work too.' } = Astro.props;
+const { columns, label = 'Upload a subtitle file', accept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.lrc,.txt,.zip', hint = 'SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, LRC, or TXT. Several files or a zip work too.' } = Astro.props;
 
 const encodings = ['UTF-8', 'windows-1252', 'windows-1250', 'windows-1251', 'windows-1253', 'windows-1254', 'windows-1255', 'windows-1256', 'iso-8859-2', 'gbk', 'big5', 'shift_jis', 'euc-kr'];
 ---

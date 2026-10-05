@@ -5,6 +5,7 @@ import { parseAss, writeAss } from './ass.ts';
 import { parseSami, writeSami } from './sami.ts';
 import { parseMicroDvd, writeMicroDvd } from './microdvd.ts';
 import { parseMpl2, writeMpl2 } from './mpl2.ts';
+import { parseLrc, writeLrc } from './lrc.ts';
 
 // What the SRT/WebVTT parser saw in the text but doesn't keep in the file; the validator reads it.
 // Cue positions count every block with a --> line, including ones skipped for a bad timestamp.
@@ -43,6 +44,7 @@ export function detect(text: string): Format | null {
   if (/^\[Script Info\]|^Dialogue\s*:/im.test(text)) return /^\[V4 Styles\]|^ScriptType:\s*v4\.00\s*$/im.test(text) ? 'ssa' : 'ass';
   if (/<sami[\s>]/i.test(text)) return 'sami';
   if (/^\s*\d*:?\d{1,2}:\d{1,2}[,.]\d{1,3}\s*-->/m.test(text)) return 'srt';
+  if (/^\[\d+:\d{1,2}(?:[.:]\d{1,3})?\]/m.test(text)) return 'lrc';
   if (/^\{\d+\}\{\d+\}/m.test(text)) return 'microdvd';
   if (/^\[\d+\]\[\d+\]/m.test(text)) return 'mpl2';
   return null;
@@ -57,6 +59,7 @@ export function parse(input: string, { fps }: { fps?: number } = {}): ParseResul
   if (format === 'sami') return parseSami(text);
   if (format === 'microdvd') return parseMicroDvd(text, fps);
   if (format === 'mpl2') return parseMpl2(text);
+  if (format === 'lrc') return parseLrc(text);
 
   const cues: Cue[] = [];
   const problems: string[] = [];
@@ -123,6 +126,7 @@ export function write(file: SubtitleFile, format: Format = file.format, { keepLi
   if (format === 'sami') return writeSami(file);
   if (format === 'microdvd') return writeMicroDvd(file);
   if (format === 'mpl2') return writeMpl2(file);
+  if (format === 'lrc') return writeLrc(file);
   if (format === 'txt') {
     const cues = file.cues.map((c) => plainText(c.text, keepLineBreaks)).filter(Boolean);
     return cues.join(keepLineBreaks ? '\n\n' : '\n') + '\n';

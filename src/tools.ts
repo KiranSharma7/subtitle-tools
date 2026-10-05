@@ -27,7 +27,7 @@ export const tools = [
     name: 'Convert to SRT',
     href: '/convert-to-srt',
     category: 'Converters',
-    blurb: 'Convert VTT, ASS, SSA, SAMI, SUB, or MPL2 to SRT.',
+    blurb: 'Convert VTT, ASS, SSA, SAMI, SUB, MPL2, or LRC to SRT.',
   },
   {
     name: 'Convert to WebVTT',
@@ -64,5 +64,11 @@ export const tools = [
     href: '/change-subtitle-color',
     category: 'Merge and style',
     blurb: 'Change the text color of SRT, WebVTT, ASS, or SSA subtitles.',
+  },
+  {
+    name: 'Timed lyrics editor',
+    href: '/timed-lyrics',
+    category: 'Lyrics',
+    blurb: 'Sync lyrics to a song line by line and save an LRC file.',
   },
 ];

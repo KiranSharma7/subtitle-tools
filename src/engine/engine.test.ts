@@ -9,6 +9,7 @@ import { clean, defaultCleanOptions, type CleanOptions } from './clean.ts';
 import { validate, fixSafe } from './validate.ts';
 import { setColor, setPosition } from './style.ts';
 import { episodeTag, merge, pairFiles } from './merge.ts';
+import { fromStamps, toStamps } from './lrc.ts';
 import { readFile } from 'node:fs/promises';
 
 const SRT = '﻿1\r\n00:00:01,000 --> 00:00:02,500\r\n<i>Hello</i>\r\nthere\r\n\r\n2\r\n00:00:03,000 --> 00:00:04,000\r\nBye\r\n';
@@ -628,4 +629,64 @@ test('merge: webvtt cue settings lost when merge cues join a base cue are report
   const r = merge(base, extra, { mode: 'nearest' });
   assert.deepEqual(r.losses, [{ kind: 'id', cues: [1] }, { kind: 'settings', cues: [1] }]);
   assert.equal(r.file.cues[1].extras?.settings, 'align:start');
+});
+
+const LRC = '[ar:Some Artist]\n[ti:Some Song]\n[00:01.00]First line\n[00:03.50]Second line\n[00:06.00]\n[00:08.25]Last line\n';
+
+test('lrc: detected, tags kept as the header, lines end where the next one starts', () => {
+  const { file, problems } = parse(LRC);
+  assert.deepEqual(problems, []);
+  assert.equal(file.format, 'lrc');
+  assert.equal(file.header, '[ar:Some Artist]\n[ti:Some Song]');
+  // The empty [00:06.00] line ends the line before it; the last line gets 5 s.
+  assert.deepEqual(file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 3500, 'First line'], [3500, 6000, 'Second line'], [8250, 13250, 'Last line']]);
+  assert.equal(write(file), LRC);
+});
+
+test('lrc: several timestamps on one line, 3-digit and missing fractions, unreadable lines reported', () => {
+  const { file, problems } = parse('[00:05.123][00:01]Chorus\n[01:02.3]Verse\nnot a lyric line\n');
+  assert.deepEqual(file.cues.map((c) => [c.start, c.text]), [[1000, 'Chorus'], [5123, 'Chorus'], [62300, 'Verse']]);
+  assert.match(problems[0], /Line 3/);
+  assert.equal(write(file), '[00:01.00]Chorus\n[00:05.12]Chorus\n[01:02.30]Verse\n');
+});
+
+test('lrc: offset tag is applied when reading and put back when writing', () => {
+  const lrc = '[offset:+500]\n[00:02.00]A\n[00:04.00]B\n';
+  const { file } = parse(lrc);
+  assert.deepEqual(file.cues.map((c) => c.start), [1500, 3500]);
+  assert.equal(write(file), lrc);
+  assert.equal(write(shift(file, 1000).file), '[offset:+500]\n[00:03.00]A\n[00:05.00]B\n');
+});
+
+test('lrc: word timings are kept relative to the line, so a shift moves them too', () => {
+  const lrc = '[00:10.00]<00:10.00>Hello <00:10.50>big <00:11.20>world\n';
+  const { file } = parse(lrc);
+  assert.equal(file.cues[0].text, '<00:00.00>Hello <00:00.50>big <00:01.20>world');
+  assert.equal(write(file), lrc);
+  assert.equal(write(shift(file, -2000).file), '[00:08.00]<00:08.00>Hello <00:08.50>big <00:09.20>world\n');
+});
+
+test('lrc to srt: word timings and tags reported; srt to lrc: tags, line breaks and overlaps reported', () => {
+  const r = convert(parse('[ti:Song]\n[00:10.00]<00:10.00>Hello <00:10.50>world\n[00:12.00]Plain\n').file, 'srt');
+  assert.equal(write(r.file), '1\n00:00:10,000 --> 00:00:12,000\nHello world\n\n2\n00:00:12,000 --> 00:00:17,000\nPlain\n');
+  assert.deepEqual(r.losses, [{ kind: 'header', cues: [] }, { kind: 'wordTimings', cues: [1] }]);
+
+  const srt = parse('1\n00:00:01,000 --> 00:00:04,000\n<i>One</i>\ntwo\n\n2\n00:00:03,000 --> 00:00:05,000\nThree\n\n3\n00:00:07,000 --> 00:00:08,000\nFour\n').file;
+  const l = convert(srt, 'lrc');
+  assert.deepEqual(l.losses, [{ kind: 'formatting', cues: [1] }, { kind: 'lineBreaks', cues: [1] }, { kind: 'overlap', cues: [1] }]);
+  assert.equal(write(l.file), '[00:01.00]One two\n[00:03.00]Three\n[00:05.00]\n[00:07.00]Four\n[00:08.00]\n');
+  assert.equal(write(srt, 'lrc'), write(l.file));
+});
+
+test('lrc stamps: the editor model round-trips through a file', () => {
+  const file = fromStamps([{ time: 3000, text: 'B' }, { time: 1000, text: 'A' }, { time: 4000, text: '' }, { time: null, text: 'untimed' }], '[ti:T]');
+  assert.deepEqual(file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 3000, 'A'], [3000, 4000, 'B']]);
+  assert.deepEqual(toStamps(file), [{ time: 1000, text: 'A' }, { time: 3000, text: 'B' }, { time: 4000, text: '' }]);
+  assert.equal(write(file), '[ti:T]\n[00:01.00]A\n[00:03.00]B\n[00:04.00]\n');
+});
+
+test('lrc: a cue with no text left is reported when converting; multi-line text is written on one line', () => {
+  const srt = parse('1\n00:00:01,000 --> 00:00:02,000\n<i></i>\n\n2\n00:00:03,000 --> 00:00:04,000\nB\n').file;
+  assert.deepEqual(convert(srt, 'lrc').losses, [{ kind: 'emptyCue', cues: [1] }, { kind: 'formatting', cues: [1] }]);
+  assert.equal(write({ format: 'lrc', cues: [{ start: 1000, end: 6000, text: 'A\nsecond' }] }), '[00:01.00]A second\n');
 });

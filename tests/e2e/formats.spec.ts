@@ -75,3 +75,17 @@ test('convert an MPL2 file to SRT', async ({ page }) => {
   expect(d.name).toBe('sample-mpl2.srt');
   expect(d.bytes.equals(await readFile(fixture('sample-mpl2-converted.srt')))).toBe(true);
 });
+
+test('convert an LRC file to SRT with word timings reported', async ({ page }) => {
+  await page.goto('/convert-to-srt');
+  await page.getByLabel('Choose a subtitle file').setInputFiles({
+    name: 'song.lrc',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('[ar:Band]\n[00:01.00]<00:01.00>One <00:01.50>two\n[00:03.00]Three\n'),
+  });
+  await expect(page.getByText('song.lrc: 2 cues, LRC.')).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Word timings dropped: cue 1.');
+  const d = await download(page);
+  expect(d.name).toBe('song.srt');
+  expect(d.bytes.toString()).toBe('1\n00:00:01,000 --> 00:00:03,000\nOne two\n\n2\n00:00:03,000 --> 00:00:08,000\nThree\n');
+});

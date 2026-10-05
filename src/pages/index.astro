@@ -4,7 +4,7 @@ import { site } from '../site.ts';
 import { tools } from '../tools.ts';
 
 // Home page heading for each tools.ts category.
-const groups = { Convert: 'Converters', Sync: 'Syncing', 'Clean and validate': 'Fixing and cleaning', 'Merge and style': 'Merge and style' };
+const groups = { Convert: 'Converters', Sync: 'Syncing', 'Clean and validate': 'Fixing and cleaning', 'Merge and style': 'Merge and style', Lyrics: 'Lyrics' };
 ---
 
 <Layout title={`${site.name}: fix, convert and sync subtitle files`} description="Free online subtitle tools for converting, syncing, cleaning, and validating SRT, WebVTT, ASS, SSA, SAMI, SUB, and MPL2 files. Files stay in your browser.">
@@ -27,7 +27,7 @@ const groups = { Convert: 'Converters', Sync: 'Syncing', 'Clean and validate': '
   </div>
   <section class="help">
     <h2>Which subtitle files work</h2>
-    <p>Every tool reads SRT, WebVTT, ASS, SSA, SAMI, MicroDVD (.sub) and MPL2. The converters write SRT, WebVTT or plain text. When a format has something the output can't hold, like ASS positions or karaoke timing, the tool lists what was dropped before you download.</p>
+    <p>Every tool reads SRT, WebVTT, ASS, SSA, SAMI, MicroDVD (.sub), MPL2 and LRC. The converters write SRT, WebVTT or plain text, and the timed lyrics editor writes LRC. When a format has something the output can't hold, like ASS positions or karaoke timing, the tool lists what was dropped before you download.</p>
     <h2>Why files never leave your device</h2>
     <p>The tools run as code in your browser tab. Your subtitle file is read, changed and saved on your own computer, so there is no upload, no waiting on a server and no copy left behind. Subtitles for unreleased or private videos stay private.</p>
     <h2>Where to start</h2>

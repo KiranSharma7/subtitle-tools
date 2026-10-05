@@ -16,6 +16,10 @@ const lost: Record<string, string> = {
   positioning: 'Position and alignment tags',
   karaoke: 'Karaoke timing',
   formatting: 'Formatting tags (colours, fonts, fades)',
+  wordTimings: 'Word timings',
+  emptyCue: 'Cues with no text (an empty LRC line only ends the line above)',
+  lineBreaks: 'Line breaks (LRC lines are one line each)',
+  overlap: 'End times that overlap the next line (LRC lines end where the next starts)',
 };
 
 export const lossWarnings = (losses: Loss[]) =>

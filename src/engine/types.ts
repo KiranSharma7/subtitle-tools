@@ -1,5 +1,5 @@
 // txt can be written but not read: plain text has no timing.
-export type Format = 'srt' | 'vtt' | 'ass' | 'ssa' | 'sami' | 'microdvd' | 'mpl2' | 'txt';
+export type Format = 'srt' | 'vtt' | 'ass' | 'ssa' | 'sami' | 'microdvd' | 'mpl2' | 'lrc' | 'txt';
 
 export type Cue = {
   start: number; // ms
