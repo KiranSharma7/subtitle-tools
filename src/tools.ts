@@ -53,4 +53,10 @@ export const tools = [
     category: 'Merge and style',
     blurb: 'Move subtitles to the top, middle, or a corner of the screen.',
   },
+  {
+    name: 'Subtitle color changer',
+    href: '/change-subtitle-color',
+    category: 'Merge and style',
+    blurb: 'Change the text color of SRT, WebVTT, ASS, or SSA subtitles.',
+  },
 ];

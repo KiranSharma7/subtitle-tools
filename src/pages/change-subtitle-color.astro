@@ -1,0 +1,104 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+---
+
+<Layout title="Change subtitle color online" description="Change the text color of SRT, WebVTT, ASS or SSA subtitles with one color picker. Runs in your browser, nothing is uploaded.">
+  <h1>Change subtitle color</h1>
+  <p class="lede">Pick one color for all subtitle text. Useful when white text is hard to read on a bright video.</p>
+
+  <ToolShell columns={['#', 'Color', 'Text']} accept=".srt,.vtt,.ass,.ssa,.zip" hint="SRT, WebVTT, ASS or SSA. Several files or a zip work too.">
+    <div class="controls">
+      <label class="picker">Text color <input id="color" type="color" value="#ffff00" /> <span id="hex" aria-hidden="true">#ffff00</span></label>
+      <label class="chip"><input id="as-ass" type="checkbox" /> Save SRT and WebVTT as ASS</label>
+      <p class="hint">ASS is the format players are most likely to show in color.</p>
+    </div>
+  </ToolShell>
+
+  <section class="help">
+    <h2>How subtitle color is stored</h2>
+    <p>Each format keeps color in its own way. Unless you save as ASS, the download stays in the uploaded format:</p>
+    <ul>
+      <li><strong>SRT</strong> gets a <code>&lt;font color="#ffff00"&gt;</code> tag around every cue. A color that already covered the whole cue or a whole line is replaced. A color on a single word stays, and those cues are listed above the preview.</li>
+      <li><strong>WebVTT</strong> gets a <code>STYLE</code> block with a <code>::cue {'{ color }'}</code> rule. If the file already has one, only its color changes.</li>
+      <li><strong>ASS and SSA</strong> get a new <code>PrimaryColour</code> in every style. Cues that set their own color with <code>\c</code> are changed too. Outline and shadow colors stay.</li>
+    </ul>
+    <h2>Will my player show it?</h2>
+    <p>VLC, MPC-HC, mpv and most desktop players show SRT font colors. Many TVs, game consoles and streaming sticks ignore them and show white text. Browsers follow WebVTT <code>STYLE</code> blocks, but some web players and apps don't. ASS is the most reliable format for styling, so if a player ignores the color, tick <em>Save SRT and WebVTT as ASS</em>. Anything ASS can't hold, like WebVTT cue settings, is listed before you download.</p>
+    <h2>Removing colors</h2>
+    <p>To take colors out instead, use the <a href="/srt-cleaner">SRT cleaner</a> with <em>HTML tags</em> ticked. It removes <code>&lt;font&gt;</code> tags, and with <em>ASS tags</em> (under More options) it removes inline <code>\c</code> colors too.</p>
+  </section>
+
+  <Faq title="Subtitle color FAQ" items={[
+    { question: 'How do I change the color of SRT subtitles?', answer: 'Load the file, pick a color and download. Every cue gets a <font color> tag, which VLC and most desktop players show.' },
+    { question: 'Why are my subtitles still white?', answer: 'Some players, especially TVs, ignore colors in SRT files. Save the file as ASS instead, or try another player.' },
+    { question: 'Can I color only some subtitles?', answer: 'No. This tool colors every cue the same. Colors set on single words in an SRT file are kept.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/change-subtitle-position', label: 'Move the subtitles', description: 'Put them at the top, middle, or a corner.' },
+    { href: '/srt-cleaner', label: 'Remove colors and tags', description: 'Remove tags, SDH notes, and duplicate cues.' },
+    { href: '/subtitle-shifter', label: 'Fix the timing', description: 'Move every cue earlier or later.' },
+  ]} />
+</Layout>
+
+<script>
+  import { plainText, write } from '../engine/formats.ts';
+  import { convert } from '../engine/convert.ts';
+  import { setColor } from '../engine/style.ts';
+  import type { SubtitleFile } from '../engine/types.ts';
+  import { mountTool } from '../components/tool-shell.ts';
+  import { lossWarnings } from '../components/converter.ts';
+
+  const asAss = document.getElementById('as-ass') as HTMLInputElement;
+  const picker = document.getElementById('color') as HTMLInputElement;
+  const hex = document.getElementById('hex') as HTMLSpanElement;
+
+  const toAss = (file: SubtitleFile) => asAss.checked && (file.format === 'srt' || file.format === 'vtt');
+
+  // Converting first means Save as ASS sets the color in the new file's Default style.
+  function run(file: SubtitleFile) {
+    const converted = toAss(file) ? convert(file, 'ass') : { file, losses: [] };
+    return { ...setColor(converted.file, picker.value), losses: converted.losses };
+  }
+
+  const render = mountTool({
+    view({ file }, { previewLimit = 200 } = {}) {
+      const r = run(file);
+      const warnings = lossWarnings(r.losses);
+      if (r.kept.length) warnings.push(`Part of the text has its own color, which stays: cue ${r.kept.join(', ')}.`);
+      const kept = new Set(r.kept);
+      const rows = file.cues.slice(0, previewLimit).map((c, i) => ({
+        cells: [String(i + 1), kept.has(i + 1) ? `${picker.value}, part kept` : picker.value, plainText(c.text)],
+        flag: kept.has(i + 1),
+      }));
+      const n = file.cues.length;
+      return { warnings, rows, result: `${n} ${n === 1 ? 'cue' : 'cues'} colored ${picker.value}.`, total: n };
+    },
+    output: ({ file }) => write(run(file).file),
+    filename: (name, { file }) => (toAss(file) ? name.replace(/\.[^.]*$/, '') + '.ass' : name),
+  });
+
+  asAss.addEventListener('change', render);
+  picker.addEventListener('input', () => {
+    hex.textContent = picker.value;
+    render();
+  });
+</script>
+
+<style>
+  .controls { display: grid; gap: 12px; justify-items: start; }
+  .picker { display: inline-flex; align-items: center; gap: 12px; font-weight: 500; }
+  .picker input { width: 56px; height: 36px; padding: 2px; border: 1px solid var(--ink); border-radius: var(--radius-input); background: none; cursor: pointer; }
+  .picker input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .picker span { font-weight: 400; font-variant-numeric: tabular-nums; color: var(--graphite); }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--ink); border-radius: var(--pill); font-size: 16px; cursor: pointer; }
+  .chip:hover { background: var(--cream); }
+  .chip:has(:checked) { background: var(--cream); box-shadow: 0 0 0 1px var(--ink); }
+  .hint { margin: 0; font-size: 14px; color: var(--graphite); }
+  :global(.tool td:first-child) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:nth-child(2)) { white-space: nowrap; }
+  :global(.tool td:last-child) { width: 100%; }
+</style>

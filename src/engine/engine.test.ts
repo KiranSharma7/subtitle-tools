@@ -7,7 +7,7 @@ import { parseTime } from './time.ts';
 import { decode } from './decode.ts';
 import { clean, defaultCleanOptions, type CleanOptions } from './clean.ts';
 import { validate, fixSafe } from './validate.ts';
-import { setPosition } from './style.ts';
+import { setColor, setPosition } from './style.ts';
 import { readFile } from 'node:fs/promises';
 
 const SRT = '﻿1\r\n00:00:01,000 --> 00:00:02,500\r\n<i>Hello</i>\r\nthere\r\n\r\n2\r\n00:00:03,000 --> 00:00:04,000\r\nBye\r\n';
@@ -470,4 +470,49 @@ test('convert vtt to ass: header and cue settings reported, then a position can 
   assert.deepEqual(r.losses, [{ kind: 'header', cues: [] }, { kind: 'formatting', cues: [1] }, { kind: 'settings', cues: [1] }]);
   assert.equal(r.file.cues[0].text, 'Hi');
   assert.match(write(setPosition(r.file, 8).file), /\nStyle: Default,[^\n]*,8,10,10,10,1\n/);
+});
+
+test('color: srt wraps each cue in <font color>, replacing a color that covers the cue or a whole line', () => {
+  const srt = (...texts: string[]) => parse(texts.map((t, i) => `${i + 1}\n00:00:0${i + 1},000 --> 00:00:0${i + 1},500\n${t}\n`).join('\n')).file;
+  const file = srt('Plain', '{\\an8}<font color="red" face="Arial">Top</font>', '<font color=#00ff00>A</font>\n<font color="blue">B</font>', 'Say <font color="red">this</font>');
+  const r = setColor(file, '#ffcc00');
+  assert.deepEqual(r.file.cues.map((c) => c.text), [
+    '<font color="#ffcc00">Plain</font>',
+    '{\\an8}<font color="#ffcc00" face="Arial">Top</font>',
+    '<font color="#ffcc00">A\nB</font>',
+    '<font color="#ffcc00">Say <font color="red">this</font></font>',
+  ]);
+  assert.deepEqual(r.kept, [4]);
+  assert.equal(file.cues[0].text, 'Plain', 'input is not changed');
+  assert.equal(setColor(r.file, '#ffffff').file.cues[0].text, '<font color="#ffffff">Plain</font>', 'running twice does not nest');
+});
+
+test('color: webvtt gets a STYLE ::cue block, or the color in an existing ::cue rule is replaced', () => {
+  const bare = setColor(parse('WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nA\n').file, '#FFCC00').file;
+  assert.equal(write(bare), 'WEBVTT\n\nSTYLE\n::cue { color: #ffcc00; }\n\n00:00:01.000 --> 00:00:02.000\nA\n');
+  const styled = 'WEBVTT\n\nSTYLE\n::cue(.x) { color: red; }\n::cue { background-color: black; color: red; }\n\n00:00:01.000 --> 00:00:02.000\nA\n';
+  assert.equal(write(setColor(parse(styled).file, '#00ff00').file), styled.replace('color: red; }\n\n', 'color: #00ff00; }\n\n'));
+  const noColor = 'WEBVTT\n\nSTYLE\n::cue { font-size: 90%; }\n\n00:00:01.000 --> 00:00:02.000\nA\n';
+  assert.match(write(setColor(parse(noColor).file, '#00ff00').file), /font-size: 90%; }\n\nSTYLE\n::cue \{ color: #00ff00; \}\n\n00:00:01/);
+});
+
+test('color: ass changes PrimaryColour in every style (alpha kept), inline \\c and \\1c only where a cue has one', async () => {
+  const ass = (await fixture('sample.ass')).replace('&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0', '&H40FFFFFF,&H000000FF,&H00000000,&H00000000,0');
+  const r = setColor(parse(ass).file, '#ffcc00');
+  assert.deepEqual(r.kept, []);
+  assert.equal(write(r.file), ass.replace('&H40FFFFFF,', '&H4000CCFF,').replace('&H0000FFFF,', '&H0000CCFF,'));
+  const inline = setColor(parse(ass.replace('{\\i1}Hello', '{\\c&H0000FF&\\3c&HFF0000&\\i1}Hello').replace('{\\b1}', '{\\1c&HFF&\\b1}')).file, '#102030').file;
+  assert.deepEqual(inline.cues.map((c) => c.text.split('}')[0]), ['{\\c&H302010&\\3c&HFF0000&\\i1', '{\\an8\\pos(960,50)', '{\\k20']);
+  assert.match(inline.cues[2].text, /\{\\1c&H302010&\\b1\}loud/);
+});
+
+test('color: ssa writes PrimaryColour as a decimal BGR number', async () => {
+  const ssa = await fixture('sample.ssa');
+  assert.equal(write(setColor(parse(ssa).file, '#ffcc00').file), ssa.replace('Default,Arial,28,16777215,', `Default,Arial,28,${0x00ccff},`));
+});
+
+test('color: save as ass sets the Default style; other formats throw', () => {
+  const r = convert(parse('1\n00:00:01,000 --> 00:00:02,000\nHi\n').file, 'ass');
+  assert.match(write(setColor(r.file, '#ff0000').file), /\nStyle: Default,Arial,20,&H000000FF,/);
+  assert.throws(() => setColor(parse('[1][20]Hi\n').file, '#ff0000'), /SRT, WebVTT, ASS and SSA/);
 });
