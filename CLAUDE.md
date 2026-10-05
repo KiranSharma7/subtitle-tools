@@ -18,7 +18,7 @@ Static Astro site of small subtitle tools (shift, convert). Everything runs in t
 - `src/engine/`: the **engine**, plain TypeScript with no DOM code. Every tool goes through it.
   - `types.ts`: shared `SubtitleFile` / `Cue` model. Format-specific per-cue data lives in `cue.extras`, file-level data in `header` as raw text (ADR 0002).
   - `formats.ts`: `detect`, `parse`, `write`, `plainText`. Handles SRT/WebVTT/txt itself and dispatches to one file per other format (`ass.ts`, `sami.ts`, `microdvd.ts`, `mpl2.ts`). Parsers return `{ file, problems }` and don't throw.
-  - `convert.ts`: cross-format conversion (only to SRT, WebVTT, txt). Each format supplies a `*ToCommon` function that returns SRT-style text plus what was lost. Losses must always be reported, never dropped silently.
+  - `convert.ts`: cross-format conversion (only to SRT, WebVTT, txt, and ASS for the style tools' "Save as ASS"). Each format supplies a `*ToCommon` function that returns SRT-style text plus what was lost. Losses must always be reported, never dropped silently.
   - `decode.ts`: byte decoding / charset detection (jschardet). `shift.ts`, `time.ts`: re-timing and timestamp parse/format.
   - All tests are in `engine.test.ts`.
 - `src/components/`: `ToolShell.astro` is the shared upload/preview/download markup. `tool-shell.ts` `mountTool()` wires it up; each tool supplies `view` (warnings + preview rows) and `output`. `converter.ts` is the shared script for the convert pages.
@@ -27,7 +27,7 @@ Static Astro site of small subtitle tools (shift, convert). Everything runs in t
 
 ## Domain, hosting, SEO
 
-- Live as **SubtitleMate** at `https://subtitlemate.com`. Name, URL, contact email and GA4 id live in `src/site.ts`. `gaId` is still a placeholder; set it before launch.
+- Live as **SubtitleMate** at `https://subtitlemate.com`. Name, URL, contact email and GA4 id live in `src/site.ts`.
 - Hosted on Cloudflare Pages as plain static files. `.node-version` pins Node 22 for its build. `public/_headers` sets security headers. The Content-Security-Policy is not there: `security.csp` in `astro.config.mjs` writes it as a `<meta>` tag with hashes of inline scripts, so a new third-party origin (script, image, fetch) must be added there or the browser blocks it. The `site.spec.ts` CSP test catches misses. `404.astro` must exist: without a `404.html` Cloudflare serves the home page with status 200 for every bad URL.
 - `build.format: 'file'` builds `/contact.html`, which Cloudflare serves at `/contact` with no redirect. Canonical URLs have no `.html` and no trailing slash; `cleanPath()` in `site.ts` does that mapping. Keep the two in step.
 - `src/layouts/Layout.astro` sets title (`"<title> | SubtitleMate"`, home page bare), description, canonical and Open Graph tags. Every page passes `title` and `description`.
