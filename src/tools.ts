@@ -48,6 +48,12 @@ export const tools = [
     blurb: 'Read old encodings and save subtitle text as UTF-8.',
   },
   {
+    name: 'Subtitle merger',
+    href: '/merge-subtitles',
+    category: 'Merge and style',
+    blurb: 'Merge two languages into one file, or join CD1 and CD2.',
+  },
+  {
     name: 'Subtitle position changer',
     href: '/change-subtitle-position',
     category: 'Merge and style',

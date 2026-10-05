@@ -8,6 +8,7 @@ import { decode } from './decode.ts';
 import { clean, defaultCleanOptions, type CleanOptions } from './clean.ts';
 import { validate, fixSafe } from './validate.ts';
 import { setColor, setPosition } from './style.ts';
+import { episodeTag, merge, pairFiles } from './merge.ts';
 import { readFile } from 'node:fs/promises';
 
 const SRT = '﻿1\r\n00:00:01,000 --> 00:00:02,500\r\n<i>Hello</i>\r\nthere\r\n\r\n2\r\n00:00:03,000 --> 00:00:04,000\r\nBye\r\n';
@@ -515,4 +516,116 @@ test('color: save as ass sets the Default style; other formats throw', () => {
   const r = convert(parse('1\n00:00:01,000 --> 00:00:02,000\nHi\n').file, 'ass');
   assert.match(write(setColor(r.file, '#ff0000').file), /\nStyle: Default,Arial,20,&H000000FF,/);
   assert.throws(() => setColor(parse('[1][20]Hi\n').file, '#ff0000'), /SRT, WebVTT, ASS and SSA/);
+});
+
+const srtOf = (...cues: [number, number, string][]) => parse(cues.map(([s, e, t], i) => `${i + 1}\n00:00:${String(s).padStart(2, '0')},000 --> 00:00:${String(e).padStart(2, '0')},000\n${t}\n`).join('\n')).file;
+
+test('merge nearest: cues within the threshold join the base cue in time order, start snaps, end is the later', () => {
+  const base = srtOf([1, 3, 'Hello'], [10, 12, 'Bye']);
+  const extra = srtOf([1, 2, 'Hola'], [2, 4, 'amigo'], [5, 6, 'Alone'], [11, 13, 'Adiós']);
+  const r = merge(base, extra, { mode: 'nearest', threshold: 1000 });
+  assert.deepEqual(r.file.cues.map((c) => [c.start, c.end, c.text]), [
+    [1000, 4000, 'Hello\nHola\namigo'],
+    [5000, 6000, 'Alone'],
+    [10000, 13000, 'Bye\nAdiós'],
+  ]);
+  assert.deepEqual(r.joined, [1, 3]);
+  assert.deepEqual(r.losses, []);
+  assert.equal(r.file.format, 'srt');
+});
+
+test('merge nearest: a merge cue joins the nearest base cue, and only within the threshold', () => {
+  const base = srtOf([1, 2, 'A'], [3, 4, 'B']);
+  const extra = srtOf([2, 3, 'near A'], [3, 5, 'on B']);
+  // 2.4 s is 1.4 s from A and 0.6 s from B.
+  extra.cues[0].start = 2400;
+  const r = merge(base, extra, { mode: 'nearest', threshold: 500 });
+  assert.deepEqual(r.file.cues.map((c) => c.text), ['A', 'near A', 'B\non B']);
+  assert.deepEqual(merge(base, extra, { mode: 'nearest', threshold: 700 }).file.cues.map((c) => c.text), ['A', 'B\nnear A\non B']);
+});
+
+test('merge simple keeps all timings; glue shifts the merge file by the first video length and appends it', () => {
+  const base = srtOf([1, 3, 'Hello'], [10, 12, 'Bye']);
+  const extra = srtOf([1, 2, 'Hola']);
+  assert.deepEqual(merge(base, extra, { mode: 'simple' }).file.cues.map((c) => [c.start, c.text]), [[1000, 'Hello'], [1000, 'Hola'], [10000, 'Bye']]);
+  const glued = merge(base, extra, { mode: 'glue', offset: 3600000 });
+  assert.deepEqual(glued.file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 3000, 'Hello'], [10000, 12000, 'Bye'], [3601000, 3602000, 'Hola']]);
+  assert.deepEqual(glued.joined, []);
+});
+
+test('merge on top: srt {\\an8}, webvtt line:0, ass a second Top style', async () => {
+  const base = srtOf([1, 3, 'Hello']);
+  const extra = srtOf([1, 2, 'Hola'], [5, 6, 'Alone']);
+  const srt = merge(base, extra, { mode: 'nearest', threshold: 1000, top: true });
+  assert.deepEqual(srt.file.cues.map((c) => [c.start, c.end, c.text]), [[1000, 3000, 'Hello'], [1000, 3000, '{\\an8}Hola'], [5000, 6000, '{\\an8}Alone']]);
+  assert.deepEqual(srt.joined, [1, 2]);
+
+  const vttBase = parse('WEBVTT\n\n00:01.000 --> 00:03.000 align:start\nHello\n').file;
+  const vtt = merge(vttBase, extra, { mode: 'simple', top: true }).file;
+  assert.equal(vtt.cues[0].extras?.settings, 'align:start');
+  assert.match(vtt.cues[1].extras?.settings ?? '', /line:0%/);
+
+  const ass = parse(await readFile(new URL('../../tests/fixtures/sample.ass', import.meta.url), 'utf8')).file;
+  const r = merge(ass, extra, { mode: 'simple', top: true }).file;
+  assert.match(r.header ?? '', /\nStyle: Top,Arial,48,[^\n]*,8,/);
+  const added = r.cues.filter((c) => c.text === 'Hola' || c.text === 'Alone');
+  assert.equal(added.length, 2);
+  assert.ok(added.every((c) => c.extras?.style === 'Top'));
+});
+
+test('merge: other formats go through the common format and their losses are reported; base must be SRT, WebVTT, ASS or SSA', async () => {
+  const base = srtOf([1, 3, 'Hello']);
+  const ass = parse(await readFile(new URL('../../tests/fixtures/sample.ass', import.meta.url), 'utf8')).file;
+  const r = merge(base, ass, { mode: 'simple' });
+  assert.ok(r.losses.some((l) => l.kind === 'header'));
+  assert.ok(r.file.cues.every((c) => !c.text.includes('\\N')));
+  assert.throws(() => merge(parse('{1}{24}Hi\n').file, base, { mode: 'simple' }), /SRT, WebVTT, ASS or SSA/);
+
+  // ASS into ASS keeps the inline tags; the merge file's styles are lost and reported.
+  const assIn = merge(ass, ass, { mode: 'simple' });
+  assert.ok(assIn.losses.some((l) => l.kind === 'header'));
+  assert.equal(assIn.file.cues.length, ass.cues.length * 2);
+});
+
+test('merge options: remove line breaks and color each side', () => {
+  const base = srtOf([1, 3, 'Hello\nthere']);
+  const extra = srtOf([1, 2, 'Hola\namigo']);
+  const r = merge(base, extra, { mode: 'nearest', threshold: 1000, unbreakBase: true, colorMerge: '#FFFF00' });
+  assert.equal(r.file.cues[0].text, 'Hello there\n<font color="#ffff00">Hola\namigo</font>');
+
+  const vtt = merge(parse('WEBVTT\n\n00:01.000 --> 00:03.000\nHello\n').file, extra, { mode: 'simple', colorBase: '#ff0000', unbreakMerge: true }).file;
+  assert.deepEqual(vtt.cues.map((c) => c.text), ['<c.base>Hello</c>', 'Hola amigo']);
+  assert.match(vtt.header ?? '', /STYLE\n::cue\(\.base\) \{ color: #ff0000; \}/);
+});
+
+test('merge into ass: joined text uses \\N, colors are inline', () => {
+  const ass = parse('[Script Info]\nScriptType: v4.00+\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:01.00,0:00:03.00,Main,,0,0,0,,Hello\\Nthere\n').file;
+  const r = merge(ass, srtOf([1, 2, '<i>Hola</i>']), { mode: 'nearest', threshold: 1000, colorBase: '#ff0000', unbreakBase: true }).file;
+  assert.equal(r.cues[0].text, '{\\c&H0000FF&}Hello there\\N{\\r}{\\i1}Hola{\\i0}');
+  assert.equal(r.cues[0].extras?.style, 'Main');
+});
+
+test('episode tags and pairing by tag, then by filename order', () => {
+  assert.deepEqual(episodeTag('Show.S01E03.720p.srt'), { season: 1, episode: 3 });
+  assert.deepEqual(episodeTag('show 1x03 en.srt'), { season: 1, episode: 3 });
+  assert.deepEqual(episodeTag('Show_E03.srt'), { episode: 3 });
+  assert.equal(episodeTag('movie.1920x1080.srt'), null);
+  assert.equal(episodeTag('film.srt'), null);
+
+  assert.deepEqual(pairFiles(['S01E02.en.srt', 'S01E01.en.srt'], ['1x01.es.srt', '1x02.es.srt']), [1, 0]);
+  assert.deepEqual(pairFiles(['b.srt', 'a.srt', 'E05.srt'], ['y.srt', 'x.srt', 'Ep05.srt']), [0, 1, 2]);
+  assert.deepEqual(pairFiles(['a.srt', 'b.srt', 'c.srt'], ['only.srt']), [0, 0, 0]);
+  assert.deepEqual(pairFiles(['a.srt', 'b.srt', 'c.srt'], ['x.srt', 'y.srt']), [0, 1, null]);
+  // Filename order never pairs two different episodes.
+  assert.deepEqual(pairFiles(['E05.srt', 'film.srt'], ['E06.srt', 'other.srt']), [1, 0]);
+  assert.deepEqual(pairFiles(['E05.srt', 'b.srt'], ['E06.srt', 'E07.srt']), [null, 0]);
+  assert.equal(episodeTag('Show.DD5.1x264.srt'), null);
+});
+
+test('merge: webvtt cue settings lost when merge cues join a base cue are reported', () => {
+  const base = parse('WEBVTT\n\n00:01.000 --> 00:03.000\nHello\n').file;
+  const extra = parse('WEBVTT\n\nhi\n00:01.000 --> 00:02.000 align:start\nHola\n\n00:09.000 --> 00:10.000 align:start\nAlone\n').file;
+  const r = merge(base, extra, { mode: 'nearest' });
+  assert.deepEqual(r.losses, [{ kind: 'id', cues: [1] }, { kind: 'settings', cues: [1] }]);
+  assert.equal(r.file.cues[1].extras?.settings, 'align:start');
 });

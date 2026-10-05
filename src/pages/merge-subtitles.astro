@@ -1,0 +1,265 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+
+const mergeAccept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.txt,.zip';
+---
+
+<Layout title="Merge two subtitle files online" description="Merge two SRT, WebVTT, ASS or SSA subtitle files into one, for dual-language subtitles or CD1 + CD2. Pairs whole seasons by episode. Runs in your browser.">
+  <h1>Merge subtitle files</h1>
+  <p class="lede">Show two languages at once, or join the subtitles for CD1 and CD2 into one file.</p>
+
+  <ToolShell columns={['#', 'Start', 'End', 'From', 'Text']} label="Upload the base file" accept=".srt,.vtt,.ass,.ssa,.zip" hint="SRT, WebVTT, ASS or SSA. The result keeps this file's format. Several files or a zip work too.">
+    <div class="controls">
+      <div class="merge-pick">
+        <label class="pick">Choose merge file <input id="merge-file" type="file" multiple accept={mergeAccept} aria-label="Choose a merge file" /></label>
+        <span id="merge-status" class="hint">The merge file can be SRT, WebVTT, ASS, SSA, SAMI, MicroDVD or MPL2. Several files or a zip work too.</span>
+      </div>
+      <div id="merge-errors" class="merge-errors" role="alert" hidden></div>
+
+      <div id="pairs" class="pairs" hidden>
+        <table>
+          <caption>Pairs. Change any that are wrong.</caption>
+          <thead><tr><th scope="col">Base file</th><th scope="col">Merge file</th></tr></thead>
+          <tbody id="pair-rows"></tbody>
+        </table>
+      </div>
+
+      <fieldset class="modes">
+        <legend>Merge mode</legend>
+        <label class="chip"><input type="radio" name="mode" value="nearest" checked /> Nearest cue</label>
+        <label class="chip"><input type="radio" name="mode" value="simple" /> Simple</label>
+        <label class="chip"><input type="radio" name="mode" value="glue" /> Glue end-to-end</label>
+      </fieldset>
+      <p class="mode-row" data-mode="nearest">
+        <label>Join cues starting within <input id="threshold" type="number" min="0" step="100" value="1000" /> ms</label>
+        <span class="hint">A merge cue joins the base cue that starts nearest to it. Unmatched cues keep their timing.</span>
+      </p>
+      <p class="mode-row" data-mode="simple" hidden>
+        <span class="hint">Every cue keeps its own timing. Players show overlapping cues together.</span>
+      </p>
+      <p class="mode-row" data-mode="glue" hidden>
+        <label>Length of the first video <input id="cd1" placeholder="01:32:10,000" /></label>
+        <span class="hint">The merge file moves later by this much and goes after the base file. To fix the timing of one part afterwards, use the <a href="/partial-subtitle-shifter">partial shifter</a>.</span>
+      </p>
+
+      <fieldset class="options">
+        <legend>Options</legend>
+        <label class="chip"><input id="top" type="checkbox" /> Merge file on top</label>
+        <label class="chip"><input id="unbreak-base" type="checkbox" /> Remove line breaks from base</label>
+        <label class="chip"><input id="unbreak-merge" type="checkbox" /> Remove line breaks from merge</label>
+        <label class="chip"><input id="color-base-on" type="checkbox" /> Color base <input id="color-base" type="color" value="#ffffff" aria-label="Base color" /></label>
+        <label class="chip"><input id="color-merge-on" type="checkbox" /> Color merge <input id="color-merge" type="color" value="#ffff00" aria-label="Merge color" /></label>
+      </fieldset>
+    </div>
+  </ToolShell>
+
+  <section class="help">
+    <h2>How to merge two subtitle files</h2>
+    <p>Upload the <strong>base file</strong> first. Its format, styles and header are kept. Then choose the <strong>merge file</strong>, the one whose cues are added. The preview shows every cue of the result and where it came from.</p>
+    <h2>Merge modes</h2>
+    <ul>
+      <li><strong>Nearest cue</strong> is for two languages of the same video. A merge cue that starts within the threshold of a base cue joins it: the text goes under the base text, the start snaps to the base cue, and the end is the later of the two. Every joined cue is marked in the preview.</li>
+      <li><strong>Simple</strong> puts all cues of both files in one file and changes no timing.</li>
+      <li><strong>Glue end-to-end</strong> is for a film split over two files (CD1 and CD2). Type the length of the first video and the second file's cues move after it.</li>
+    </ul>
+    <h2>Dual-language subtitles</h2>
+    <p>Tick <em>Merge file on top</em> to show the second language at the top of the screen. SRT gets <code>{'{\\an8}'}</code>, WebVTT gets <code>line:0%</code>, and ASS gets a second style called Top. Colors help tell the languages apart.</p>
+    <h2>Merging a whole season</h2>
+    <p>Upload all base files at once, then all merge files. Pairs are matched by episode number (<code>S01E03</code>, <code>1x03</code> or <code>E03</code>), then by filename order, and shown in a table you can change. One merge file with many base files goes into each of them. The download is a zip.</p>
+    <h2>Different formats</h2>
+    <p>The merge file can be any format this site reads. When it isn't the base file's format, its cues are converted, and anything the base format can't hold, like ASS styles or WebVTT positions, is listed before you download.</p>
+  </section>
+
+  <Faq title="Subtitle merger FAQ" items={[
+    { question: 'How do I show two subtitle languages at once?', answer: 'Upload one language as the base file and the other as the merge file. Nearest cue mode joins lines that are spoken together. Tick Merge file on top to put the second language at the top.' },
+    { question: 'How do I join CD1 and CD2 subtitles?', answer: 'Choose Glue end-to-end and type the length of the first video. The second file is moved by that much and added at the end.' },
+    { question: 'Which format is the result?', answer: 'The base file\'s format. Upload the file whose format you want to keep as the base.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/partial-subtitle-shifter', label: 'Fix one part of the timing', description: 'Shift a section after a cut or ad break.' },
+    { href: '/change-subtitle-position', label: 'Move the subtitles', description: 'Put them at the top, middle, or a corner.' },
+    { href: '/change-subtitle-color', label: 'Change the color', description: 'One color for all subtitle text.' },
+  ]} />
+</Layout>
+
+<script>
+  import { write } from '../engine/formats.ts';
+  import { merge, pairFiles, type MergeOptions } from '../engine/merge.ts';
+  import { formatTime, parseTime } from '../engine/time.ts';
+  import type { SubtitleFile } from '../engine/types.ts';
+  import { mountTool, readSubtitles } from '../components/tool-shell.ts';
+  import { lossWarnings } from '../components/converter.ts';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const mergeInput = $<HTMLInputElement>('merge-file');
+  const mergeStatus = $('merge-status');
+  const mergeErrors = $('merge-errors');
+  const pairsBox = $('pairs');
+  const pairRows = $('pair-rows');
+  const checked = (id: string) => $<HTMLInputElement>(id).checked;
+  const value = (id: string) => $<HTMLInputElement>(id).value;
+
+  type MergeFile = { name: string; file: SubtitleFile; notes: string[] }; // notes: parser problems and how the file was read
+  let merges: MergeFile[] = [];
+  let bases: string[] = [];
+  const pairs = new Map<string, number | null>(); // base file name -> index into merges
+
+  const DEFAULT_FPS = 23.976; // CONTEXT.md: Frame rate
+  const mode = () => (document.querySelector('input[name="mode"]:checked') as HTMLInputElement).value as MergeOptions['mode'];
+
+  function options(): MergeOptions | string {
+    let offset = 0;
+    if (mode() === 'glue') {
+      const typed = value('cd1').trim();
+      const ms = parseTime(/[,.]\d+$/.test(typed) ? typed : `${typed},000`);
+      if (ms === null) return 'Type the length of the first video, like 01:32:10,000.';
+      offset = ms;
+    }
+    return {
+      mode: mode(),
+      threshold: Math.max(0, Math.round(+value('threshold') || 0)),
+      offset,
+      top: checked('top'),
+      unbreakBase: checked('unbreak-base'),
+      unbreakMerge: checked('unbreak-merge'),
+      colorBase: checked('color-base-on') ? value('color-base') : undefined,
+      colorMerge: checked('color-merge-on') ? value('color-merge') : undefined,
+    };
+  }
+
+  const paired = (name: string) => {
+    const k = pairs.get(name);
+    return k == null ? undefined : merges[k];
+  };
+
+  const render = mountTool({
+    view({ file }, { previewLimit = 200, name = '' } = {}) {
+      const t = (ms: number) => formatTime(ms, file.format === 'srt' ? ',' : '.');
+      const mergeFile = paired(name);
+      const o = options();
+      if (!mergeFile || typeof o === 'string') {
+        const rows = file.cues.slice(0, previewLimit).map((c, i) => ({ cells: [String(i + 1), t(c.start), t(c.end), 'Base', c.text] }));
+        const result = !merges.length ? 'Choose a merge file.' : !mergeFile ? 'No merge file for this file.' : 'Type the length of the first video.';
+        return { warnings: typeof o === 'string' && mergeFile ? [o] : [], rows, total: file.cues.length, result, ready: false };
+      }
+      const r = merge(file, mergeFile.file, o);
+      const warnings = [...mergeFile.notes, ...lossWarnings(r.losses)].map((w) => `${mergeFile.name}: ${w}`);
+      const lastEnd = Math.max(0, ...file.cues.map((c) => c.end));
+      if (o.mode === 'glue' && o.offset! < lastEnd) warnings.push(`The base file's last cue ends at ${t(lastEnd)}, after the first video length, so the two parts overlap.`);
+      if (r.joined.length) warnings.push(`Joined by nearest cue: cue ${r.joined.join(', ')}.`);
+      const joined = new Set(r.joined);
+      const rows = r.file.cues.slice(0, previewLimit).map((c, i) => ({
+        cells: [String(i + 1), t(c.start), t(c.end), r.from[i] === 'base' ? 'Base' : 'Merge', c.text],
+        flag: joined.has(i + 1),
+      }));
+      const n = r.file.cues.length;
+      return { warnings, rows, total: n, result: `${n} ${n === 1 ? 'cue' : 'cues'}, merged with ${mergeFile.name}.` };
+    },
+    output({ file }, name) {
+      const mergeFile = paired(name);
+      const o = options();
+      return write(mergeFile && typeof o !== 'string' ? merge(file, mergeFile.file, o).file : file);
+    },
+    loaded(names) {
+      bases = names;
+      propose();
+    },
+  });
+
+  function propose() {
+    const proposed = pairFiles(bases, merges.map((m) => m.name));
+    pairs.clear();
+    bases.forEach((b, i) => pairs.set(b, proposed[i]));
+    renderPairs();
+  }
+
+  // The table only shows when there is a choice to make.
+  function renderPairs() {
+    pairsBox.hidden = bases.length < 2 && merges.length < 2;
+    pairRows.replaceChildren(
+      ...bases.map((b) => {
+        const select = document.createElement('select');
+        select.setAttribute('aria-label', `Merge file for ${b}`);
+        select.append(new Option('No merge file', ''), ...merges.map((m, k) => new Option(m.name, String(k))));
+        select.value = String(pairs.get(b) ?? '');
+        select.addEventListener('change', () => {
+          pairs.set(b, select.value === '' ? null : +select.value);
+          render();
+        });
+        const tr = document.createElement('tr');
+        tr.append(Object.assign(document.createElement('td'), { textContent: b }), Object.assign(document.createElement('td'), {}));
+        tr.lastElementChild!.append(select);
+        return tr;
+      }),
+    );
+  }
+
+  mergeInput.addEventListener('change', async () => {
+    const list = [...(mergeInput.files ?? [])];
+    if (!list.length) return;
+    mergeStatus.textContent = 'Reading...';
+    const read = await readSubtitles(list, mergeInput.accept, DEFAULT_FPS);
+    merges = read.flatMap((r) => {
+      if (!('parsed' in r)) return [];
+      const { file, problems } = r.parsed;
+      const notes = [...problems];
+      if (r.encoding !== 'UTF-8') notes.push(`Read as ${r.encoding}.`);
+      if (file.format === 'microdvd' && !file.header) notes.push(`MicroDVD with no frame rate in the file, read at ${DEFAULT_FPS} fps.`);
+      return [{ name: r.name, file, notes }];
+    });
+    const errors = read.flatMap((r) => ('error' in r ? [`${r.name}: ${r.error}`] : []));
+    mergeErrors.replaceChildren(...errors.map((e) => Object.assign(document.createElement('p'), { textContent: e })));
+    mergeErrors.hidden = !errors.length;
+    const one = merges.length === 1 && merges[0];
+    mergeStatus.textContent = one ? `${one.name}: ${one.file.cues.length} cues.` : `${merges.length} merge files.`;
+    mergeInput.value = '';
+    propose();
+    render();
+  });
+
+  for (const r of document.querySelectorAll<HTMLInputElement>('input[name="mode"]')) {
+    r.addEventListener('change', () => {
+      for (const row of document.querySelectorAll<HTMLElement>('.mode-row')) row.hidden = row.dataset.mode !== mode();
+      render();
+    });
+  }
+  for (const id of ['threshold', 'cd1', 'top', 'unbreak-base', 'unbreak-merge', 'color-base-on', 'color-merge-on', 'color-base', 'color-merge'])
+    $(id).addEventListener('input', render);
+</script>
+
+<style>
+  .controls { display: grid; gap: 16px; justify-items: start; }
+  .merge-pick { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .pick { position: relative; border: 1px solid var(--ink); border-radius: var(--radius); padding: 7px 16px; font-weight: 500; cursor: pointer; }
+  .pick:hover { background: var(--cream); }
+  .pick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .pick:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .hint { margin: 0; font-size: 14px; color: var(--graphite); }
+  .merge-errors { color: var(--error); font-size: 14px; }
+  .merge-errors :global(p) { margin: 0; }
+  .merge-errors[hidden], .pairs[hidden], .mode-row[hidden] { display: none; }
+
+  .pairs { width: 100%; max-height: 320px; overflow: auto; border: 1px solid var(--ink); border-radius: var(--radius-sm); }
+  .pairs table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .pairs caption { text-align: left; padding: 8px 16px; font-weight: 500; }
+  .pairs th, .pairs :global(td) { text-align: left; padding: 8px 16px; border-top: 1px solid var(--cream); overflow-wrap: anywhere; }
+  .pairs th { font-weight: 500; color: var(--graphite); border-top-color: var(--ink); }
+  .pairs :global(select) { max-width: 100%; }
+
+  fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  legend { float: left; font-weight: 500; margin-right: 8px; }
+  .mode-row { margin: 0; display: grid; gap: 4px; }
+  .mode-row label { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #threshold { width: 6em; }
+  #cd1 { width: 9em; font-variant-numeric: tabular-nums; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--ink); border-radius: var(--pill); font-size: 16px; cursor: pointer; }
+  .chip:hover { background: var(--cream); }
+  .chip:has(:checked) { background: var(--cream); box-shadow: 0 0 0 1px var(--ink); }
+  .chip input[type='color'] { width: 32px; height: 24px; padding: 0; border: 1px solid var(--ink); border-radius: var(--radius-input); background: none; cursor: pointer; }
+  :global(.tool .preview td:nth-child(-n + 4)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool .preview td:last-child) { width: 100%; }
+</style>

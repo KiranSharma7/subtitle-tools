@@ -6,16 +6,18 @@ import { makeZip, readZip } from './zip.ts';
 const formatNames: Record<Format, string> = { srt: 'SRT', vtt: 'VTT', ass: 'ASS', ssa: 'SSA', sami: 'SAMI', microdvd: 'MicroDVD', mpl2: 'MPL2', txt: 'TXT' };
 
 export type Row = { cells: string[]; flag?: boolean };
-export type ViewOptions = { previewLimit?: number; encoding?: string };
+export type ViewOptions = { previewLimit?: number; encoding?: string; name?: string }; // name: the uploaded file's name
 
 export type Tool = {
   // Tool-specific warnings (parser problems are added by the shell) and preview rows.
   // summary replaces the "name: N cues, SRT." line. result is the bold line next to Download.
   // In a batch, view and output run once per file, so keep per-file state in the ParseResult, not in the closure.
-  view: (parsed: ParseResult, options?: ViewOptions) => { warnings: string[]; rows: Row[]; summary?: string; result?: string; total?: number };
-  output: (parsed: ParseResult) => string;
+  // ready: false keeps the file from downloading (the merger before a merge file is chosen).
+  view: (parsed: ParseResult, options?: ViewOptions) => { warnings: string[]; rows: Row[]; summary?: string; result?: string; total?: number; ready?: boolean };
+  output: (parsed: ParseResult, name: string) => string;
   filename?: (name: string, parsed: ParseResult) => string; // download name; defaults to the uploaded name
   parse?: (text: string) => ParseResult; // for tools that take any text, not only subtitles
+  loaded?: (names: string[]) => void; // after a file or batch is read, with every file name, before the first render
 };
 
 type Loaded = { parsed: ParseResult; encoding: string };
@@ -29,6 +31,38 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+// Zips are replaced by the files inside them that match accept. Throws when a zip can't be read.
+async function unzipAll(list: File[], accept: string): Promise<File[]> {
+  const files: File[] = [];
+  for (const f of list) {
+    if (!/\.zip$/i.test(f.name)) files.push(f);
+    else files.push(...readZip(new Uint8Array(await f.arrayBuffer()), accept).map((e) => new File([e.data as BlobPart], e.name)));
+  }
+  return files;
+}
+
+// Reads extra subtitle files outside the shell, the way the shell reads its own: for a page's second
+// file input (the merger's merge files). Each file, or the zip it came in, gets its own result.
+export async function readSubtitles(list: File[], accept: string, fps: number): Promise<({ name: string; error: string } | ({ name: string } & Loaded))[]> {
+  let files: File[];
+  try {
+    files = await unzipAll(list, accept.split(',').filter((e) => e.trim().toLowerCase() !== '.zip').join(','));
+  } catch {
+    return [{ name: list.find((f) => /\.zip$/i.test(f.name))?.name ?? '', error: 'This zip file could not be read.' }];
+  }
+  return Promise.all(files.map((file) => new Promise<{ name: string; error: string } | ({ name: string } & Loaded)>((resolve) => {
+    const worker = new Worker(new URL('./file-worker.ts', import.meta.url), { type: 'module' });
+    const done = (r: { error: string } | Loaded) => (worker.terminate(), resolve({ name: file.name, ...r }));
+    worker.onmessage = (event: MessageEvent<{ type: string; encoding?: string; parsed?: ParseResult; message?: string }>) => {
+      const m = event.data;
+      if (m.type === 'error') done({ error: m.message ?? 'The file could not be processed.' });
+      else if (m.type === 'result' && m.parsed && m.encoding) done({ parsed: m.parsed, encoding: m.encoding });
+    };
+    worker.onerror = () => done({ error: 'The file could not be processed.' });
+    worker.postMessage({ file, parseSubtitle: true, fps });
+  })));
 }
 
 // Wires up the markup from ToolShell.astro. Call the returned render() when the tool's own controls change.
@@ -144,12 +178,9 @@ export function mountTool(tool: Tool): () => void {
   async function load(list: File[]) {
     request += 1;
     const token = request;
-    const files: File[] = [];
+    let files: File[];
     try {
-      for (const f of list) {
-        if (!/\.zip$/i.test(f.name)) files.push(f);
-        else files.push(...readZip(new Uint8Array(await f.arrayBuffer()), accept).map((e) => new File([e.data as BlobPart], e.name)));
-      }
+      files = await unzipAll(list, accept);
     } catch {
       fail('This zip file could not be read.', token);
       return;
@@ -180,6 +211,7 @@ export function mountTool(tool: Tool): () => void {
       if (token !== request) return;
       parsed = result.parsed;
       encoding.value = result.encoding;
+      tool.loaded?.([name]);
       show();
       track('file_loaded', { tool: toolName, input_format: parsed.file.format });
     } catch (e) {
@@ -207,6 +239,7 @@ export function mountTool(tool: Tool): () => void {
       }
       if (token !== request) return;
     }
+    tool.loaded?.(batch.map((item) => item.file.name));
     show();
     for (const item of batch) if (item.parsed) track('file_loaded', { tool: toolName, input_format: item.parsed.file.format });
   }
@@ -232,7 +265,7 @@ export function mountTool(tool: Tool): () => void {
     if (!parsed) return;
     try {
       const { file, problems } = parsed;
-      const view = tool.view(parsed, { previewLimit: PREVIEW_LIMIT, encoding: encoding.value });
+      const view = tool.view(parsed, { previewLimit: PREVIEW_LIMIT, encoding: encoding.value, name });
       const fromFile = file.format === 'microdvd' && file.header ? `, ${file.fps} fps from the file` : '';
       $('fps-picker').hidden = file.format !== 'microdvd' || !!file.header;
       $('summary').textContent = view.summary ?? `${name}: ${file.cues.length} cues, ${formatNames[file.format]}${fromFile}.`;
@@ -240,7 +273,7 @@ export function mountTool(tool: Tool): () => void {
         ? `This is a large file (${formatBytes(sourceFile.size)}). Processing may use extra memory.`
         : '';
       largeWarning.hidden = !sourceFile || sourceFile.size < LARGE_FILE_BYTES;
-      download.disabled = false;
+      download.disabled = view.ready === false;
 
       $('result').textContent = view.result ?? 'Ready to download.';
 
@@ -275,22 +308,22 @@ export function mountTool(tool: Tool): () => void {
   // One row per file: its name, what was read and the tool's result line, then its error or warnings.
   function renderBatch() {
     const items = batch.map((item) => {
-      if (!item.parsed) return { item, detail: '', notes: [] as string[], error: item.error };
+      if (!item.parsed) return { item, detail: '', notes: [] as string[], error: item.error, ready: false };
       try {
         const { file, problems } = item.parsed;
-        const view = tool.view(item.parsed, { previewLimit: 0, encoding: item.encoding });
+        const view = tool.view(item.parsed, { previewLimit: 0, encoding: item.encoding, name: item.file.name });
         const readAs = !tool.parse && item.encoding !== 'UTF-8' ? `, read as ${item.encoding}` : '';
         const fromFile = file.format === 'microdvd' && file.header ? `, ${file.fps} fps from the file` : '';
         const detail = [view.summary ?? `${file.cues.length} cues, ${formatNames[file.format]}${readAs}${fromFile}.`, view.result].filter(Boolean).join(' ');
-        return { item, detail, notes: [...problems, ...view.warnings], error: undefined };
+        return { item, detail, notes: [...problems, ...view.warnings], error: undefined, ready: view.ready !== false };
       } catch (e) {
-        return { item, detail: '', notes: [], error: (e as Error).message };
+        return { item, detail: '', notes: [], error: (e as Error).message, ready: false };
       }
     });
 
-    batchReady = items.flatMap(({ item, error: e }) => (e || !item.parsed ? [] : [{ ...item, parsed: item.parsed }]));
+    batchReady = items.flatMap(({ item, ready: ok }) => (ok && item.parsed ? [{ ...item, parsed: item.parsed }] : []));
     const ready = batchReady.length;
-    const failed = items.length - ready;
+    const failed = items.filter((i) => i.error).length;
     $('summary').textContent = `${items.length} files${failed ? `, ${failed} could not be read` : ''}.`;
     $('fps-picker').hidden = !batch.some(({ parsed: p }) => p?.file.format === 'microdvd' && !p.file.header);
     largeWarning.hidden = true;
@@ -368,13 +401,13 @@ export function mountTool(tool: Tool): () => void {
     doneTimer = window.setTimeout(() => download.classList.remove('done'), 1500);
 
     if (!parsed) {
-      const files = ready.map((item) => ({ name: tool.filename?.(item.file.name, item.parsed) ?? item.file.name, text: tool.output(item.parsed) }));
+      const files = ready.map((item) => ({ name: tool.filename?.(item.file.name, item.parsed) ?? item.file.name, text: tool.output(item.parsed, item.file.name) }));
       for (const item of ready) track('download', { tool: toolName, input_format: item.parsed.file.format, output_format: outputFormat(item.file.name, item.parsed) });
       save(new Blob([makeZip(files) as BlobPart], { type: 'application/zip' }), 'subtitles.zip');
       return;
     }
     track('download', { tool: toolName, input_format: parsed.file.format, output_format: outputFormat(name, parsed) });
-    save(new Blob([tool.output(parsed)], { type: 'text/plain;charset=utf-8' }), tool.filename?.(name, parsed) ?? name);
+    save(new Blob([tool.output(parsed, name)], { type: 'text/plain;charset=utf-8' }), tool.filename?.(name, parsed) ?? name);
   });
 
   return render;

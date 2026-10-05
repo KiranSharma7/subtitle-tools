@@ -1,4 +1,4 @@
-import type { Cue, SubtitleFile } from './types.ts';
+import type { Cue, Format, SubtitleFile } from './types.ts';
 
 // Where cues sit on screen, numbered like a numpad and like ASS \an: 1-3 bottom, 4-6 middle, 7-9 top, left to right.
 export type Position = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
@@ -144,11 +144,19 @@ function assColor(old: string, bgr: string): string {
 
 const inlineColor = /\\(1?c)&H[0-9a-f]+&?/gi; // \c and \1c; not \2c-\4c (karaoke, outline, shadow)
 
+// #rrggbb as the BGR hex ASS uses.
+const toBgr = (color: string) => (color.slice(5, 7) + color.slice(3, 5) + color.slice(1, 3)).toUpperCase();
+
+function checkColor(color: string): string {
+  color = color.toLowerCase();
+  if (!/^#[0-9a-f]{6}$/.test(color)) throw new Error(`Not a color: ${color}`);
+  return color;
+}
+
 // Sets the text color of every cue (color is #rrggbb). Returns a new file.
 // kept: SRT cues where part of a line has its own <font color>, which still shows in that color.
 export function setColor(file: SubtitleFile, color: string): { file: SubtitleFile; kept: number[] } {
-  color = color.toLowerCase();
-  if (!/^#[0-9a-f]{6}$/.test(color)) throw new Error(`Not a color: ${color}`);
+  color = checkColor(color);
   const { format } = file;
   if (format === 'srt') {
     const cues = file.cues.map((c) => ({ ...c, text: srtCue(c.text, color) }));
@@ -157,10 +165,53 @@ export function setColor(file: SubtitleFile, color: string): { file: SubtitleFil
   }
   if (format === 'vtt') return { file: { ...file, header: vttHeader(file.header, color) }, kept: [] };
   if (format === 'ass' || format === 'ssa') {
-    const bgr = (color.slice(5, 7) + color.slice(3, 5) + color.slice(1, 3)).toUpperCase();
+    const bgr = toBgr(color);
     const header = file.header && setStyleField(file.header, 'primarycolour', (old) => assColor(old, bgr));
     const cues = file.cues.map((c) => ({ ...c, text: inBlocks(c.text, (b) => b.replace(inlineColor, `\\$1&H${bgr}&`)) }));
     return { file: { ...file, header, cues }, kept: [] };
   }
   throw new Error('Colors can only be set on SRT, WebVTT, ASS and SSA files.');
+}
+
+// Colors one cue's text inline, for tools that color some cues and not others (the merger).
+// WebVTT has no inline color: the text goes in a <c.name> span, and cueClassColor() styles the class.
+export function colorCueText(text: string, format: Format, color: string, vttClass: string): string {
+  color = checkColor(color);
+  if (format === 'srt') return srtCue(text, color);
+  if (format === 'vtt') return `<c.${vttClass}>${text}</c>`;
+  if (format === 'ass' || format === 'ssa') {
+    const bgr = toBgr(color);
+    return `{\\c&H${bgr}&}` + inBlocks(text, (b) => b.replace(inlineColor, `\\$1&H${bgr}&`));
+  }
+  throw new Error('Colors can only be set on SRT, WebVTT, ASS and SSA files.');
+}
+
+// Adds a STYLE block giving the WebVTT class its color.
+export const cueClassColor = (header: string | undefined, vttClass: string, color: string) =>
+  `${header ?? 'WEBVTT'}\n\nSTYLE\n::cue(.${vttClass}) { color: ${checkColor(color)}; }`;
+
+// Adds a copy of the first style, aligned top center, for cues that go on top (the merger).
+// Returns the new style's name, or null when the header has no style to copy.
+export function addTopStyle(header: string, ssa: boolean): { header: string; name: string } | null {
+  const lines = header.split('\n');
+  const taken = new Set(lines.flatMap((l) => /^Style\s*:\s?([^,]*)/i.exec(l)?.[1].trim() ?? []));
+  let name = 'Top';
+  for (let n = 2; taken.has(name); n++) name = `Top ${n}`;
+  let inStyles = false;
+  let fields: string[] = [];
+  for (const [i, l] of lines.entries()) {
+    if (isSection(l)) inStyles = /^\[v4\+? styles\]/i.test(l);
+    if (!inStyles) continue;
+    const format = /^Format\s*:(.*)/i.exec(l);
+    if (format) fields = format[1].split(',').map((f) => f.trim().toLowerCase());
+    const style = /^(Style\s*:\s?)(.*)$/i.exec(l);
+    if (!style) continue;
+    const values = style[2].split(',');
+    const set = (field: string, value: string) => fields.includes(field) && (values[fields.indexOf(field)] = value);
+    set('name', name);
+    set('alignment', String(ssa ? ssaAlignment(8) : 8));
+    lines.splice(i + 1, 0, style[1] + values.join(','));
+    return { header: lines.join('\n'), name };
+  }
+  return null;
 }
