@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
 <Layout title="Change subtitle color online" description="Change the text color of SRT, WebVTT, ASS or SSA subtitles with one color picker. Runs in your browser, nothing is uploaded.">
@@ -25,6 +26,7 @@ import RelatedTools from '../components/RelatedTools.astro';
       <li><strong>WebVTT</strong> gets a <code>STYLE</code> block with a <code>::cue {'{ color }'}</code> rule. If the file already has one, only its color changes.</li>
       <li><strong>ASS and SSA</strong> get a new <code>PrimaryColour</code> in every style. Cues that set their own color with <code>\c</code> are changed too. Outline and shadow colors stay.</li>
     </ul>
+    <ToolImage name="change-subtitle-color" alt="Subtitle color changer with a color picker and the cue preview" caption="Pick a color. The preview shows the cues that change." />
     <h2>Will my player show it?</h2>
     <p>VLC, MPC-HC, mpv and most desktop players show SRT font colors. Many TVs, game consoles and streaming sticks ignore them and show white text. Browsers follow WebVTT <code>STYLE</code> blocks, but some web players and apps don't. ASS is the most reliable format for styling, so if a player ignores the color, tick <em>Save SRT and WebVTT as ASS</em>. Anything ASS can't hold, like WebVTT cue settings, is listed before you download.</p>
     <h2>Removing colors</h2>

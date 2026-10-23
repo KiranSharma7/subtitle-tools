@@ -2,11 +2,12 @@
 import Layout from '../layouts/Layout.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
-<Layout title="Timed lyrics editor: make LRC files online" description="Sync lyrics to a song line by line and download an LRC file. Load MP3, WAV, OGG, FLAC or M4A audio and an existing LRC. Audio stays in your browser.">
-  <h1>Timed lyrics editor</h1>
-  <p class="lede">Play a song, tap a key as each line starts, and download synced LRC lyrics. Your audio never leaves this device.</p>
+<Layout title="LRC maker: create and edit LRC lyrics online" description="Free LRC maker and editor. Sync lyrics to a song line by line and download an LRC file. Open an existing LRC to fix it. Audio stays in your browser.">
+  <h1>LRC maker and editor</h1>
+  <p class="lede">Make an LRC file in minutes: play a song, tap a key as each line starts, and download synced lyrics. Your audio never leaves this device.</p>
 
   <section class="editor" id="editor">
     <div class="inputs">
@@ -77,8 +78,9 @@ import RelatedTools from '../components/RelatedTools.astro';
       <li>On <strong>Sync</strong>, play the song and press <kbd>R</kbd> as each line starts.</li>
       <li>On <strong>Preview</strong>, play it back, nudge any line by 0.1 seconds, then download the .lrc.</li>
     </ol>
+    <ToolImage name="lrc-maker" alt="LRC maker preview tab with timed song lyrics, each line with its timestamp and nudge buttons" caption="Synced lyrics on the Preview tab. Nudge any line by 0.1 seconds, then download the .lrc." />
     <h2>What an LRC file looks like</h2>
-    <p>Each line starts with the minute, second and hundredth of a second it appears. Tag lines at the top name the artist and title. An empty timed line ends the line before it, for instrumental breaks.</p>
+    <p>Each line starts with the minute, second and hundredth of a second it appears (the <a href="/guides/what-is-an-lrc-file">LRC file guide</a> covers every tag). Tag lines at the top name the artist and title. An empty timed line ends the line before it, for instrumental breaks.</p>
     <pre><code>[ar:Artist]
 [ti:Song title]
 [00:12.40]First line of the song
@@ -94,7 +96,7 @@ import RelatedTools from '../components/RelatedTools.astro';
     <p>The song plays straight from your device in this browser tab and is never uploaded. <em>Find lyrics online</em> sends only the artist and title to lrclib.net, a free lyrics database, and only when you press it.</p>
   </section>
 
-  <Faq title="Timed lyrics FAQ" items={[
+  <Faq title="LRC maker FAQ" items={[
     { question: 'What is an LRC file?', answer: 'A text file of song lyrics where each line starts with a timestamp like [01:02.50]. Music players use it to show the lyrics in time with the song.' },
     { question: 'Which audio files work?', answer: 'Anything your browser can play: usually MP3, WAV, OGG, FLAC, M4A and AAC.' },
     { question: 'Can I fix the timing of a whole LRC file?', answer: 'Yes. Open it, go to Preview and shift all lines earlier or later. To shift by a fixed amount without the audio, the subtitle shifter reads LRC too.' },
@@ -315,7 +317,7 @@ import RelatedTools from '../components/RelatedTools.astro';
       if (split.title) title.value = split.title;
       tags = split.others;
       setLines(toStamps(lrc));
-      track('file_loaded', { tool: 'timed-lyrics', input_format: parsed.file.format });
+      track('file_loaded', { tool: 'lrc-maker', input_format: parsed.file.format });
     } catch (err) {
       show((err as Error).message);
     }
@@ -364,7 +366,7 @@ import RelatedTools from '../components/RelatedTools.astro';
     a.download = lrcName(artist.value, title.value, audioName);
     a.click();
     URL.revokeObjectURL(a.href);
-    track('download', { tool: 'timed-lyrics', input_format: 'lrc', output_format: 'lrc' });
+    track('download', { tool: 'lrc-maker', input_format: 'lrc', output_format: 'lrc' });
   });
 
   renderAll();

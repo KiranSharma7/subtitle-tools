@@ -30,14 +30,14 @@ export const tools = [
     blurb: 'Convert VTT, ASS, SSA, SAMI, SUB, MPL2, or LRC to SRT.',
   },
   {
-    name: 'Convert to WebVTT',
-    href: '/convert-to-webvtt',
+    name: 'SRT to VTT',
+    href: '/srt-to-vtt',
     category: 'Converters',
-    blurb: 'Create WebVTT captions for HTML5 video and web players.',
+    blurb: 'Convert SRT and other subtitles to WebVTT for HTML5 video.',
   },
   {
-    name: 'Convert to plain text',
-    href: '/convert-to-plain-text',
+    name: 'SRT to TXT',
+    href: '/srt-to-txt',
     category: 'Converters',
     blurb: 'Remove timings and export the dialogue as a TXT file.',
   },
@@ -48,10 +48,22 @@ export const tools = [
     blurb: 'Make a printable PDF transcript from any subtitle file.',
   },
   {
+    name: 'SRT to Word',
+    href: '/srt-to-word',
+    category: 'Converters',
+    blurb: 'Make an editable Word document from any subtitle file.',
+  },
+  {
     name: 'UTF-8 converter',
     href: '/utf-8-converter',
     category: 'Fixing and cleaning',
     blurb: 'Read old encodings and save subtitle text as UTF-8.',
+  },
+  {
+    name: 'SRT editor',
+    href: '/srt-editor',
+    category: 'Create and edit',
+    blurb: 'Make an SRT from text, time it to your video, fix any line.',
   },
   {
     name: 'Subtitle merger',
@@ -72,9 +84,19 @@ export const tools = [
     blurb: 'Change the text color of SRT, WebVTT, ASS, or SSA subtitles.',
   },
   {
-    name: 'Timed lyrics editor',
-    href: '/timed-lyrics',
+    name: 'LRC maker',
+    href: '/lrc-maker',
     category: 'Lyrics',
     blurb: 'Sync lyrics to a song line by line and save an LRC file.',
   },
+];
+
+// One page per popular format pair (people search "vtt to srt", not "convert to SRT"). Same engine as the
+// converters above; linked from the home page and the SRT converter rather than the menu.
+export const conversions = [
+  { name: 'VTT to SRT', href: '/vtt-to-srt', blurb: 'WebVTT captions to SRT.' },
+  { name: 'ASS to SRT', href: '/ass-to-srt', blurb: 'ASS and SSA to plain SRT.' },
+  { name: 'SRT to ASS', href: '/srt-to-ass', blurb: 'SRT to a styled ASS file.' },
+  { name: 'SMI to SRT', href: '/smi-to-srt', blurb: 'SAMI (.smi) to SRT.' },
+  { name: 'SUB to SRT', href: '/sub-to-srt', blurb: 'MicroDVD (.sub) to SRT.' },
 ];

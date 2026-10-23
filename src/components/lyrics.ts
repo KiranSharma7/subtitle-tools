@@ -1,24 +1,25 @@
 import { parse } from '../engine/formats.ts';
 import { toStamps, type Stamp } from '../engine/lrc.ts';
 
-// After the lyrics text is edited: each new line takes the time of the matching old line, so adding,
-// removing or moving lines keeps the sync done so far. With the same number of lines, an edited line
-// (no match) takes the time at its position, unless that old line's time went to another line.
-export function retext(lines: Stamp[], text: string): Stamp[] {
-  const next = text.trimEnd() ? text.trimEnd().split('\n') : [];
+// After a text is edited: for each new line, the index of the old line whose timing it keeps (-1 for none).
+// Lines match by text in order, so adding, removing or moving lines keeps the sync done so far. With the
+// same number of lines, an edited line (no match) keeps the timing at its position, unless that went elsewhere.
+export function rematch(old: string[], next: string[]): number[] {
   const used = new Set<number>();
   let from = 0;
   const matched = next.map((t) => {
-    const k = lines.findIndex((l, i) => i >= from && l.text === t);
+    const k = old.findIndex((o, i) => i >= from && o === t);
     if (k < 0) return -1;
     from = k + 1;
     used.add(k);
     return k;
   });
-  return next.map((t, i) => {
-    const k = matched[i] >= 0 ? matched[i] : next.length === lines.length && !used.has(i) ? i : -1;
-    return { time: k < 0 ? null : lines[k].time, text: t };
-  });
+  return matched.map((k, i) => (k >= 0 ? k : next.length === old.length && !used.has(i) ? i : -1));
+}
+
+export function retext(lines: Stamp[], text: string): Stamp[] {
+  const next = text.trimEnd() ? text.trimEnd().split('\n') : [];
+  return rematch(lines.map((l) => l.text), next).map((k, i) => ({ time: k < 0 ? null : lines[k].time, text: next[i] }));
 }
 
 // Index of the line showing at ms: the latest start at or before it. -1 before the first line.

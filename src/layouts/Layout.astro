@@ -2,18 +2,22 @@
 import { site, cleanPath } from '../site.ts';
 import Header from '../components/Header.astro';
 import Logo from '../components/Logo.astro';
-import { tools } from '../tools.ts';
+import { tools, conversions } from '../tools.ts';
 
 interface Props {
   title: string;
   description: string;
   noindex?: boolean;
+  // Short name for the breadcrumb when the title is too long for it. Tools use their tools.ts name.
+  crumb?: string;
+  // Extra JSON-LD for the page itself, like a guide's Article.
+  schema?: Record<string, unknown>;
 }
-const { title, description, noindex } = Astro.props;
+const { title, description, noindex, crumb, schema: pageSchema } = Astro.props;
 const path = cleanPath(Astro.url.pathname);
 const fullTitle = path === '/' ? title : `${title} | ${site.name}`;
 const canonical = new URL(path, Astro.site);
-const tool = tools.find((t) => t.href === path);
+const tool = tools.find((t) => t.href === path) ?? conversions.find((t) => t.href === path);
 // Home describes the site and who runs it, each tool page describes itself as a free web app.
 const org = { '@type': 'Organization', '@id': `${site.url}/#org`, name: site.name, url: site.url, logo: `${site.url}/apple-touch-icon.png`, email: site.email, founder: { '@type': 'Person', name: site.author } };
 const schema = path === '/'
@@ -22,7 +26,16 @@ const schema = path === '/'
   ? { '@context': 'https://schema.org', '@type': 'AboutPage', url: canonical.href, mainEntity: org }
   : path === '/contact'
   ? { '@context': 'https://schema.org', '@type': 'ContactPage', url: canonical.href, mainEntity: org }
-  : tool && { '@context': 'https://schema.org', '@type': 'WebApplication', name: tool.name, description, url: canonical.href, applicationCategory: 'MultimediaApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, publisher: org };
+  : tool ? { '@context': 'https://schema.org', '@type': 'WebApplication', name: tool.name, description, url: canonical.href, applicationCategory: 'MultimediaApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, publisher: org }
+  : pageSchema && { '@context': 'https://schema.org', ...pageSchema, publisher: org };
+// Home > (Guides >) this page, for the URL line in search results.
+const trail = path === '/' ? [] : [
+  { name: site.name, url: site.url + '/' },
+  ...(path.startsWith('/guides/') ? [{ name: 'Guides', url: `${site.url}/guides` }] : []),
+  { name: tool?.name ?? crumb ?? title, url: canonical.href },
+];
+const breadcrumb = trail.length > 1 && { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: trail.map((t, i) => ({ '@type': 'ListItem', position: i + 1, name: t.name, item: t.url })) };
+const ld = (data: object) => JSON.stringify(data).replace(/</g, '\\u003c');
 ---
 
 <!doctype html>
@@ -44,7 +57,8 @@ const schema = path === '/'
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    {schema && <script type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, '\\u003c')} />}
+    {schema && <script type="application/ld+json" set:html={ld(schema)} />}
+    {breadcrumb && <script type="application/ld+json" set:html={ld(breadcrumb)} />}
     <link rel="sitemap" href="/sitemap.xml" />
     <link rel="preload" href="/fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
@@ -65,6 +79,7 @@ const schema = path === '/'
         </nav>
         <nav aria-label="Site">
           <h2>{site.name}</h2>
+          <a href="/guides">Guides</a>
           <a href="/about">About</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>

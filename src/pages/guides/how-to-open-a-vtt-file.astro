@@ -1,0 +1,55 @@
+---
+import Guide from '../../components/Guide.astro';
+---
+
+<Guide title="What is a VTT file and how to open it" crumb="How to open a VTT file" description="What a .vtt (WebVTT) file is, where it comes from (YouTube, Zoom, Teams, course sites), and how to open it as text, play it with a video, or convert it." published="2026-10-23">
+  <p>A VTT file is a <strong>WebVTT</strong> subtitle or caption file: plain text with timestamps, made for video on the web. You usually get one from somewhere online: downloaded captions, a meeting transcript, or the subtitles of an online course. Your computer may not know what to do with it, so here is how to open it for each job.</p>
+
+  <h2>What is inside a VTT file</h2>
+  <pre><code>WEBVTT
+
+00:00:01.000 --> 00:00:04.000
+Welcome to the course.
+
+00:00:04.500 --> 00:00:07.200 line:10%
+&lt;v Instructor&gt;Let's start with the basics.</code></pre>
+  <p>It always starts with <code>WEBVTT</code>. Each cue has a start and end time and its text. Some cues have settings after the time, like <code>line:10%</code> to place them near the top, and some have tags like <code>&lt;v Instructor&gt;</code> naming the speaker.</p>
+
+  <h2>Where VTT files come from</h2>
+  <ul>
+    <li><strong>Meetings:</strong> Zoom cloud recordings and Microsoft Teams meetings save their transcripts as .vtt.</li>
+    <li><strong>Online courses and video sites:</strong> caption downloads from course platforms, YouTube and Vimeo are often VTT.</li>
+    <li><strong>Web video:</strong> any site with captions on an HTML5 video player is likely serving a .vtt.</li>
+  </ul>
+
+  <h2>Open it to read the text</h2>
+  <p>A VTT file is text, so Notepad, TextEdit or any code editor opens it: right-click the file and choose <em>Open with</em>. You can also drag it into a browser tab. To read it without the timestamps and tags, turn it into a clean transcript:</p>
+  <ul>
+    <li><a href="/srt-to-txt">VTT to text</a> for a plain .txt file</li>
+    <li><a href="/srt-to-word">VTT to Word</a> for an editable .docx</li>
+    <li><a href="/convert-subtitles-to-pdf">VTT to PDF</a> for something to print or share</li>
+  </ul>
+
+  <h2>Play it with a video</h2>
+  <ul>
+    <li><strong>VLC</strong> (version 3 and newer) plays VTT: open the video, then drag the .vtt onto it or use <em>Subtitle › Add Subtitle File</em>. Naming it like the video, <code>talk.mp4</code> and <code>talk.vtt</code>, in the same folder loads it on its own.</li>
+    <li><strong>A web page:</strong> add it with <code>&lt;track src="captions.vtt" kind="subtitles" srclang="en" label="English"&gt;</code> inside the <code>&lt;video&gt;</code> element.</li>
+    <li><strong>TVs, older players and video editors</strong> often don't read VTT. Convert it to SRT, which they do.</li>
+  </ul>
+  <div class="cta"><p>Convert <a href="/vtt-to-srt">VTT to SRT</a> in your browser. Times and text stay the same, and anything SRT can't hold, like positions or speaker tags, is listed before you download.</p></div>
+
+  <h2>Fix a VTT file</h2>
+  <ul>
+    <li><strong>Out of sync:</strong> the <a href="/subtitle-shifter">subtitle shifter</a> reads and writes VTT directly.</li>
+    <li><strong>Rejected by a browser or platform:</strong> check it with the <a href="/subtitle-validator">validator</a>. A missing <code>WEBVTT</code> line or a comma in a timestamp is the usual cause.</li>
+    <li><strong>Auto-captions repeat each line:</strong> convert to SRT and run the <a href="/srt-cleaner">SRT cleaner</a> to remove the duplicates.</li>
+  </ul>
+
+  <h2>Quick answers</h2>
+  <h3>Can Windows Media Player open VTT files?</h3>
+  <p>Not reliably. Use VLC, or convert the file to SRT.</p>
+  <h3>How do I turn a Zoom or Teams transcript into a document?</h3>
+  <p>Load the .vtt into the <a href="/srt-to-word">Word converter</a>. Untick timestamps for clean text, or keep them to see when each part was said.</p>
+  <h3>What's the difference between VTT and SRT?</h3>
+  <p>VTT has a header, dots in timestamps and can position and style cues; SRT is simpler and supported almost everywhere. See <a href="/guides/srt-vs-vtt">SRT vs VTT</a>.</p>
+</Guide>

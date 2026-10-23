@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
 <Layout title="Fix garbled subtitles and convert to UTF-8" description="Fix garbled SRT and text subtitles. Pick the right source encoding, like Windows-1251, Shift-JIS, GBK or Big5, and save as UTF-8 in your browser.">
@@ -14,6 +15,7 @@ import RelatedTools from '../components/RelatedTools.astro';
   <section class="help">
     <h2>How to convert SRT to UTF-8</h2>
     <p>Upload the subtitle or text file and inspect the preview. Under <strong>Read as</strong>, try another source encoding until accents, Cyrillic, Japanese, Korean, or Chinese text looks correct.</p>
+    <ToolImage name="utf-8-converter" alt="UTF-8 converter reading a Windows-1251 Cyrillic subtitle file and showing the text correctly" caption="A Windows-1251 Russian file read correctly, ready to save as UTF-8." />
     <h2>Encodings to try</h2>
     <p>Common fixes include Windows-1252 for Western European text, Windows-1251 for Cyrillic, Shift-JIS for Japanese, GBK for Simplified Chinese, Big5 for Traditional Chinese, and EUC-KR for Korean. The <a href="https://encoding.spec.whatwg.org/#names-and-labels">WHATWG Encoding Standard</a> lists every encoding browsers can read.</p>
     <h2>Garbled text examples</h2>

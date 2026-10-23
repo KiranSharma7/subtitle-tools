@@ -3,10 +3,11 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
-<Layout title="Convert SRT to text online" description="Convert SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, or MPL2 subtitles to plain text. Remove timestamps and cue numbers in your browser.">
-  <h1>Convert SRT to plain text</h1>
+<Layout title="SRT to TXT: convert subtitles to text" description="Convert SRT to TXT online. Remove timestamps and cue numbers from SRT, VTT, ASS, SAMI, SUB or MPL2 subtitles and save the dialogue as plain text.">
+  <h1>Convert SRT to TXT</h1>
   <p class="lede">Extract a clean transcript from SRT and other subtitle files. Timings and cue numbers are removed.</p>
 
   <ToolShell columns={['#', 'Text']}>
@@ -16,6 +17,7 @@ import RelatedTools from '../components/RelatedTools.astro';
   <section class="help">
     <h2>How to convert SRT to TXT</h2>
     <p>Upload SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, or LRC. The preview keeps dialogue and removes timestamps, cue numbers, WebVTT settings, headers, and formatting tags.</p>
+    <ToolImage name="srt-to-txt" alt="SRT file converted to plain text, showing the dialogue without timestamps or cue numbers" caption="Only the dialogue is kept. Timestamps and cue numbers are removed." />
     <h2>Choose your text layout</h2>
     <p>Keep line breaks to preserve two-line cues and separate cues with a blank line. Turn it off to put each cue on one line for a compact transcript.</p>
     <pre><code>Keep line breaks:  I wanted to tell you something.
@@ -38,7 +40,7 @@ One line per cue: I wanted to tell you something. But I did not know how.</code>
     { href: '/srt-cleaner', label: 'Clean before extracting', description: 'Remove HTML tags and SDH notes, plus labels or duplicate cues.' },
     { href: '/utf-8-converter', label: 'Fix the text encoding', description: 'Repair mojibake before making a transcript.' },
     { href: '/convert-to-srt', label: 'Keep subtitle timing', description: 'Convert another subtitle format to SRT instead of plain text.' },
-    { href: '/convert-to-webvtt', label: 'Make web captions', description: 'Convert to WebVTT when you need timed captions instead.' },
+    { href: '/srt-to-vtt', label: 'Make web captions', description: 'Convert to WebVTT when you need timed captions instead.' },
   ]} />
 </Layout>
 

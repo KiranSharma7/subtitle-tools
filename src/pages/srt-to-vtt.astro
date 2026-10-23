@@ -3,17 +3,19 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
-<Layout title="SRT to WebVTT converter online" description="Convert SRT, ASS, SSA, SAMI, MicroDVD, or MPL2 subtitles to WebVTT for HTML5 video. Preview changes before download.">
-  <h1>Convert SRT to WebVTT</h1>
-  <p class="lede">Convert SRT to WebVTT for an HTML5 <code>&lt;track&gt;</code>, a web video player, or any upload that needs <code>.vtt</code>.</p>
+<Layout title="SRT to VTT converter online" description="Convert SRT to VTT (WebVTT) online for HTML5 video. ASS, SSA, SAMI, SUB and MPL2 work too. Preview every cue before download. Free, no upload.">
+  <h1>Convert SRT to VTT</h1>
+  <p class="lede">Convert SRT to a WebVTT (.vtt) file for an HTML5 <code>&lt;track&gt;</code>, a web video player, or any upload that needs <code>.vtt</code>.</p>
 
   <ToolShell columns={['#', 'Start', 'End', 'Text']} />
 
   <section class="help">
-    <h2>How to convert SRT to WebVTT</h2>
+    <h2>How to convert SRT to VTT</h2>
     <p>Upload the subtitle file, review the cue preview, and download a UTF-8 WebVTT file. The converter adds the required <code>WEBVTT</code> header.</p>
+    <ToolImage name="srt-to-vtt" alt="SRT file converted to WebVTT, with start and end times in WebVTT format in the preview" caption="The preview shows each cue with WebVTT timestamps before you download the .vtt." />
     <h2>Supported input formats</h2>
     <p>Convert SRT, ASS, SSA, SAMI, MicroDVD, MPL2, or LRC. SRT is the common choice for web captions. MicroDVD uses video frames, so select the video's frame rate when the file does not include one.</p>
     <h2>SRT and WebVTT timestamps</h2>
@@ -23,11 +25,12 @@ VTT:  00:00:12.400 --> 00:00:14.800</code></pre>
     <h2>What happens to styles?</h2>
     <p>Bold, italic, and underline can stay. ASS positions, karaoke timing, and other ASS-only styles are removed and listed because WebVTT cannot represent them the same way.</p>
     <h2>When a browser rejects the file</h2>
-    <p>Check that the download ends in <code>.vtt</code> and starts with <code>WEBVTT</code>, as the <a href="https://www.w3.org/TR/webvtt1/">W3C WebVTT specification</a> requires. If times look wrong, check the source encoding or frame rate. Then <a href="/subtitle-validator">validate the WebVTT file</a>.</p>
+    <p>Not sure which format you need? See <a href="/guides/srt-vs-vtt">SRT vs VTT</a>. Check that the download ends in <code>.vtt</code> and starts with <code>WEBVTT</code>, as the <a href="https://www.w3.org/TR/webvtt1/">W3C WebVTT specification</a> requires. If times look wrong, check the source encoding or frame rate. Then <a href="/subtitle-validator">validate the WebVTT file</a>.</p>
   </section>
 
-  <Faq title="WebVTT converter FAQ" items={[
-    { question: 'Can I convert SRT to WebVTT?', answer: 'Yes. Upload the SRT file and download a WebVTT file with the required WEBVTT header.' },
+  <Faq title="SRT to VTT FAQ" items={[
+    { question: 'How do I convert SRT to VTT?', answer: 'Upload the SRT file, check the preview and download. You get a .vtt file with the required WEBVTT header and dot-separated timestamps.' },
+    { question: 'Is VTT the same as WebVTT?', answer: 'Yes. WebVTT is the format name and .vtt is its file extension.' },
     { question: 'Why do WebVTT timestamps use dots?', answer: 'SRT uses a comma before milliseconds. WebVTT uses a period. The converter changes this for you.' },
     { question: 'Will ASS styles work in WebVTT?', answer: 'Basic bold, italic, and underline can stay. ASS positions, karaoke timing, and other ASS-only styles are removed and listed.' },
   ]} />

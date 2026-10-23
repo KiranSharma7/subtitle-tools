@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
 <Layout title="Convert subtitles to PDF online" description="Turn SRT, WebVTT, ASS and other subtitle files, or any text file, into a printable PDF transcript. Runs in your browser, nothing is uploaded.">
@@ -40,6 +41,7 @@ import RelatedTools from '../components/RelatedTools.astro';
   <section class="help">
     <h2>How to convert subtitles to PDF</h2>
     <p>Upload a subtitle file, choose the font size and page size, and download the PDF. The preview shows each cue as it will appear. Upload several files or a zip to get one PDF per file in a zip, or tick <em>Combine into one PDF</em> to put them all in one PDF, each starting on a new page.</p>
+    <ToolImage name="convert-subtitles-to-pdf" alt="Subtitles to PDF converter with layout options and a preview of the transcript" caption="Choose the layout, then download a PDF transcript." />
     <h2>What goes in the PDF</h2>
     <p>Each cue's text, in order, with its start and end time above it in grey. Turn off <em>Timestamps</em> for a clean transcript. Plain text files have no timing, so each paragraph goes in as it is.</p>
     <pre><code>00:00:01 – 00:00:04
@@ -48,7 +50,7 @@ But I did not know how.</code></pre>
     <h2>Languages and fonts</h2>
     <p>The PDF uses Noto fonts for Latin, Greek, Cyrillic, Arabic, Hebrew, Devanagari, Thai, Chinese, Japanese and Korean text. Only the fonts your file needs are downloaded, and only the characters it uses are put in the PDF, so it stays small. Chinese text with no Japanese or Korean in it is shown with the Simplified Chinese font. Arabic and Hebrew lines are right-aligned. A line that mixes right-to-left and left-to-right words may show some of them in the wrong order. Emoji and scripts not listed here are left out, and the page lists them before you download.</p>
     <h2>What gets removed?</h2>
-    <p>Formatting tags, colors, positions, ASS styles and karaoke effects are removed, the same as in the <a href="/convert-to-plain-text">plain text converter</a>. Cues with no text left are left out. The PDF is for reading and printing: it can't be turned back into a subtitle file.</p>
+    <p>Formatting tags, colors, positions, ASS styles and karaoke effects are removed, the same as in the <a href="/srt-to-txt">plain text converter</a>. Cues with no text left are left out. The PDF is for reading and printing: it can't be turned back into a subtitle file.</p>
     <h2>If the text looks wrong</h2>
     <p>If accents or non-Latin letters look garbled in the preview, pick another encoding next to <em>Read as</em>, or fix the file with the <a href="/utf-8-converter">UTF-8 converter</a>. To remove hearing-impaired notes or speaker labels first, use the <a href="/srt-cleaner">SRT cleaner</a>.</p>
   </section>
@@ -61,7 +63,7 @@ But I did not know how.</code></pre>
   ]} />
 
   <RelatedTools tools={[
-    { href: '/convert-to-plain-text', label: 'Get a text file instead', description: 'Save the dialogue as a TXT file you can edit.' },
+    { href: '/srt-to-txt', label: 'Get a text file instead', description: 'Save the dialogue as a TXT file you can edit.' },
     { href: '/srt-cleaner', label: 'Clean before printing', description: 'Remove tags, SDH notes, speaker labels and duplicate cues.' },
     { href: '/utf-8-converter', label: 'Fix the text encoding', description: 'Repair garbled accents and non-Latin text first.' },
     { href: '/subtitle-validator', label: 'Check the subtitle file', description: 'Find broken timestamps, overlaps and empty cues.' },

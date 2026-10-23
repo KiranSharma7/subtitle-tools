@@ -1,6 +1,6 @@
 # SubtitleMate
 
-> Free subtitle tools that run in your browser. Files are never uploaded. Supports SRT, WebVTT, ASS/SSA, SAMI, MicroDVD (SUB), MPL2 and plain text.
+> Free subtitle tools that run in your browser. Files are never uploaded. Reads SRT, WebVTT, ASS/SSA, SAMI, MicroDVD (SUB), MPL2 and LRC; writes SRT, WebVTT, ASS, LRC, plain text, Word and PDF.
 
 ## Syncing
 
@@ -13,11 +13,33 @@
 - [Subtitle validator](https://subtitlemate.com/subtitle-validator): Check timestamps, overlaps, numbering, and empty cues.
 - [UTF-8 converter](https://subtitlemate.com/utf-8-converter): Read old encodings and save subtitle text as UTF-8.
 
+## Create and edit
+
+- [SRT editor](https://subtitlemate.com/srt-editor): Make an SRT from text, time it to a video, edit any line.
+- [LRC maker](https://subtitlemate.com/lrc-maker): Sync lyrics to a song and save an LRC file.
+
 ## Converters
 
-- [Convert to SRT](https://subtitlemate.com/convert-to-srt): Convert VTT, ASS, SSA, SAMI, SUB, or MPL2 to SRT.
-- [Convert to WebVTT](https://subtitlemate.com/convert-to-webvtt): Create WebVTT captions for HTML5 video and web players.
-- [Convert to plain text](https://subtitlemate.com/convert-to-plain-text): Remove timings and export the dialogue as a TXT file.
+- [Convert to SRT](https://subtitlemate.com/convert-to-srt): Convert VTT, ASS, SSA, SAMI, SUB, MPL2 or LRC to SRT.
+- [VTT to SRT](https://subtitlemate.com/vtt-to-srt), [ASS to SRT](https://subtitlemate.com/ass-to-srt), [SMI to SRT](https://subtitlemate.com/smi-to-srt), [SUB to SRT](https://subtitlemate.com/sub-to-srt), [SRT to ASS](https://subtitlemate.com/srt-to-ass)
+- [SRT to VTT](https://subtitlemate.com/srt-to-vtt): Create WebVTT captions for HTML5 video and web players.
+- [SRT to TXT](https://subtitlemate.com/srt-to-txt): Remove timings and export the dialogue as a TXT file.
+- [SRT to Word](https://subtitlemate.com/srt-to-word): Make an editable .docx transcript.
+- [Convert to PDF](https://subtitlemate.com/convert-subtitles-to-pdf): Make a printable PDF transcript.
+
+## Merge and style
+
+- [Subtitle merger](https://subtitlemate.com/merge-subtitles): Merge two languages into one file, or join CD1 and CD2.
+- [Subtitle position changer](https://subtitlemate.com/change-subtitle-position): Move subtitles to the top, middle, or a corner.
+- [Subtitle color changer](https://subtitlemate.com/change-subtitle-color): Change the text color of SRT, WebVTT, ASS or SSA subtitles.
+
+## Guides
+
+- [What is an SRT file?](https://subtitlemate.com/guides/what-is-an-srt-file)
+- [SRT vs VTT](https://subtitlemate.com/guides/srt-vs-vtt)
+- [How to open a VTT file](https://subtitlemate.com/guides/how-to-open-a-vtt-file)
+- [What is an LRC file?](https://subtitlemate.com/guides/what-is-an-lrc-file)
+- [How to fix out-of-sync subtitles](https://subtitlemate.com/guides/fix-out-of-sync-subtitles)
 
 ## Optional
 

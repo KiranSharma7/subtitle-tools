@@ -1,0 +1,69 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
+---
+
+<Layout title="ASS to SRT converter online" description="Convert ASS and SSA subtitles to SRT online for free. Keeps timing, dialogue and italics, and lists every style or effect SRT can't hold. No upload.">
+  <h1>Convert ASS to SRT</h1>
+  <p class="lede">Turn Advanced SubStation Alpha (.ass) and SubStation Alpha (.ssa) subtitles into a plain SRT for any player, TV or editor.</p>
+
+  <ToolShell columns={['#', 'Start', 'End', 'Text']} label="Upload an ASS or SSA file" />
+
+  <section class="help">
+    <h2>How to convert ASS to SRT</h2>
+    <ol>
+      <li>Upload the .ass or .ssa file.</li>
+      <li>Read the list above the preview: it names every style, position or effect that SRT can't hold, with the cue numbers.</li>
+      <li>Download the .srt.</li>
+    </ol>
+    <ToolImage name="ass-to-srt" alt="ASS file converted to SRT, with the dropped header, position tag and fade listed above the cue preview" caption="Everything SRT cannot hold, like positions and fades, is listed with its cue numbers." />
+    <h2>What carries over</h2>
+    <p>Every <code>Dialogue</code> line becomes an SRT cue with the same start and end time. Line breaks (<code>\N</code>) become real line breaks, and hard spaces (<code>\h</code>) become spaces. Bold, italic and underline overrides become SRT's <code>&lt;b&gt;</code>, <code>&lt;i&gt;</code> and <code>&lt;u&gt;</code> tags. <code>Comment</code> lines are not dialogue and are left out.</p>
+    <pre><code>{'Dialogue: 0,0:00:05.20,0:00:07.90,Default,,0,0,0,,{\\i1}Wait.{\\i0}\\NOver here!'}</code></pre>
+    <pre><code>1
+00:00:05,200 --> 00:00:07,900
+&lt;i&gt;Wait.&lt;/i&gt;
+Over here!</code></pre>
+    <h2>What SRT can't keep</h2>
+    <p>ASS is a styling format. SRT is plain timed text. These have no SRT equivalent and are dropped:</p>
+    <ul>
+      <li>Styles from <code>[V4+ Styles]</code>: fonts, sizes, colours, outlines</li>
+      <li>Positions and movement: <code>\pos</code>, <code>\move</code>, <code>\an8</code></li>
+      <li>Karaoke timing: <code>\k</code>, <code>\kf</code></li>
+      <li>Fades, blur, rotation and other override tags</li>
+      <li>Layers, actor names, margins and effects</li>
+    </ul>
+    <p>Each one is listed with its cue numbers before you download, so you can see whether it matters. Signs and song lines that were placed at the top of the screen will show at the bottom in SRT.</p>
+    <h2>Anime fansub files</h2>
+    <p>Fansub ASS files often have several lines on screen at once: dialogue at the bottom, a sign translation at the top. SRT has no positions, so both show at the bottom. To keep a sign at the top in players that support it, open the SRT in the <a href="/change-subtitle-position">subtitle position changer</a> afterwards.</p>
+    <h2>If the result looks wrong</h2>
+    <p>Garbled characters mean the file isn't UTF-8: pick another encoding under <em>Read as</em>. If dialogue lines overlap after converting, the <a href="/subtitle-validator">SRT validator</a> lists them. To keep the styling instead, keep the .ass: most desktop players (VLC, mpv, MPC-HC) play it directly.</p>
+  </section>
+
+  <Faq title="ASS to SRT FAQ" items={[
+    { question: 'How do I convert ASS to SRT?', answer: 'Upload the .ass file on this page, check the list of dropped styles and the preview, then download the .srt.' },
+    { question: 'Does it work for SSA files too?', answer: 'Yes. SSA (SubStation Alpha v4) and ASS (v4+) are both read.' },
+    { question: 'Will italics survive the conversion?', answer: 'Yes. Bold, italic and underline overrides become SRT tags. Colours, fonts and positions do not.' },
+    { question: 'Why are there fewer cues than lines in my file?', answer: 'Comment lines and lines with an unreadable timestamp are skipped. Unreadable lines are listed above the preview.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/srt-to-ass', label: 'Convert SRT to ASS', description: 'Go the other way and start styling.' },
+    { href: '/srt-cleaner', label: 'Clean the SRT', description: 'Remove leftover tags, music notes and duplicate lines.' },
+    { href: '/change-subtitle-color', label: 'Add a colour back', description: 'Colour the SRT text for players that show font colours.' },
+    { href: '/convert-to-srt', label: 'Other formats to SRT', description: 'VTT, SAMI, MicroDVD, MPL2 and LRC.' },
+  ]} />
+</Layout>
+
+<script>
+  import { mountConverter } from '../components/converter.ts';
+  mountConverter('srt');
+</script>
+
+<style>
+  :global(.tool td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
+</style>

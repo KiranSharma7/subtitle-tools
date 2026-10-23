@@ -29,7 +29,7 @@ async function save(page: Page) {
 }
 
 test('sync pasted lyrics to audio with R, nudge a line, download the LRC', async ({ page }) => {
-  await page.goto('/timed-lyrics');
+  await page.goto('/lrc-maker');
   await loadAudio(page);
   await expect(page.getByLabel('Artist')).toHaveValue('The Band');
   await expect(page.getByLabel('Song title')).toHaveValue('A Song');
@@ -56,7 +56,7 @@ test('sync pasted lyrics to audio with R, nudge a line, download the LRC', async
 });
 
 test('open an LRC, edit the text keeping times, shift all, download', async ({ page }) => {
-  await page.goto('/timed-lyrics');
+  await page.goto('/lrc-maker');
   await page.getByLabel('Open a lyrics file').setInputFiles({
     name: 'old.lrc',
     mimeType: 'text/plain',
@@ -82,7 +82,7 @@ test('find lyrics online asks lrclib.net and uses the result only when asked', a
     asked = route.request().url();
     return route.fulfill({ json: [{ trackName: 'A Song', artistName: 'The Band', instrumental: false, plainLyrics: 'x', syncedLyrics: '[00:01.00] Hello\n[00:02.00] World\n' }] });
   });
-  await page.goto('/timed-lyrics');
+  await page.goto('/lrc-maker');
   await page.getByLabel('Artist').fill('The Band');
   await page.getByLabel('Song title').fill('A Song');
   await page.getByLabel('Lyrics, one line per row').fill('mine');
@@ -103,7 +103,7 @@ test('the content security policy lets the audio play and lrclib.net be asked', 
     (window as unknown as { cspViolation: (v: string) => void }).cspViolation(`${e.violatedDirective} ${e.blockedURI}`)));
   await page.route('https://lrclib.net/api/search?*', (route) => route.fulfill({ json: [] }));
 
-  await page.goto('/timed-lyrics');
+  await page.goto('/lrc-maker');
   await loadAudio(page);
   await page.getByRole('button', { name: 'Find lyrics online' }).click();
   await expect(page.getByText('No lyrics found.', { exact: false })).toBeVisible();

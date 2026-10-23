@@ -1,0 +1,82 @@
+{
+  "subtitle-shifter": {
+    "width": 1120,
+    "height": 566
+  },
+  "partial-subtitle-shifter": {
+    "width": 1120,
+    "height": 735
+  },
+  "srt-cleaner": {
+    "width": 1120,
+    "height": 434
+  },
+  "subtitle-validator": {
+    "width": 1120,
+    "height": 335
+  },
+  "convert-to-srt": {
+    "width": 1120,
+    "height": 600
+  },
+  "srt-to-vtt": {
+    "width": 1120,
+    "height": 500
+  },
+  "srt-to-txt": {
+    "width": 1120,
+    "height": 548
+  },
+  "convert-subtitles-to-pdf": {
+    "width": 1120,
+    "height": 582
+  },
+  "utf-8-converter": {
+    "width": 1120,
+    "height": 479
+  },
+  "merge-subtitles": {
+    "width": 1120,
+    "height": 760
+  },
+  "change-subtitle-position": {
+    "width": 1120,
+    "height": 709
+  },
+  "change-subtitle-color": {
+    "width": 1120,
+    "height": 643
+  },
+  "lrc-maker": {
+    "width": 1120,
+    "height": 666
+  },
+  "srt-editor": {
+    "width": 1120,
+    "height": 760
+  },
+  "srt-to-word": {
+    "width": 1120,
+    "height": 620
+  },
+  "vtt-to-srt": {
+    "width": 1120,
+    "height": 500
+  },
+  "ass-to-srt": {
+    "width": 1120,
+    "height": 600
+  },
+  "srt-to-ass": {
+    "width": 1120,
+    "height": 479
+  },
+  "smi-to-srt": {
+    "width": 1120,
+    "height": 546
+  },
+  "sub-to-srt": {
+    "width": 1120,
+    "height": 500
+  }
+}

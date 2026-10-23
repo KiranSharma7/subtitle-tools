@@ -1,0 +1,63 @@
+---
+// The frame for a page under /guides: Article schema, a visible breadcrumb, the byline and links to the other guides.
+import Layout from '../layouts/Layout.astro';
+import { site, cleanPath } from '../site.ts';
+import { guides } from '../guides.ts';
+
+type Props = { title: string; description: string; crumb: string; published: string; updated?: string };
+const { title, description, crumb, published, updated = published } = Astro.props;
+const path = cleanPath(Astro.url.pathname);
+const schema = {
+  '@type': 'TechArticle',
+  headline: title,
+  description,
+  datePublished: published,
+  dateModified: updated,
+  author: { '@type': 'Person', name: site.author },
+  mainEntityOfPage: new URL(path, Astro.site).href,
+  image: new URL('/og.png', Astro.site).href,
+};
+const date = new Date(updated).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const others = guides.filter((g) => g.href !== path);
+---
+
+<Layout title={title} description={description} crumb={crumb} schema={schema}>
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">{site.name}</a> › <a href="/guides">Guides</a></nav>
+  <article class="guide">
+    <h1>{title}</h1>
+    <p class="byline">By {site.author} · Updated <time datetime={updated}>{date}</time></p>
+    <slot />
+  </article>
+  <section class="more" aria-labelledby="more-guides">
+    <h2 id="more-guides">More guides</h2>
+    <ul>{others.map((g) => <li><a href={g.href}>{g.title}</a> <span>{g.blurb}</span></li>)}</ul>
+  </section>
+</Layout>
+
+<style>
+  .crumbs { max-width: 760px; margin: 48px auto 0; font-size: 14px; color: var(--graphite); }
+  .crumbs a { color: var(--graphite); }
+  .guide { max-width: 760px; }
+  .guide h1 { text-align: left; margin-top: 16px; font-size: clamp(36px, 5vw, 52px); }
+  .byline { color: var(--graphite); font-size: 14px; margin: 0 0 40px; }
+  .guide :global(h2) { font-size: 26px; line-height: 1.3; margin: 48px 0 12px; }
+  .guide :global(h3) { font-size: 20px; line-height: 1.4; margin: 32px 0 8px; font-weight: 500; }
+  .guide :global(p), .guide :global(li) { color: var(--graphite); font-size: 18px; line-height: 1.65; }
+  .guide :global(strong), .guide :global(code), .guide :global(a) { color: var(--ink); }
+  .guide :global(ul), .guide :global(ol) { padding-left: 24px; }
+  .guide :global(pre) { overflow-x: auto; background: var(--cream); border-radius: var(--radius-sm); padding: 16px; font-size: 15px; line-height: 1.5; }
+  .guide :global(table) { width: 100%; border-collapse: collapse; font-size: 16px; margin: 16px 0; }
+  .guide :global(th), .guide :global(td) { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--cream); }
+  .guide :global(th) { font-weight: 500; }
+  .guide :global(thead th) { border-bottom-color: var(--ink); }
+  .guide :global(td) { color: var(--graphite); }
+  .guide :global(.cta) { background: var(--sun); border: 1px solid var(--ink); border-radius: var(--radius); padding: 20px 24px; margin: 32px 0; }
+  .guide :global(.cta p) { color: var(--ink); margin: 0; }
+  .guide :global(kbd) { font: inherit; font-size: 15px; border: 1px solid var(--ink); border-radius: 4px; padding: 0 5px; }
+  .more { max-width: 760px; margin-top: 96px; border-top: 1px solid var(--ink); padding-top: 32px; }
+  .more h2 { margin: 0 0 16px; }
+  .more ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .more a { font-weight: 500; }
+  .more span { color: var(--graphite); }
+  @media (max-width: 640px) { .guide :global(table) { font-size: 14px; } .guide :global(th), .guide :global(td) { padding: 8px 6px; } }
+</style>

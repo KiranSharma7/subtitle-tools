@@ -1,0 +1,4 @@
+# Renamed pages (2026-10-23): match what people search for. 301 so links and any indexing carry over.
+/timed-lyrics /lrc-maker 301
+/convert-to-webvtt /srt-to-vtt 301
+/convert-to-plain-text /srt-to-txt 301

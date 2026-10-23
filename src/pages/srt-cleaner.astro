@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 import { defaultCleanOptions } from '../engine/clean.ts';
 
 const d = defaultCleanOptions;
@@ -53,6 +54,7 @@ const more: Row[] = [
   <section class="help">
     <h2>How to clean an SRT file</h2>
     <p>Choose cleanup rules, compare changed cues in the preview, then download. Safe formatting rules start on. Rules that may remove dialogue stay off.</p>
+    <ToolImage name="srt-cleaner" alt="SRT cleaner removing an SDH note, a speaker label and a music cue, shown as before and after columns" caption="Before and after for every changed cue: an SDH note and a music line removed, a speaker label cut." />
     <h2>What the SRT cleaner removes</h2>
     <p>Clean SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, or LRC files. Remove HTML and ASS tags, SDH descriptions, speaker labels, music cues, duplicate cues, empty cues, extra line breaks, or ALL-CAPS text.</p>
     <h2>Before and after</h2>
@@ -73,7 +75,7 @@ After:  JOHN:        (speaker labels kept)</code></pre>
 
   <RelatedTools tools={[
     { href: '/subtitle-validator', label: 'Validate the cleaned file', description: 'Find empty cues and overlap or malformed-timestamp problems.' },
-    { href: '/convert-to-plain-text', label: 'Extract dialogue', description: 'Remove all timing and formatting to make a transcript.' },
+    { href: '/srt-to-txt', label: 'Extract dialogue', description: 'Remove all timing and formatting to make a transcript.' },
     { href: '/utf-8-converter', label: 'Repair garbled text', description: 'Convert the source encoding before you clean it.' },
     { href: '/subtitle-shifter', label: 'Fix subtitle timing', description: 'Move every cue earlier or later by one offset.' },
   ]} />
@@ -101,7 +103,7 @@ After:  JOHN:        (speaker labels kept)</code></pre>
         .map((c, i) => ({ cells: [String(i + 1), c.text, r.after[i] ?? 'removed'], flag: r.after[i] !== c.text || r.changed.includes(i + 1) }))
         .filter((row) => row.flag);
       const rows = changed.length ? changed.slice(0, previewLimit) : [{ cells: ['', 'No cues change with these settings.'] }];
-      return { warnings: [], rows, result: `${r.changed.length} cues changed, ${r.removed.length} removed.`, total: changed.length };
+      return { warnings: [], rows, result: `${r.changed.length} ${r.changed.length === 1 ? 'cue' : 'cues'} changed, ${r.removed.length} removed.`, total: changed.length };
     },
     output: ({ file }) => write(clean(file, options()).file),
   });

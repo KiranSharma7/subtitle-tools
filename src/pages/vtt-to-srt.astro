@@ -1,0 +1,69 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
+---
+
+<Layout title="VTT to SRT converter online" description="Convert VTT to SRT online for free. Turn WebVTT captions from YouTube, Zoom or a web player into an SRT file. Preview every cue first. No upload.">
+  <h1>Convert VTT to SRT</h1>
+  <p class="lede">Turn a WebVTT (.vtt) caption file into an SRT that works in VLC, Plex, video editors and upload forms. The file stays on your device.</p>
+
+  <ToolShell columns={['#', 'Start', 'End', 'Text']} label="Upload a VTT file" />
+
+  <section class="help">
+    <h2>How to convert VTT to SRT</h2>
+    <ol>
+      <li>Upload the .vtt file, or drop it on the box above.</li>
+      <li>Check the preview: every cue with its new SRT start and end time.</li>
+      <li>Download the .srt. It has the same name as your file.</li>
+    </ol>
+    <ToolImage name="vtt-to-srt" alt="VTT file converted to SRT, with SRT timestamps in the cue preview" caption="A WebVTT file converted to SRT: same cues, SRT timestamps." />
+    <h2>What changes between VTT and SRT</h2>
+    <p>The two formats hold the same thing, timed lines of text, but write it differently. The converter handles each difference:</p>
+    <ul>
+      <li><strong>Header:</strong> the <code>WEBVTT</code> line at the top is removed. SRT has no header.</li>
+      <li><strong>Timestamps:</strong> WebVTT uses a dot before milliseconds, SRT a comma. Short WebVTT times like <code>01:02.500</code> get their hours added.</li>
+      <li><strong>Numbering:</strong> SRT numbers every cue from 1. WebVTT cue ids, if any, are replaced by the numbers.</li>
+      <li><strong>Text:</strong> dialogue, line breaks and bold, italic or underline stay.</li>
+    </ul>
+    <pre><code>WEBVTT
+
+00:01.000 --> 00:04.000 line:85%
+Hello there.</code></pre>
+    <pre><code>1
+00:00:01,000 --> 00:00:04,000
+Hello there.</code></pre>
+    <h2>What SRT can't keep</h2>
+    <p>Cue settings like <code>line:85%</code> or <code>align:start</code>, <code>STYLE</code> and <code>REGION</code> blocks, voice tags and colour classes have no SRT equivalent. If your file has any, they are listed above the preview with the cue numbers, before you download. Nothing is dropped without telling you.</p>
+    <h2>VTT files from YouTube, Zoom and course sites</h2>
+    <p>Auto-generated captions often repeat each line as it scrolls, or carry word-by-word timing tags like <code>&lt;00:00:01.500&gt;</code>. The timing tags are removed. If the text repeats, run the SRT through the <a href="/srt-cleaner">SRT cleaner</a> and turn on merging of duplicate lines.</p>
+    <h2>If the result looks wrong</h2>
+    <p>Accented letters showing as <code>Ã©</code> mean the file isn't UTF-8: pick another encoding under <em>Read as</em>, or use the <a href="/utf-8-converter">UTF-8 converter</a>. A player that still refuses the file usually means a broken timestamp, which the <a href="/subtitle-validator">SRT validator</a> finds. Other formats like ASS or SAMI go through the <a href="/convert-to-srt">SRT converter</a>. For more on the format, see <a href="/guides/how-to-open-a-vtt-file">how to open a VTT file</a>.</p>
+  </section>
+
+  <Faq title="VTT to SRT FAQ" items={[
+    { question: 'How do I convert a VTT file to SRT?', answer: 'Upload the .vtt file on this page, check the preview and press Download. You get an .srt with the same cue times and text.' },
+    { question: 'Is converting VTT to SRT lossless?', answer: 'Timing and text are kept exactly. WebVTT-only features like cue positions, regions and style blocks are dropped, and listed before you download.' },
+    { question: 'Can VLC play VTT subtitles?', answer: 'Recent VLC versions can, but many TV apps, older players and video editors only accept SRT. Converting avoids the problem.' },
+    { question: 'Is the file uploaded?', answer: 'No. The conversion runs in your browser tab, so the file never leaves your device.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/srt-to-vtt', label: 'Convert SRT to VTT', description: 'Go the other way, for HTML5 video and web players.' },
+    { href: '/srt-cleaner', label: 'Clean the SRT', description: 'Remove repeated lines, tags and SDH notes from auto captions.' },
+    { href: '/subtitle-shifter', label: 'Fix the timing', description: 'Move every cue earlier or later if the captions are out of sync.' },
+    { href: '/subtitle-validator', label: 'Validate the SRT', description: 'Check timestamps, numbering and overlaps.' },
+  ]} />
+</Layout>
+
+<script>
+  import { mountConverter } from '../components/converter.ts';
+  mountConverter('srt');
+</script>
+
+<style>
+  :global(.tool td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
+</style>

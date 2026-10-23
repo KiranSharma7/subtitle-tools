@@ -1,0 +1,142 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
+---
+
+<Layout title="SRT to Word: convert subtitles to DOCX" description="Convert SRT, VTT and other subtitle files to an editable Word document (.docx), with or without timestamps. Free, and nothing is uploaded.">
+  <h1>Convert SRT to Word</h1>
+  <p class="lede">Turn a subtitle file into an editable Word document (.docx) for scripts, translations, review notes and transcripts. Made on your device.</p>
+
+  <ToolShell columns={['#', 'Time', 'Text']} hint="SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, LRC, or any TXT file. Several files or a zip work too.">
+    <div class="controls">
+      <div class="selects">
+        <label>Page size
+          <select id="page">
+            <option value="a4">A4</option>
+            <option value="letter">Letter</option>
+          </select>
+        </label>
+      </div>
+      <div class="chips">
+        <label class="chip"><input id="timestamps" type="checkbox" checked /> Timestamps</label>
+        <label class="chip"><input id="gap" type="checkbox" checked /> Empty line between cues</label>
+        <label class="chip"><input id="heading" type="checkbox" checked /> File name heading</label>
+        <label class="chip" id="combine-option" hidden><input id="combine" type="checkbox" /> Combine into one document</label>
+      </div>
+    </div>
+  </ToolShell>
+
+  <section class="help">
+    <h2>How to convert SRT to Word</h2>
+    <ol>
+      <li>Upload an SRT, VTT or other subtitle file. A plain .txt file works too.</li>
+      <li>Choose whether to keep timestamps, and the page size.</li>
+      <li>Download the .docx and open it in Word, Google Docs, Pages or LibreOffice.</li>
+    </ol>
+    <p>Upload several files or a zip to get one Word document per file, or tick <em>Combine into one document</em> to put them all in one, each starting on a new page.</p>
+    <ToolImage name="srt-to-word" alt="SRT to Word converter with page size and timestamp options and a preview of each cue" caption="Choose the options, check the preview, and download an editable .docx." />
+    <h2>What the document looks like</h2>
+    <p>Each subtitle becomes a paragraph: its start and end time in small grey text, then its lines. The file name is the heading. Turn off <em>Timestamps</em> for a clean script you can edit or translate.</p>
+    <pre><code>film.srt
+
+00:00:01 – 00:00:04
+I wanted to tell you something.
+But I did not know how.</code></pre>
+    <h2>Why Word instead of a text file</h2>
+    <ul>
+      <li><strong>Review and approval:</strong> clients and editors can comment and track changes on the script.</li>
+      <li><strong>Translation:</strong> translators work in Word, and the timestamps show where each line belongs.</li>
+      <li><strong>Printing:</strong> headings, page size and spacing are set, so it prints cleanly. For a fixed layout, use the <a href="/convert-subtitles-to-pdf">PDF converter</a>.</li>
+    </ul>
+    <h2>What gets removed</h2>
+    <p>Cue numbers, formatting tags, colours, positions, ASS styles and karaoke effects are removed, the same as in the <a href="/srt-to-txt">SRT to TXT converter</a>. Arabic and Hebrew paragraphs are set right to left. A Word document can't be turned back into a subtitle file, so keep the original.</p>
+  </section>
+
+  <Faq title="SRT to Word FAQ" items={[
+    { question: 'How do I convert an SRT file to Word?', answer: 'Upload the SRT on this page, choose whether to keep timestamps, and download the .docx. It opens in Word, Google Docs, Pages and LibreOffice.' },
+    { question: 'Can I convert VTT to Word?', answer: 'Yes. WebVTT, ASS, SAMI, MicroDVD and the other formats this page reads all convert the same way.' },
+    { question: 'Can I remove the timestamps?', answer: 'Yes. Untick Timestamps to get only the dialogue, one paragraph per subtitle.' },
+    { question: 'Is my file uploaded?', answer: 'No. The Word document is made in your browser and the subtitle file never leaves your device.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/convert-subtitles-to-pdf', label: 'Convert to PDF', description: 'Make a printable transcript with a fixed layout.' },
+    { href: '/srt-to-txt', label: 'Convert to TXT', description: 'Save the dialogue as a plain text file.' },
+    { href: '/srt-cleaner', label: 'Clean first', description: 'Remove SDH notes, speaker labels and tags before exporting.' },
+    { href: '/utf-8-converter', label: 'Fix garbled text', description: 'Repair the encoding before you export.' },
+  ]} />
+</Layout>
+
+<script>
+  import { parse } from '../engine/formats.ts';
+  import { convert } from '../engine/convert.ts';
+  import type { ParseResult } from '../engine/formats.ts';
+  import { mountTool } from '../components/tool-shell.ts';
+  import { lossWarnings } from '../components/converter.ts';
+  import { cueRows } from '../components/pdf.ts';
+  import { buildDocx, type DocxOptions } from '../components/docx.ts';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const pageSize = $<HTMLSelectElement>('page');
+  const timestamps = $<HTMLInputElement>('timestamps');
+  const gap = $<HTMLInputElement>('gap');
+  const heading = $<HTMLInputElement>('heading');
+  const combine = $<HTMLInputElement>('combine');
+
+  const options = (): DocxOptions => ({ page: pageSize.value as DocxOptions['page'], heading: heading.checked, gap: gap.checked });
+  const doc = (parsed: ParseResult, name: string) => ({ title: name, cues: cueRows(parsed, timestamps.checked) });
+
+  const render = mountTool({
+    // Any text file works: what isn't a subtitle file goes in as paragraphs, split at blank lines.
+    parse(text, { fps }) {
+      try {
+        return parse(text, { fps });
+      } catch {
+        const paragraphs = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+        return { file: { format: 'txt', cues: paragraphs.map((p) => ({ start: 0, end: 0, text: p })) }, problems: [] };
+      }
+    },
+    view(parsed, { previewLimit = 200 } = {}) {
+      const { file } = parsed;
+      const cues = cueRows(parsed, timestamps.checked);
+      const warnings = file.format === 'txt' ? [] : lossWarnings(convert(file, 'txt').losses);
+      if (file.format === 'txt' && timestamps.checked) warnings.push('This is a plain text file, so the document has no timestamps.');
+      return {
+        warnings,
+        rows: cues.slice(0, previewLimit).map((c, i) => ({ cells: [String(i + 1), c.time ?? '', c.text] })),
+        total: cues.length,
+        ready: cues.length > 0,
+        result: cues.length ? undefined : 'There is no text to put in a document.',
+      };
+    },
+    output: (parsed, name) => buildDocx([doc(parsed, name)], options()),
+    mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    filename: (name) => name.replace(/\.[^.]*$/, '') + '.docx',
+    combine: () => combine.checked
+      ? async (files) => ({ name: 'subtitles.docx', data: buildDocx(files.map((f) => doc(f.parsed, f.name)), options()) })
+      : undefined,
+    loaded(names) {
+      $('combine-option').hidden = names.length < 2;
+    },
+  });
+
+  for (const control of [pageSize, timestamps, gap, heading, combine]) control.addEventListener('change', render);
+</script>
+
+<style>
+  .controls { display: grid; gap: 16px; }
+  .selects { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  .selects label { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--ink); border-radius: var(--pill); font-size: 16px; cursor: pointer; }
+  .chip[hidden] { display: none; }
+  .chip:hover { background: var(--cream); }
+  .chip:has(:checked) { background: var(--cream); box-shadow: 0 0 0 1px var(--ink); }
+  :global(.tool td:nth-child(-n + 2)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
+  /* Mobile labels each value; plain text has no time, so don't show a bare "Time" label. */
+  @media (max-width: 640px) { :global(.tool td:empty) { display: none; } }
+</style>

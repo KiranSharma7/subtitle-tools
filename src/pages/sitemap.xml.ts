@@ -4,10 +4,24 @@ import { execFileSync } from 'node:child_process';
 // Every .astro page, built at build time. Add a filter here if a page should stay out.
 const files = Object.keys(import.meta.glob('./**/*.astro')).filter((f) => f !== './404.astro');
 
+const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+
+// Cloudflare builds from a shallow clone, where every file's last commit is HEAD and every lastmod
+// would be the deploy date. Fetch the history once; if that fails, leave lastmod out rather than lie.
+const history = (() => {
+  try {
+    if (git('rev-parse', '--is-shallow-repository') === 'true') git('fetch', '--unshallow', '--quiet');
+    return git('rev-parse', '--is-shallow-repository') === 'false';
+  } catch {
+    return false;
+  }
+})();
+
 // Last commit date of the page file. Left out when git has no history for it (new file, shallow clone).
 const lastmod = (file: string) => {
+  if (!history) return '';
   try {
-    return execFileSync('git', ['log', '-1', '--format=%cs', '--', `src/pages/${file.slice(2)}`], { encoding: 'utf8' }).trim();
+    return git('log', '-1', '--format=%cs', '--', `src/pages/${file.slice(2)}`);
   } catch {
     return '';
   }

@@ -1,0 +1,65 @@
+---
+import Guide from '../../components/Guide.astro';
+---
+
+<Guide title="What is an LRC file? Synced lyrics explained" crumb="What is an LRC file?" description="What an LRC lyrics file is, how its timestamps and tags work, enhanced word-by-word LRC, which players show it, and how to make or fix one." published="2026-10-23">
+  <p>An LRC file is a lyrics file with timestamps. Music players read it to show each line of a song at the moment it's sung, the way karaoke screens do. The name is short for <em>lyrics</em>, and the files end in <code>.lrc</code>. Like subtitle files, they're plain text.</p>
+
+  <h2>What is inside an LRC file</h2>
+  <pre><code>[ar:The Night Trains]
+[ti:Rain on the Window]
+[al:Last Train Home]
+
+[00:12.40]Rain on the window, light on the stairs
+[00:16.80]Nobody knows that we are still there
+[00:21.20]Hold the last train, hold it for me
+[00:25.60]</code></pre>
+  <p>Each lyric line starts with a time in square brackets: <strong>minutes, seconds and hundredths of a second</strong>. <code>[00:16.80]</code> means 16.8 seconds into the song. A line stays on screen until the next one starts. An empty timed line, like <code>[00:25.60]</code> above, clears the screen for an instrumental part.</p>
+
+  <h2>LRC tags</h2>
+  <p>Lines at the top in the form <code>[tag:value]</code> describe the song. Players use them to match the lyrics to the track.</p>
+  <table>
+    <thead><tr><th scope="col">Tag</th><th scope="col">Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>[ar:]</code></td><td>Artist</td></tr>
+      <tr><td><code>[ti:]</code></td><td>Song title</td></tr>
+      <tr><td><code>[al:]</code></td><td>Album</td></tr>
+      <tr><td><code>[by:]</code></td><td>Who made the LRC file</td></tr>
+      <tr><td><code>[length:]</code></td><td>Length of the song</td></tr>
+      <tr><td><code>[offset:]</code></td><td>Milliseconds to shift every line; positive shows lyrics earlier</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Enhanced LRC: word by word</h2>
+  <p>Some LRC files time every word, karaoke style, with extra timestamps in angle brackets inside the line:</p>
+  <pre><code>[00:12.40]&lt;00:12.40&gt;Rain &lt;00:12.90&gt;on &lt;00:13.10&gt;the &lt;00:13.30&gt;window</code></pre>
+  <p>Players that don't support word timing still show the line normally.</p>
+
+  <h2>Which players show LRC lyrics</h2>
+  <p>Many music players and servers show synced lyrics from an LRC file, among them foobar2000, MusicBee, Poweramp, Plex and Jellyfin, though some need a setting or plugin turned on. The usual rule: give the LRC file the same name as the song and put it in the same folder.</p>
+  <pre><code>Music/The Night Trains/
+  01 Rain on the Window.mp3
+  01 Rain on the Window.lrc</code></pre>
+
+  <h2>How to make an LRC file</h2>
+  <ol>
+    <li>Get the lyrics as plain text, one line per row.</li>
+    <li>Play the song and mark the time each line starts.</li>
+    <li>Write each time in front of its line in the <code>[mm:ss.xx]</code> format and save the file as UTF-8 with the .lrc extension.</li>
+  </ol>
+  <p>Doing step 3 by hand is slow. An LRC maker records the times while you listen:</p>
+  <div class="cta"><p>The <a href="/lrc-maker">LRC maker</a> plays your song in the browser. Press <kbd>R</kbd> as each line starts, nudge any line by a tenth of a second, and download the .lrc. It can also find lyrics online by artist and title.</p></div>
+
+  <h2>Fixing an LRC file</h2>
+  <ul>
+    <li><strong>All lines early or late:</strong> open it in the <a href="/lrc-maker">LRC maker</a> and shift every line, or use the <a href="/subtitle-shifter">subtitle shifter</a>, which reads LRC too.</li>
+    <li><strong>Garbled characters:</strong> the file isn't UTF-8. The <a href="/utf-8-converter">UTF-8 converter</a> fixes it.</li>
+    <li><strong>Lyrics for a video:</strong> <a href="/convert-to-srt">convert LRC to SRT</a>. Each line ends where the next one starts.</li>
+  </ul>
+
+  <h2>Quick answers</h2>
+  <h3>What's the difference between LRC and SRT?</h3>
+  <p>An LRC line has only a start time and is one line of text; SRT subtitles have start and end times and can be two lines. LRC is for music players, SRT for video. See <a href="/guides/what-is-an-srt-file">what is an SRT file</a>.</p>
+  <h3>How do I open an LRC file?</h3>
+  <p>Any text editor shows its contents. To see the lyrics in time with the song, open the song in a player that supports LRC, with the .lrc next to it.</p>
+</Guide>

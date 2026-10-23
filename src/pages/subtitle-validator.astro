@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
 <Layout title="SRT validator and subtitle checker" description="Validate SRT and WebVTT files for bad timestamps, numbering, order, overlaps, empty cues, and missing headers. Fix safe errors in your browser.">
@@ -14,6 +15,7 @@ import RelatedTools from '../components/RelatedTools.astro';
   <section class="help">
     <h2>How to validate an SRT file</h2>
     <p>Upload a file to see each issue with its cue number and a plain-language explanation. Cue numbers refer to the order in the file, so they still point to the right line when numbering is broken.</p>
+    <ToolImage name="subtitle-validator" alt="Subtitle validator listing three problems in an SRT file: a cue out of order, an empty cue and an overlap" caption="Each problem is listed with its cue number. Safe fixes run when you download." />
     <h2>Errors this subtitle checker finds</h2>
     <ul>
       <li><strong>Bad timestamps:</strong> a time cannot be read or uses the wrong separator.</li>

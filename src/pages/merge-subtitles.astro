@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 
 const mergeAccept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.lrc,.txt,.zip';
 ---
@@ -59,6 +60,7 @@ const mergeAccept = '.srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.lrc,.txt,.zip';
   <section class="help">
     <h2>How to merge two subtitle files</h2>
     <p>Upload the <strong>base file</strong> first. Its format, styles and header are kept. Then choose the <strong>merge file</strong>, the one whose cues are added. The preview shows every cue of the result and where it came from.</p>
+    <ToolImage name="merge-subtitles" alt="Subtitle merger joining English and Spanish SRT files into dual-language cues" caption="English and Spanish merged by nearest cue: each joined cue shows both languages." />
     <h2>Merge modes</h2>
     <ul>
       <li><strong>Nearest cue</strong> is for two languages of the same video. A merge cue that starts within the threshold of a base cue joins it: the text goes under the base text, the start snaps to the base cue, and the end is the later of the two. Every joined cue is marked in the preview.</li>

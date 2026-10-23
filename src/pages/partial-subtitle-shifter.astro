@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
 <Layout title="Shift part of an SRT file" description="Fix one section of an SRT, WebVTT, ASS, SAMI, MicroDVD, or MPL2 file with a different timing offset. Files stay on your device.">
@@ -28,6 +29,7 @@ import RelatedTools from '../components/RelatedTools.astro';
     <p>Add a range for each section that needs a different offset. Type the start and end times shown in the preview. A positive value moves cues later; a negative value moves them earlier.</p>
     <pre><code>00:00:00–00:18:42   0 seconds
 00:18:42–00:42:10  -1.5 seconds</code></pre>
+    <ToolImage name="partial-subtitle-shifter" alt="Partial subtitle shifter with one range from 0:10 shifted half a second earlier, showing before and after times for each cue" caption="Only cues from 0:10 on move half a second earlier. Cues before the range keep their timing." />
     <h2>Supported subtitle formats</h2>
     <p>Use SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, or LRC. The downloaded file keeps its original format and filename.</p>
     <h2>How time ranges work</h2>

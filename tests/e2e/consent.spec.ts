@@ -28,7 +28,7 @@ test('no GA requests before Accept or after Reject, and the banner stays away', 
 
 test('after Accept, GA loads and tool events carry only tool and formats', async ({ page }) => {
   const hits = await watchGoogle(page);
-  await page.goto('/convert-to-webvtt');
+  await page.goto('/srt-to-vtt');
   await page.getByRole('button', { name: 'Accept' }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('region', { name: 'Cookie consent' })).toBeHidden();
@@ -40,8 +40,8 @@ test('after Accept, GA loads and tool events carry only tool and formats', async
 
   const events = await page.evaluate(() => (window.dataLayer as IArguments[]).map((a) => [...a]).filter((a) => a[0] === 'event'));
   expect(events).toEqual([
-    ['event', 'file_loaded', { tool: 'convert-to-webvtt', input_format: 'srt' }],
-    ['event', 'download', { tool: 'convert-to-webvtt', input_format: 'srt', output_format: 'vtt' }],
+    ['event', 'file_loaded', { tool: 'srt-to-vtt', input_format: 'srt' }],
+    ['event', 'download', { tool: 'srt-to-vtt', input_format: 'srt', output_format: 'vtt' }],
   ]);
   expect(JSON.stringify(events)).not.toContain('sample');
 });

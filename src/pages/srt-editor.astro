@@ -1,0 +1,476 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
+---
+
+<Layout title="SRT editor: create and edit SRT files online" description="Free online SRT editor and maker. Make an SRT file from text, time each line to your video, fix times and text, and download SRT or VTT. No upload.">
+  <h1>SRT editor and maker</h1>
+  <p class="lede">Make an SRT file from text, time each subtitle to your video, and fix times and text by hand. Your video never leaves this device.</p>
+
+  <section class="editor" id="editor">
+    <div class="inputs">
+      <label class="pick">Choose video <input id="video-file" type="file" accept="video/*,audio/*,.mkv" aria-label="Choose a video file" /></label>
+      <label class="pick">Open subtitle file <input id="subtitle-file" type="file" accept=".srt,.vtt,.ass,.ssa,.smi,.sami,.sub,.lrc,.txt" aria-label="Open a subtitle file" /></label>
+      <span id="video-name" class="hint">The video is optional: you need it only to time subtitles by ear. MP4 and WebM play in every browser.</span>
+    </div>
+    <div class="stage" id="stage" hidden>
+      <video id="player" controls playsinline preload="metadata"></video>
+      <p id="caption" class="caption" aria-live="off"></p>
+    </div>
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <div class="tabs" role="tablist" aria-label="Editor steps">
+      <button role="tab" id="tab-text" aria-controls="panel-text" aria-selected="true">1. Text</button>
+      <button role="tab" id="tab-timing" aria-controls="panel-timing" aria-selected="false" tabindex="-1">2. Timing</button>
+      <button role="tab" id="tab-edit" aria-controls="panel-edit" aria-selected="false" tabindex="-1">3. Edit</button>
+    </div>
+
+    <div role="tabpanel" id="panel-text" aria-labelledby="tab-text" class="panel">
+      <textarea id="rows" rows="12" aria-label="Subtitles, one per row" placeholder="Type or paste the subtitles here, one per row. Use | to break a subtitle onto two lines."></textarea>
+      <div class="row">
+        <button id="auto" class="quiet" type="button">Time automatically</button>
+        <span class="hint">No video? This times every untimed subtitle by reading speed, one after another. Fix any of them on Edit.</span>
+      </div>
+    </div>
+
+    <div role="tabpanel" id="panel-timing" aria-labelledby="tab-timing" class="panel" hidden>
+      <p class="hint">Play the video and press <kbd>R</kbd> (or Start line) as each subtitle should appear. The next <kbd>R</kbd> ends it and starts the next one. Press <kbd>E</kbd> to end a subtitle early, before a pause. <kbd>Space</kbd> plays and pauses, <kbd>←</kbd> <kbd>→</kbd> seek 5 seconds, <kbd>↑</kbd> <kbd>↓</kbd> pick the subtitle.</p>
+      <div class="row">
+        <button class="quiet" type="button" data-seek="-5">−5 s</button>
+        <button class="quiet" type="button" id="play">Play</button>
+        <button class="quiet" type="button" data-seek="5">+5 s</button>
+        <button class="quiet stamp" type="button" id="start-line">Start line (R)</button>
+        <button class="quiet" type="button" id="end-line">End line (E)</button>
+      </div>
+      <ol id="timing-lines" class="lines"></ol>
+    </div>
+
+    <div role="tabpanel" id="panel-edit" aria-labelledby="tab-edit" class="panel" hidden>
+      <div class="row">
+        <label class="inline">Shift all by <input id="shift" type="number" step="0.1" value="0" /> s</label>
+        <button id="apply-shift" class="quiet" type="button">Apply</button>
+        <span class="hint">Negative moves subtitles earlier. Times take 00:01:02,500, 1:02.5 or 62.5.</span>
+      </div>
+      <div class="table-wrap">
+        <table class="cues">
+          <thead><tr><th scope="col">#</th><th scope="col">Start</th><th scope="col">End</th><th scope="col">Text</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="cue-rows"></tbody>
+        </table>
+      </div>
+      <div class="row"><button id="add" class="quiet" type="button">Add subtitle</button></div>
+    </div>
+
+    <div class="result">
+      <div class="result-bar">
+        <strong id="result">No subtitles yet.</strong>
+        <label class="inline">Save as
+          <select id="format"><option value="srt">SRT</option><option value="vtt">WebVTT</option></select>
+        </label>
+        <button id="download" class="primary" disabled>Download</button>
+      </div>
+      <div id="warnings" class="warnings" role="status" hidden></div>
+    </div>
+  </section>
+
+  <section class="help">
+    <h2>How to make an SRT file</h2>
+    <p>There are three ways, depending on what you have:</p>
+    <ol>
+      <li><strong>Text and a video:</strong> paste the text on <strong>Text</strong>, choose the video, and on <strong>Timing</strong> press <kbd>R</kbd> as each subtitle should appear. Then download.</li>
+      <li><strong>Text only:</strong> paste the text and press <strong>Time automatically</strong>. Each subtitle gets enough time to read, one after another. Adjust the times on <strong>Edit</strong> if you know them.</li>
+      <li><strong>An existing file:</strong> open the SRT, VTT, ASS or other subtitle file, then fix text or times on <strong>Edit</strong>, or retime lines on <strong>Timing</strong>.</li>
+    </ol>
+    <ToolImage name="srt-editor" alt="SRT editor Edit tab with start time, end time and text fields for each subtitle, and a Download button with SRT or WebVTT" caption="The Edit tab: change any start or end time or text, delete lines or add new ones, then download." />
+    <h2>What an SRT file looks like</h2>
+    <p>An SRT file is plain text. Each subtitle has a number, a start and end time, and one or two lines of text, followed by a blank line. Times are hours, minutes, seconds and milliseconds, with a comma before the milliseconds.</p>
+    <pre><code>1
+00:00:12,400 --> 00:00:14,800
+Is the coffee still warm?
+
+2
+00:00:15,200 --> 00:00:18,000
+Barely.
+You took your time.</code></pre>
+    <p>The <a href="/guides/what-is-an-srt-file">SRT file guide</a> explains each part. You could type that in Notepad, but the numbering, the time format and the blank lines are easy to get wrong. This editor writes them for you.</p>
+    <h2>Good subtitles are easy to read</h2>
+    <ul>
+      <li>Keep each line under about 42 characters, and each subtitle to two lines. Use <code>|</code> on the Text tab to break a long subtitle in two.</li>
+      <li>Leave each subtitle up long enough to read: about 15 characters a second, and at least one second. <strong>Time automatically</strong> uses that speed.</li>
+      <li>Split at natural pauses, not in the middle of a phrase.</li>
+    </ul>
+    <h2>Which videos work</h2>
+    <p>The video plays in your browser, so it needs a format your browser can play: MP4 (H.264) and WebM work everywhere, and Chrome and Edge play many MKV files. If yours won't play, you can still time by ear with an MP3 of the audio, or use <strong>Time automatically</strong>. Only the subtitle file is downloaded. The video is never changed.</p>
+    <h2>Your video stays private</h2>
+    <p>The video plays from your own device in this browser tab and is never uploaded, so this works for unreleased and private videos. Closing the tab clears everything.</p>
+  </section>
+
+  <Faq title="SRT editor FAQ" items={[
+    { question: 'How do I make an SRT file?', answer: 'Paste the text on the Text tab, one subtitle per row. Then time it to your video on the Timing tab, or press Time automatically, and download the .srt.' },
+    { question: 'Can I make an SRT file from a text file?', answer: 'Yes. Paste the text, one subtitle per row, and press Time automatically. Every subtitle gets a start and end time by reading speed.' },
+    { question: 'Can I edit an existing SRT file?', answer: 'Yes. Open it, then change any text, start or end time on the Edit tab, delete or add subtitles, or shift them all at once.' },
+    { question: 'Can I save as WebVTT instead?', answer: 'Yes. Choose WebVTT next to Download to get a .vtt file for web players.' },
+    { question: 'Is my video uploaded?', answer: 'No. It plays from your device in your browser, and only the subtitle file you make is saved.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/subtitle-shifter', label: 'Shift every subtitle', description: 'Fix a constant delay in a finished file.' },
+    { href: '/subtitle-validator', label: 'Check the SRT', description: 'Find overlaps, bad timestamps and empty cues.' },
+    { href: '/srt-to-vtt', label: 'Convert SRT to VTT', description: 'Turn an SRT into WebVTT for web video.' },
+    { href: '/lrc-maker', label: 'Make song lyrics', description: 'Time lyrics to a song and save an LRC file.' },
+  ]} />
+</Layout>
+
+<script>
+  import { decode } from '../engine/decode.ts';
+  import { parse, write } from '../engine/formats.ts';
+  import { convert } from '../engine/convert.ts';
+  import { formatTime } from '../engine/time.ts';
+  import { lossWarnings } from '../components/converter.ts';
+  import { activeCue, autoTime, parseClock, retextLines, stampEnd, stampStart, toFile, toRow, type Line } from '../components/srt-editor.ts';
+  import { track } from '../components/analytics.ts';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const player = $<HTMLVideoElement>('player');
+  const rowsBox = $<HTMLTextAreaElement>('rows');
+  const timingList = $('timing-lines');
+  const cueRows = $('cue-rows');
+  const download = $<HTMLButtonElement>('download');
+  const error = $('error');
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+
+  let lines: Line[] = [];
+  let cursor = 0; // the line R starts next
+  let tab = 'text';
+  let baseName = '';
+  let fileWarnings: string[] = [];
+
+  const now = () => Math.round(player.currentTime * 1000);
+  const show = (message = '') => ((error.textContent = message), (error.hidden = !message));
+  const clock = (ms: number | null) => (ms == null ? '' : formatTime(ms, ','));
+
+  function renderTiming() {
+    cursor = Math.min(cursor, Math.max(0, lines.length - 1));
+    timingList.replaceChildren(...lines.map((l, i) => {
+      const li = document.createElement('li');
+      const time = Object.assign(document.createElement('span'), { className: 'time', textContent: l.start == null ? '--:--:--,---' : clock(l.start) });
+      const text = Object.assign(document.createElement('button'), { type: 'button', className: 'text', textContent: toRow(l.text) });
+      text.addEventListener('click', () => {
+        cursor = i;
+        if (l.start != null && player.src) player.currentTime = l.start / 1000;
+        renderTiming();
+      });
+      li.append(time, text);
+      if (i === cursor) li.setAttribute('aria-current', 'step');
+      return li;
+    }));
+    if (tab === 'timing') (timingList.children[cursor] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest' });
+  }
+
+  // Rebuilt only when lines are added, removed or retimed in bulk, so typing in a field keeps its focus.
+  function renderEdit() {
+    cueRows.replaceChildren(...lines.map((l, i) => {
+      const tr = document.createElement('tr');
+      const n = Object.assign(document.createElement('td'), { className: 'n', textContent: String(i + 1) });
+      const time = (key: 'start' | 'end') => {
+        const input = Object.assign(document.createElement('input'), { value: clock(l[key]), className: 'clock', placeholder: '00:00:00,000' });
+        input.setAttribute('aria-label', `${key === 'start' ? 'Start' : 'End'} of subtitle ${i + 1}`);
+        input.addEventListener('change', () => {
+          const ms = input.value.trim() ? parseClock(input.value) : null;
+          const bad = input.value.trim() !== '' && ms == null;
+          input.setAttribute('aria-invalid', String(bad));
+          if (bad) return;
+          l[key] = ms;
+          input.value = clock(ms);
+          syncText();
+          renderTiming();
+          renderResult();
+        });
+        const td = document.createElement('td');
+        td.append(input);
+        return td;
+      };
+      const textCell = document.createElement('td');
+      const area = Object.assign(document.createElement('textarea'), { value: l.text, rows: Math.max(1, l.text.split('\n').length) });
+      area.setAttribute('aria-label', `Text of subtitle ${i + 1}`);
+      area.addEventListener('input', () => {
+        l.text = area.value;
+        syncText();
+        renderTiming();
+        renderResult();
+      });
+      textCell.append(area);
+      const actions = document.createElement('td');
+      const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'nudge', textContent: '×' });
+      remove.setAttribute('aria-label', `Delete subtitle ${i + 1}`);
+      remove.addEventListener('click', () => {
+        lines.splice(i, 1);
+        renderAll();
+      });
+      actions.append(remove);
+      tr.append(n, time('start'), time('end'), textCell, actions);
+      return tr;
+    }));
+  }
+
+  function renderResult() {
+    const { untimed, overlaps } = toFile(lines);
+    const total = lines.filter((l) => l.text).length;
+    const timed = total - untimed.length;
+    $('result').textContent = total ? `${timed} of ${total} subtitles timed.` : 'No subtitles yet.';
+    download.disabled = !timed;
+    const notes = [...fileWarnings];
+    if (timed && untimed.length) notes.push(`Not timed yet, left out of the download: subtitle ${untimed.join(', ')}.`);
+    if (overlaps.length) notes.push(`Starts before the subtitle above it ends: subtitle ${overlaps.join(', ')}.`);
+    const warnings = $('warnings');
+    warnings.replaceChildren(...notes.map((n) => Object.assign(document.createElement('p'), { textContent: n })));
+    warnings.hidden = !notes.length;
+  }
+
+  function syncText() {
+    if (document.activeElement !== rowsBox) rowsBox.value = lines.map((l) => toRow(l.text)).join('\n');
+  }
+
+  function renderAll() {
+    syncText();
+    renderTiming();
+    renderEdit();
+    renderResult();
+    caption();
+  }
+
+  function setLines(next: Line[]) {
+    lines = next;
+    cursor = Math.max(0, lines.findIndex((l) => l.start == null));
+    renderAll();
+  }
+
+  function caption() {
+    const at = activeCue(lines, now());
+    $('caption').textContent = at < 0 ? '' : lines[at].text.replace(/<[^>]*>|\{[^}]*\}/g, '');
+  }
+
+  function select(name: string) {
+    tab = name;
+    for (const t of tabs) {
+      const on = t.id === `tab-${name}`;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      $(t.getAttribute('aria-controls')!).hidden = !on;
+    }
+    renderTiming();
+  }
+
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t.id.slice(4)));
+    t.addEventListener('keydown', (e) => {
+      const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const next = tabs[(i + step + tabs.length) % tabs.length];
+      next.focus();
+      select(next.id.slice(4));
+    });
+  });
+
+  rowsBox.addEventListener('input', () => {
+    lines = retextLines(lines, rowsBox.value);
+    renderTiming();
+    renderEdit();
+    renderResult();
+  });
+
+  $('auto').addEventListener('click', () => {
+    lines = autoTime(lines);
+    renderAll();
+  });
+
+  function startLine() {
+    if (!lines.length) return;
+    if (!player.src) return show('Choose the video first, so there is a time to stamp. Or use Time automatically on the Text tab.');
+    lines = stampStart(lines, cursor, now());
+    cursor = Math.min(cursor + 1, lines.length - 1);
+    renderAll();
+  }
+
+  function endLine() {
+    if (!player.src) return;
+    // The line on screen is the last one started before the cursor's.
+    const open = lines.findLastIndex((l, i) => i <= cursor && l.start != null && l.start < now());
+    if (open < 0) return;
+    lines = stampEnd(lines, open, now());
+    renderAll();
+  }
+
+  const togglePlay = () => (player.paused ? player.play().catch(() => show('This video could not be played.')) : player.pause());
+  const seek = (s: number) => (player.currentTime = Math.max(0, player.currentTime + s));
+
+  $('start-line').addEventListener('click', startLine);
+  $('end-line').addEventListener('click', endLine);
+  $('play').addEventListener('click', togglePlay);
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-seek]')) b.addEventListener('click', () => seek(+b.dataset.seek!));
+  player.addEventListener('play', () => ($('play').textContent = 'Pause'));
+  player.addEventListener('pause', () => ($('play').textContent = 'Play'));
+  player.addEventListener('timeupdate', caption);
+  player.addEventListener('seeked', caption);
+  player.addEventListener('error', () => player.src && show('This browser cannot play this video. Try an MP4 or WebM copy, or an MP3 of the audio.'));
+
+  // Shortcuts work on the Timing tab, and Space and the arrows on Edit too, except while typing in a field.
+  let swallowSpace = false;
+  document.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement;
+    const key = e.key;
+    if (tab === 'text' || e.ctrlKey || e.metaKey || e.altKey || t.closest('input, textarea, select')) return;
+    if (t === player && (key === ' ' || key === 'ArrowLeft' || key === 'ArrowRight')) return;
+    if (key === ' ') togglePlay();
+    else if (key === 'ArrowLeft') seek(-5);
+    else if (key === 'ArrowRight') seek(5);
+    // Holding a key would stamp line after line at almost the same time.
+    else if (tab === 'timing' && (key === 'r' || key === 'R')) e.repeat || startLine();
+    else if (tab === 'timing' && (key === 'e' || key === 'E')) e.repeat || endLine();
+    else if (tab === 'timing' && (key === 'ArrowUp' || key === 'ArrowDown')) {
+      cursor = Math.max(0, Math.min(lines.length - 1, cursor + (key === 'ArrowUp' ? -1 : 1)));
+      renderTiming();
+    } else return;
+    e.preventDefault();
+    // A focused button clicks on Space's keyup; that would toggle play a second time.
+    swallowSpace = key === ' ';
+  });
+  document.addEventListener('keyup', (e) => {
+    if (e.key === ' ' && swallowSpace) e.preventDefault();
+    swallowSpace = false;
+  });
+
+  $('apply-shift').addEventListener('click', () => {
+    const by = Math.round(+$<HTMLInputElement>('shift').value * 1000);
+    if (!by) return;
+    lines = lines.map((l) => ({ ...l, start: l.start == null ? null : Math.max(0, l.start + by), end: l.end == null ? null : Math.max(0, l.end + by) }));
+    renderAll();
+  });
+
+  $('add').addEventListener('click', () => {
+    const last = lines.findLast((l) => l.start != null);
+    const start = last ? (last.end ?? last.start!) + 100 : null;
+    lines.push({ start, end: null, text: 'New subtitle' });
+    renderAll();
+    (cueRows.lastElementChild?.querySelector('textarea') as HTMLTextAreaElement | null)?.select();
+  });
+
+  $<HTMLInputElement>('video-file').addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    show();
+    if (player.src) URL.revokeObjectURL(player.src);
+    player.src = URL.createObjectURL(file);
+    $('stage').hidden = false;
+    $('video-name').textContent = file.name;
+    baseName ||= file.name.replace(/\.[^.]*$/, '');
+  });
+
+  $<HTMLInputElement>('subtitle-file').addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    show();
+    try {
+      const { text } = await decode(new Uint8Array(await file.arrayBuffer()));
+      const parsed = parse(text);
+      const { file: srt, losses } = convert(parsed.file, 'srt');
+      fileWarnings = [...parsed.problems, ...lossWarnings(losses)];
+      baseName = file.name.replace(/\.[^.]*$/, '');
+      setLines(srt.cues.map((c) => ({ start: c.start, end: c.end, text: c.text })));
+      track('file_loaded', { tool: 'srt-editor', input_format: parsed.file.format });
+    } catch (err) {
+      show((err as Error).message);
+    }
+  });
+
+  download.addEventListener('click', () => {
+    const format = $<HTMLSelectElement>('format').value as 'srt' | 'vtt';
+    const { file } = toFile(lines);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([write(file, format)], { type: 'text/plain;charset=utf-8' }));
+    a.download = `${baseName || 'subtitles'}.${format}`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    track('download', { tool: 'srt-editor', input_format: 'srt', output_format: format });
+  });
+
+  renderAll();
+</script>
+
+<style>
+  .editor { display: grid; gap: 24px; }
+  .inputs, .row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .hint { color: var(--graphite); font-size: 14px; }
+  .panel > p { margin: 0; }
+  .pick { position: relative; border: 1px solid var(--ink); border-radius: var(--radius); padding: 7px 16px; font-weight: 500; cursor: pointer; }
+  .pick:hover { background: var(--cream); }
+  .pick:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .pick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  [hidden] { display: none !important; }
+  .error { color: var(--error); margin: 0; }
+
+  /* The subtitle on screen shows over the bottom of the video, the way a player would show it. */
+  .stage { position: relative; background: var(--ink); border-radius: var(--radius-sm); overflow: clip; }
+  video { display: block; width: 100%; max-height: 60vh; }
+  .caption { position: absolute; inset: auto 0 56px; margin: 0 auto; width: fit-content; max-width: 90%; text-align: center; white-space: pre-line; color: #fff; background: rgb(0 0 0 / .7); padding: 2px 8px; font-size: clamp(14px, 2.4vw, 22px); pointer-events: none; }
+  .caption:empty { display: none; }
+
+  label.inline { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--graphite); }
+  input:not([type='file']), textarea { padding: 8px 12px; border: 1px solid var(--ink); border-radius: var(--radius-input); background: var(--paper); color: var(--ink); font: inherit; }
+  #shift { width: 6em; }
+  #rows { width: 100%; resize: vertical; line-height: 1.6; }
+
+  .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--ink); }
+  .tabs button { border: 1px solid transparent; border-bottom: 0; border-radius: var(--radius-sm) var(--radius-sm) 0 0; background: transparent; padding: 10px 20px; font: inherit; font-weight: 500; color: var(--graphite); cursor: pointer; margin-bottom: -1px; }
+  .tabs button:hover { background: var(--cream); }
+  .tabs button[aria-selected='true'] { color: var(--ink); border-color: var(--ink); background: var(--paper); }
+  .panel { display: grid; gap: 16px; }
+  kbd { font: inherit; font-size: 13px; border: 1px solid var(--ink); border-radius: 4px; padding: 0 5px; }
+
+  .quiet { border: 1px solid var(--ink); border-radius: var(--radius); background: transparent; padding: 7px 16px; color: var(--ink); font: inherit; font-weight: 500; cursor: pointer; }
+  .quiet:hover { background: var(--cream); }
+  .stamp { box-shadow: 0 0 0 1px var(--ink); }
+  .quiet:active, .primary:active { scale: .97; }
+
+  /* Rows are built by the script, so their selectors are global. */
+  .lines { list-style: none; margin: 0; padding: 0; max-height: min(50vh, 480px); overflow: auto; border: 1px solid var(--ink); border-radius: var(--radius-sm); }
+  .lines:empty { display: none; }
+  .lines :global(li) { display: flex; gap: 12px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--cream); }
+  .lines :global(li:last-child) { border-bottom: 0; }
+  .lines :global(.time) { flex: none; width: 8.5em; font-variant-numeric: tabular-nums; color: var(--graphite); font-size: 14px; }
+  .lines :global(.text) { flex: 1; text-align: left; background: none; border: 0; padding: 4px 0; font: inherit; color: var(--ink); cursor: pointer; }
+  .lines :global(li[aria-current]) { background: var(--sun); }
+  .lines :global(li[aria-current] .time) { color: var(--ink); }
+
+  .table-wrap { max-height: min(60vh, 560px); overflow: auto; border: 1px solid var(--ink); border-radius: var(--radius-sm); }
+  .table-wrap:has(tbody:empty) { display: none; }
+  .cues { width: 100%; border-collapse: collapse; }
+  .cues th { position: sticky; top: 0; background: var(--paper); text-align: left; font-weight: 400; font-size: 14px; color: var(--graphite); padding: 8px; border-bottom: 1px solid var(--ink); }
+  .cues :global(td) { padding: 6px 8px; border-bottom: 1px solid var(--cream); vertical-align: top; }
+  .cues :global(.n) { color: var(--graphite); font-size: 14px; padding-top: 14px; }
+  /* Built by the script, so the scoped input rule above doesn't reach them. */
+  .cues :global(input), .cues :global(textarea) { padding: 6px 10px; border: 1px solid var(--ink); border-radius: var(--radius-input); background: var(--paper); color: var(--ink); font: inherit; }
+  .cues :global(.clock) { width: 10em; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .cues :global(.clock[aria-invalid='true']) { border-color: var(--error); outline: 1px solid var(--error); }
+  .cues :global(textarea) { width: 100%; min-width: 12em; resize: vertical; }
+  .cues :global(.nudge) { width: 32px; height: 32px; border: 1px solid var(--ink); border-radius: var(--pill); background: var(--paper); font: inherit; cursor: pointer; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  .result { display: flex; flex-direction: column; border: 1px solid var(--ink); border-radius: var(--radius-sm); overflow: clip; }
+  .result-bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 12px 12px 12px 16px; }
+  #result { flex: 1; font-weight: 500; }
+  .primary { background: var(--sun); color: var(--ink); border: 0; border-radius: var(--radius); padding: 12px 24px; font-size: 16px; font-weight: 500; cursor: pointer; }
+  .primary:disabled { opacity: .5; cursor: not-allowed; }
+  .warnings { padding: 12px 16px; border-top: 1px solid var(--ink); font-size: 14px; display: grid; gap: 6px; }
+  .warnings :global(p) { margin: 0; display: flex; gap: 10px; align-items: baseline; }
+  .warnings :global(p)::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: var(--pill); background: var(--sun); border: 1px solid var(--ink); }
+
+  @media (max-width: 640px) {
+    .tabs button { padding: 10px 12px; }
+    .cues :global(.clock) { width: 8.5em; }
+    .result-bar { position: sticky; bottom: 0; background: var(--paper); }
+  }
+</style>

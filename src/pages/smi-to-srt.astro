@@ -1,0 +1,63 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
+---
+
+<Layout title="SMI to SRT converter online" description="Convert SMI (SAMI) subtitles to SRT online for free. Reads Korean, Japanese and other old encodings, and keeps italics and line breaks. No upload.">
+  <h1>Convert SMI to SRT</h1>
+  <p class="lede">Turn a SAMI subtitle file (.smi or .sami) into an SRT that modern players, TVs and editors read.</p>
+
+  <ToolShell columns={['#', 'Start', 'End', 'Text']} label="Upload an SMI file" />
+
+  <section class="help">
+    <h2>How to convert SMI to SRT</h2>
+    <ol>
+      <li>Upload the .smi file.</li>
+      <li>If the text looks garbled, change <em>Read as</em> to the file's encoding. Korean SMI files are usually <code>euc-kr</code>.</li>
+      <li>Check the preview and download the .srt.</li>
+    </ol>
+    <ToolImage name="smi-to-srt" alt="SAMI (.smi) file converted to SRT, with SRT timestamps in the cue preview" caption="Each SAMI paragraph becomes an SRT cue that ends where the next one starts." />
+    <h2>How SAMI is read</h2>
+    <p>SAMI is HTML-like. Each <code>&lt;SYNC Start=…&gt;</code> gives a time in milliseconds, and the paragraph after it is shown from then on. The next <code>SYNC</code> ends it, and a blank one (<code>&amp;nbsp;</code>) clears the screen. The converter turns each shown paragraph into an SRT cue, ending where the next one starts.</p>
+    <pre><code>&lt;SYNC Start=5200&gt;&lt;P Class=KRCC&gt;안녕하세요&lt;br&gt;반갑습니다
+&lt;SYNC Start=7900&gt;&lt;P Class=KRCC&gt;&amp;nbsp;</code></pre>
+    <pre><code>1
+00:00:05,200 --> 00:00:07,900
+안녕하세요
+반갑습니다</code></pre>
+    <p><code>&lt;br&gt;</code> becomes a line break, HTML entities like <code>&amp;amp;</code> become the character, and <code>&lt;i&gt;</code>, <code>&lt;b&gt;</code> and <code>&lt;u&gt;</code> stay as SRT tags.</p>
+    <h2>Files with two languages</h2>
+    <p>One SAMI file can hold several languages, each in its own class (<code>KRCC</code>, <code>ENCC</code>…). SRT holds one. The converter reads the first language in the file and names the ones it skipped above the preview. For a two-language SRT, convert each language separately and join them with the <a href="/merge-subtitles">subtitle merger</a>.</p>
+    <h2>A cue that never ends</h2>
+    <p>If the last line has no closing <code>SYNC</code>, it gets two seconds on screen. Check the end of the preview, and fix a cue that runs too long or too short in the <a href="/subtitle-validator">validator</a>.</p>
+    <h2>Garbled Korean or Japanese text</h2>
+    <p>Most SMI files are older than UTF-8 became common. The page guesses the encoding, but a short file can fool it. Try <code>euc-kr</code> for Korean, <code>shift_jis</code> for Japanese and <code>big5</code> or <code>gbk</code> for Chinese. The download is always UTF-8. For more help, see the <a href="/utf-8-converter">UTF-8 converter</a>.</p>
+  </section>
+
+  <Faq title="SMI to SRT FAQ" items={[
+    { question: 'What is an SMI file?', answer: 'A SAMI subtitle file: Microsoft’s HTML-like caption format, common for Korean dramas and old Windows Media videos.' },
+    { question: 'How do I convert SMI to SRT?', answer: 'Upload the .smi on this page, pick the right encoding if the text looks garbled, then download the .srt.' },
+    { question: 'Why is only one language in my SRT?', answer: 'SRT holds one track of text. The first language in the SAMI file is converted, and the skipped ones are named above the preview.' },
+    { question: 'Is the file uploaded?', answer: 'No. It is read and converted in your browser and never leaves your device.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/utf-8-converter', label: 'Fix garbled text', description: 'Read EUC-KR, Shift-JIS or Big5 and save as UTF-8.' },
+    { href: '/merge-subtitles', label: 'Make dual subtitles', description: 'Join two languages into one SRT.' },
+    { href: '/subtitle-shifter', label: 'Fix the timing', description: 'Shift every cue earlier or later.' },
+    { href: '/convert-to-srt', label: 'Other formats to SRT', description: 'VTT, ASS, MicroDVD, MPL2 and LRC.' },
+  ]} />
+</Layout>
+
+<script>
+  import { mountConverter } from '../components/converter.ts';
+  mountConverter('srt');
+</script>
+
+<style>
+  :global(.tool td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
+</style>

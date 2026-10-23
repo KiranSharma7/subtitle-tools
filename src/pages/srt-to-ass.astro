@@ -1,0 +1,64 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
+---
+
+<Layout title="SRT to ASS converter online" description="Convert SRT to ASS online for free. Get an Advanced SubStation Alpha file with a clean Default style, ready to style in Aegisub. No upload.">
+  <h1>Convert SRT to ASS</h1>
+  <p class="lede">Turn an SRT into an Advanced SubStation Alpha (.ass) file with one clean Default style, ready for styling, typesetting or burning in.</p>
+
+  <ToolShell columns={['#', 'Start', 'End', 'Text']} label="Upload an SRT file" />
+
+  <section class="help">
+    <h2>How to convert SRT to ASS</h2>
+    <ol>
+      <li>Upload the .srt file. WebVTT, SAMI, MicroDVD and other formats work too.</li>
+      <li>Check the preview and the list of anything ASS can't hold.</li>
+      <li>Download the .ass and open it in Aegisub, a video editor or your player.</li>
+    </ol>
+    <ToolImage name="srt-to-ass" alt="SRT file converted to ASS, with the cue preview before download" caption="Each SRT cue becomes an ASS Dialogue line with the Default style." />
+    <h2>What the ASS file contains</h2>
+    <p>A <code>[Script Info]</code> section, one <code>Default</code> style (Arial, white text, black outline, bottom centre) and one <code>Dialogue</code> line per cue. Times are rounded to the hundredth of a second, which is as precise as ASS gets.</p>
+    <pre><code>1
+00:00:05,200 --> 00:00:07,900
+&lt;i&gt;Wait.&lt;/i&gt;
+Over here!</code></pre>
+    <pre><code>{'Dialogue: 0,0:00:05.20,0:00:07.90,Default,,0,0,0,,{\\i1}Wait.{\\i0}\\NOver here!'}</code></pre>
+    <h2>What carries over</h2>
+    <p>Bold, italic and underline become ASS override tags (<code>{'{\\i1}'}</code>, <code>{'{\\b1}'}</code>, <code>{'{\\u1}'}</code>). Line breaks become <code>\N</code>. An SRT position tag like <code>{'{\\an8}'}</code> is already ASS and stays. HTML font colours and other tags are removed and listed, because ASS writes colour differently. Set the colour on the style instead.</p>
+    <h2>Why convert SRT to ASS</h2>
+    <ul>
+      <li><strong>Styling:</strong> pick a font, size, colour and outline once on the style, and every line follows.</li>
+      <li><strong>Burning in:</strong> FFmpeg and HandBrake render ASS styles exactly when hard-coding subtitles into a video.</li>
+      <li><strong>Typesetting:</strong> place signs anywhere on screen with <code>\pos</code>, which SRT can't do.</li>
+    </ul>
+    <p>To change the colour or position without editing the file by hand, run the ASS through the <a href="/change-subtitle-color">colour changer</a> or the <a href="/change-subtitle-position">position changer</a>.</p>
+  </section>
+
+  <Faq title="SRT to ASS FAQ" items={[
+    { question: 'How do I convert SRT to ASS?', answer: 'Upload the .srt on this page, check the preview and download. You get an .ass file with a Default style and one Dialogue line per cue.' },
+    { question: 'What style does the ASS file use?', answer: 'One Default style: Arial 20, white text with a black outline, centred at the bottom. Change it in Aegisub or with the colour and position tools.' },
+    { question: 'Do italics carry over?', answer: 'Yes. Bold, italic and underline become ASS override tags. Font colours are listed as dropped.' },
+    { question: 'Can I convert it back to SRT later?', answer: 'Yes, with the ASS to SRT converter. Styles you add in ASS are dropped then, because SRT cannot hold them.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/ass-to-srt', label: 'Convert ASS to SRT', description: 'Go back to plain SRT for players that need it.' },
+    { href: '/change-subtitle-color', label: 'Change the colour', description: 'Set the subtitle text colour in the ASS style.' },
+    { href: '/change-subtitle-position', label: 'Move the subtitles', description: 'Put the lines at the top or in a corner.' },
+    { href: '/subtitle-shifter', label: 'Fix the timing', description: 'Shift every line earlier or later first.' },
+  ]} />
+</Layout>
+
+<script>
+  import { mountConverter } from '../components/converter.ts';
+  mountConverter('ass');
+</script>
+
+<style>
+  :global(.tool td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
+</style>

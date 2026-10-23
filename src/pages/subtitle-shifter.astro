@@ -3,11 +3,12 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 ---
 
-<Layout title="Fix subtitle delay online" description="Fix out-of-sync SRT, WebVTT, ASS, SAMI, MicroDVD, or MPL2 subtitles. Shift every cue earlier or later by seconds or milliseconds in your browser.">
-  <h1>Fix subtitle delay in SRT and VTT files</h1>
-  <p class="lede">Move every subtitle earlier or later by the same amount to fix a constant delay.</p>
+<Layout title="Subtitle shifter: sync SRT subtitles online" description="Sync out-of-sync SRT, VTT, ASS, SAMI, SUB or MPL2 subtitles online. Shift every cue earlier or later by seconds or milliseconds to fix a delay.">
+  <h1>Subtitle shifter: sync SRT and VTT subtitles</h1>
+  <p class="lede">Subtitles out of sync with the video? Move every subtitle earlier or later by the same amount to fix the delay.</p>
 
   <ToolShell columns={['#', 'Start', 'Text']}>
     <fieldset>
@@ -25,14 +26,15 @@ import RelatedTools from '../components/RelatedTools.astro';
   </ToolShell>
 
   <section class="help">
-    <h2>How to fix a subtitle delay</h2>
+    <h2>How to sync subtitles with a delay</h2>
     <p>Compare one spoken line with its subtitle. A late subtitle needs an earlier shift. An early subtitle needs a later shift.</p>
     <pre><code>Subtitle is 2 seconds late  →  shift earlier by 2 seconds
 Subtitle is 1.5 seconds early →  shift later by 1.5 seconds</code></pre>
+    <ToolImage name="subtitle-shifter" alt="Subtitle shifter with an SRT file loaded, shifting all 8 cues 1 second later, with the new start times in the preview" caption="Every cue moves by the same amount. The preview shows the new times before you download." />
     <h2>Supported subtitle formats</h2>
     <p>Shift SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2 or LRC files. The download keeps the uploaded format, styles, cue settings, and filename.</p>
     <h2>Constant delay or timing drift?</h2>
-    <p>This tool applies one fixed offset to the whole file. If subtitles start in sync and drift over time, the video and subtitle may use different frame rates. Use the <a href="/partial-subtitle-shifter">partial subtitle shifter</a> after a cut or ad break.</p>
+    <p>This tool applies one fixed offset to the whole file. If subtitles start in sync and drift over time, the video and subtitle may use different frame rates. Use the <a href="/partial-subtitle-shifter">partial subtitle shifter</a> after a cut or ad break. The <a href="/guides/fix-out-of-sync-subtitles">out-of-sync subtitles guide</a> shows how to tell which problem you have.</p>
     <h2>Warnings you may see</h2>
     <p>Cues moved before 0:00 are clamped to 0:00. Cues that end before 0:00 are removed. Both changes are listed above the preview. MicroDVD uses frames, so choose the video's frame rate when the file does not state one.</p>
     <p>When the timing looks right, <a href="/subtitle-validator">validate the shifted file</a> before sharing it.</p>
@@ -47,7 +49,7 @@ Subtitle is 1.5 seconds early →  shift later by 1.5 seconds</code></pre>
   <RelatedTools tools={[
     { href: '/partial-subtitle-shifter', label: 'Shift one section', description: 'Use a different offset after a cut, ad break, or scene change.' },
     { href: '/subtitle-validator', label: 'Check the result', description: 'Find overlaps, bad timestamps, and empty cues.' },
-    { href: '/convert-to-webvtt', label: 'Convert to WebVTT', description: 'Prepare the shifted subtitles for HTML5 video.' },
+    { href: '/srt-to-vtt', label: 'Convert to WebVTT', description: 'Prepare the shifted subtitles for HTML5 video.' },
     { href: '/srt-cleaner', label: 'Clean the file', description: 'Remove tags, SDH notes, and duplicate cues.' },
   ]} />
 </Layout>

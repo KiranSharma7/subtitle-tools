@@ -1,0 +1,54 @@
+---
+import Guide from '../../components/Guide.astro';
+---
+
+<Guide title="How to fix out-of-sync subtitles" crumb="Fix out-of-sync subtitles" description="Subtitles too early, too late or drifting? Find which kind of sync problem you have, fix it for one viewing in VLC, or fix the SRT file for good." published="2026-10-23">
+  <p>Subtitles that don't match the speech are almost always one of three problems, and each has a different fix. Spend a minute finding out which one you have before changing anything.</p>
+
+  <h2>Step 1: Find out which problem you have</h2>
+  <p>Check one line near the start of the video and one near the end. For each, compare when the person starts speaking with when the subtitle appears.</p>
+  <table>
+    <thead><tr><th scope="col">What you see</th><th scope="col">The problem</th><th scope="col">The fix</th></tr></thead>
+    <tbody>
+      <tr><td>Off by the same amount at the start and the end</td><td>A constant delay</td><td><a href="#constant">Shift the whole file</a></td></tr>
+      <tr><td>Fine at first, then later and later (or earlier and earlier)</td><td>Drift: a different frame rate</td><td><a href="#drift">Get a matching file</a></td></tr>
+      <tr><td>Fine until one point, then off by a fixed amount</td><td>A cut, ad break or extra scene</td><td><a href="#partial">Shift from that point</a></td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="constant">Constant delay: shift the whole file</h2>
+  <p>This is the most common case. The subtitles were made for a version of the video with a slightly different start, like a few seconds of logo or intro.</p>
+  <ol>
+    <li>Find a clear line of dialogue and note when it's spoken in the video, say <code>00:05:12</code>.</li>
+    <li>Find the same line in the subtitle file and note its start time, say <code>00:05:14,500</code>.</li>
+    <li>The difference is your offset: here the subtitles are 2.5 seconds late, so they need to move 2.5 seconds earlier.</li>
+  </ol>
+  <div class="cta"><p>The <a href="/subtitle-shifter">subtitle shifter</a> moves every line earlier or later by seconds or milliseconds and saves a fixed SRT, VTT, ASS or other file. It runs in your browser.</p></div>
+
+  <h3>Just for this viewing: VLC and other players</h3>
+  <p>To fix it while watching, without changing the file:</p>
+  <ul>
+    <li><strong>VLC on Windows and Linux:</strong> press <kbd>H</kbd> to delay the subtitles by 50 ms and <kbd>G</kbd> to bring them 50 ms earlier. On a Mac, use <kbd>H</kbd> and <kbd>J</kbd>. For a bigger change, use <em>Tools › Track Synchronization</em> and type the offset in seconds.</li>
+    <li><strong>Plex and Jellyfin:</strong> many of their apps have a subtitle offset in the playback settings menu.</li>
+  </ul>
+  <p>Player offsets are forgotten when you close the video. Fix the file once and it plays right everywhere, on every device.</p>
+
+  <h2 id="drift">Drift: the frame rate doesn't match</h2>
+  <p>If the gap grows steadily through the film, the subtitles were timed for a release at a different speed. The classic case is a film at 23.976 frames per second next to a European release at 25: PAL video runs about 4% faster, so after two hours the subtitles are around five minutes out.</p>
+  <ul>
+    <li>The best fix is subtitles made for your release: search for ones that name the same version, like the same release group or running time.</li>
+    <li>If the file is MicroDVD (<code>.sub</code> with frame numbers in curly braces), it stores frames, not times. Converting it at the right frame rate fixes the drift: open it in the <a href="/sub-to-srt">SUB to SRT converter</a> and pick your video's rate.</li>
+    <li>Desktop editors like Subtitle Edit can stretch timing from one frame rate to another.</li>
+  </ul>
+
+  <h2 id="partial">One section off: shift from that point</h2>
+  <p>A TV recording with the ads cut out, or a director's cut with an extra scene, keeps the subtitles in sync until the change and off by a fixed amount after it. Shift only the part after the change, and if there are several breaks, give each section its own offset.</p>
+  <div class="cta"><p>The <a href="/partial-subtitle-shifter">partial subtitle shifter</a> lets you set time ranges, each with its own offset. Lines outside the ranges keep their timing.</p></div>
+
+  <h2>Still not right?</h2>
+  <ul>
+    <li><strong>Lines overlap or flash past after shifting:</strong> run the file through the <a href="/subtitle-validator">validator</a>, which lists overlaps and empty or broken lines.</li>
+    <li><strong>The subtitles belong to a different cut altogether:</strong> lines are missing or in a different order. No shift fixes that; find subtitles for your version.</li>
+    <li><strong>Lines are timed badly, not offset:</strong> retime them one by one in the <a href="/srt-editor">SRT editor</a> while the video plays.</li>
+  </ul>
+</Guide>

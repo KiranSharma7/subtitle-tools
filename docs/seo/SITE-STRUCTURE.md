@@ -1,22 +1,35 @@
 # Subtitle Tools site structure and internal linking
 
-## Proposed URL hierarchy
+## URL hierarchy
+
+Live as of 2026-10-23. Slugs follow what people search for (Semrush, `SEO-AUDIT-2026-10-23.md`); renamed URLs 301 in `public/_redirects`.
 
 ```text
 /
-├── /convert-to-srt
-├── /convert-to-webvtt
-├── /convert-to-plain-text
+├── /convert-to-srt            (hub; pair pages below link back to it)
+│   ├── /vtt-to-srt  /ass-to-srt  /smi-to-srt  /sub-to-srt
+├── /srt-to-ass
+├── /srt-to-vtt                (was /convert-to-webvtt)
+├── /srt-to-txt                (was /convert-to-plain-text)
+├── /srt-to-word
+├── /convert-subtitles-to-pdf
 ├── /subtitle-shifter
 ├── /partial-subtitle-shifter
 ├── /srt-cleaner
 ├── /utf-8-converter
 ├── /subtitle-validator
-├── /guides/
-│   ├── /guides/subtitle-sync
-│   ├── /guides/subtitle-formats
-│   ├── /guides/fix-garbled-subtitles
-│   └── /guides/srt-file-errors
+├── /srt-editor
+├── /merge-subtitles
+├── /change-subtitle-position
+├── /change-subtitle-color
+├── /lrc-maker                 (was /timed-lyrics)
+├── /guides
+│   ├── /guides/what-is-an-srt-file
+│   ├── /guides/srt-vs-vtt
+│   ├── /guides/how-to-open-a-vtt-file
+│   ├── /guides/what-is-an-lrc-file
+│   ├── /guides/fix-out-of-sync-subtitles
+│   └── (planned) fix-garbled-subtitles, srt-file-errors
 ├── /glossary/
 │   ├── /glossary/srt
 │   ├── /glossary/webvtt
@@ -33,14 +46,9 @@
 Future routes should be added only when the feature is working:
 
 ```text
-/merge-subtitles
 /extract-subtitles
 /convert-sup-to-srt
 /convert-sub-idx-to-srt
-/convert-subtitles-to-pdf
-/change-subtitle-color
-/change-subtitle-position
-/timed-lyrics
 /make-chinese-pinyin-subtitles
 /docs/api
 ```

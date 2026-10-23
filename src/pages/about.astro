@@ -1,17 +1,38 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { site } from '../site.ts';
+import { tools, conversions } from '../tools.ts';
 ---
 
-<Layout title="About" description={`What ${site.name} is, how its subtitle tools work in your browser, and how they are tested.`}>
+<Layout title="About" description={`What ${site.name} is, how its subtitle tools work in your browser without uploading files, and how they are tested.`}>
   <article class="doc">
     <h1>About {site.name}</h1>
-    <p>{site.name} is a set of free tools for fixing subtitle files: shifting timing, converting formats, cleaning text, checking for errors and repairing garbled characters. It is built and run by {site.author}.</p>
+    <p>{site.name} is a set of {tools.length + conversions.length} free tools for subtitle files: syncing timing, converting formats, cleaning text, checking for errors, repairing garbled characters, merging languages and making LRC lyrics. It is built and run by {site.author}. There is no account, no paid tier and no limit on how many files you fix.</p>
+
     <h2>Why it runs in your browser</h2>
-    <p>Most online subtitle tools upload your file to a server. {site.name} doesn't. Each tool reads the file in your browser tab, changes it there and saves the result back to your device. Nothing is sent to us, so there is nothing for us to store or lose.</p>
+    <p>Most online subtitle tools upload your file to a server, process it there and send it back. {site.name} doesn't. Each tool is code that runs in your browser tab: it reads the file from your device, changes it there and saves the result back to your device. Nothing is sent to us, so there is nothing for us to store, leak or lose. That matters for subtitles of unreleased films, client work, private videos and course material.</p>
+    <p>It also makes the tools fast. There is no upload or download wait, and a whole season of files in a zip is processed as quickly as your computer can read it.</p>
+
+    <h2>How to check that nothing is uploaded</h2>
+    <p>You don't have to take our word for it:</p>
+    <ol>
+      <li>Open your browser's developer tools (<kbd>F12</kbd>) and go to the <strong>Network</strong> tab.</li>
+      <li>Load a subtitle file into any tool and download the result.</li>
+      <li>Look at the requests. None of them carries your file. You'll see the page's own scripts and fonts, and Google Analytics only if you accepted cookies.</li>
+    </ol>
+    <p>Two features do talk to a server, and only when you use them: <strong>Find lyrics online</strong> in the <a href="/lrc-maker">LRC maker</a> sends the artist and song title (not your audio or lyrics) to lrclib.net, and the <a href="/convert-subtitles-to-pdf">PDF converter</a> downloads a font from this site when your text needs one. The <a href="/privacy">privacy policy</a> has the details.</p>
+
     <h2>How the tools are built</h2>
-    <p>All tools share one engine that reads SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2 and LRC. It doesn't stop on a bad file. It reads what it can and tells you which lines it couldn't. When a conversion drops something, like ASS styling that SRT can't hold, the tool lists it instead of removing it without telling you.</p>
-    <p>The engine has automated tests for parsing, timing, conversion and cleanup in every supported format. Every tool page is also tested in a real browser: upload a file, change it, download it.</p>
+    <p>All tools share one engine that reads SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2 and LRC, and writes SRT, WebVTT, ASS, LRC, plain text and PDF. Three rules run through it:</p>
+    <ul>
+      <li><strong>Read what can be read.</strong> A file with a few broken lines still opens. The tool lists the lines it couldn't read, with their line numbers, instead of refusing the file.</li>
+      <li><strong>Never drop anything silently.</strong> When a conversion can't keep something, like ASS styling in an SRT, the tool lists what was dropped and on which cues before you download.</li>
+      <li><strong>Keep what you didn't ask to change.</strong> Shifting an ASS file keeps its styles, layers and effects. Cleaning an SRT keeps its timing.</li>
+    </ul>
+
+    <h2>How the tools are tested</h2>
+    <p>The engine has automated tests for parsing, timing, conversion, cleanup, validation and merging in every supported format, including files in old encodings like Windows-1251, Shift-JIS and GBK. Every tool page is also tested in a real browser on every change: load a file, change it, download it, and compare the result byte for byte with a known-good file.</p>
+
     <h2>Problems and requests</h2>
     <p>If a file won't open or the output looks wrong, email <a href={`mailto:${site.email}`}>{site.email}</a> and describe what happened. Requests for new tools and formats go to the same address.</p>
   </article>

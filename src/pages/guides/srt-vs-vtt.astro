@@ -1,0 +1,60 @@
+---
+import Guide from '../../components/Guide.astro';
+---
+
+<Guide title="SRT vs VTT: differences and which to use" crumb="SRT vs VTT" description="SRT and WebVTT (VTT) side by side: timestamps, headers, styling and positioning, which players and sites accept each, and how to convert between them." published="2026-10-23">
+  <p>SRT and VTT are the two subtitle formats you'll meet most. They look almost the same, and for plain dialogue they hold the same thing. The short answer: <strong>use VTT for video on a web page, and SRT for everything else.</strong> Here is why, and what actually differs.</p>
+
+  <h2>The same subtitle in both formats</h2>
+  <pre><code>1
+00:00:12,400 --> 00:00:14,800
+Is the coffee still warm?</code></pre>
+  <pre><code>WEBVTT
+
+00:00:12.400 --> 00:00:14.800
+Is the coffee still warm?</code></pre>
+  <p>The visible differences: VTT starts with a <code>WEBVTT</code> line, uses a dot instead of a comma before the milliseconds, and doesn't need the cue number.</p>
+
+  <h2>Side by side</h2>
+  <table>
+    <thead><tr><th scope="col"></th><th scope="col">SRT (SubRip)</th><th scope="col">VTT (WebVTT)</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Origin</th><td>SubRip, a DVD ripping program</td><td>W3C standard for web video</td></tr>
+      <tr><th scope="row">First line</th><td>Subtitle number 1</td><td><code>WEBVTT</code> (required)</td></tr>
+      <tr><th scope="row">Timestamps</th><td><code>00:01:02,500</code>, hours required</td><td><code>00:01:02.500</code>, hours optional</td></tr>
+      <tr><th scope="row">Cue numbers</th><td>Required</td><td>Optional ids, any text</td></tr>
+      <tr><th scope="row">Styling</th><td>Italic, bold, underline; font colour in some players</td><td>Italic, bold, underline, classes styled with CSS, <code>STYLE</code> blocks</td></tr>
+      <tr><th scope="row">Position</th><td>None (some players read <code>{'{\\an8}'}</code>)</td><td>Cue settings: <code>line</code>, <code>position</code>, <code>align</code>, <code>size</code>, regions</td></tr>
+      <tr><th scope="row">Extras</th><td>None</td><td>Speaker tags (<code>&lt;v&gt;</code>), comments (<code>NOTE</code>), word timing</td></tr>
+      <tr><th scope="row">HTML5 <code>&lt;track&gt;</code></th><td>Not supported</td><td>Supported in every browser</td></tr>
+    </tbody>
+  </table>
+
+  <h2>When to use SRT</h2>
+  <ul>
+    <li><strong>Desktop players and TVs:</strong> VLC, MPC-HC, Plex, Kodi, smart TVs and USB playback all read SRT. Some TVs read nothing else.</li>
+    <li><strong>Video editors:</strong> Premiere Pro, DaVinci Resolve and Final Cut import SRT.</li>
+    <li><strong>Social video:</strong> Facebook requires SRT. LinkedIn and most other platforms accept it.</li>
+    <li><strong>Sharing and archiving:</strong> it is the format most likely to work for whoever gets the file next.</li>
+  </ul>
+
+  <h2>When to use VTT</h2>
+  <ul>
+    <li><strong>Your own website:</strong> the HTML5 <code>&lt;video&gt;</code> element only accepts WebVTT in its <code>&lt;track&gt;</code>, and so do most web players built on it, like Video.js and Plyr.</li>
+    <li><strong>Captions with positions:</strong> VTT can place a line at the top of the screen or to one side, for example to keep it off on-screen text.</li>
+    <li><strong>Platforms that ask for it:</strong> some learning platforms and streaming tools take VTT only. YouTube and Vimeo accept both.</li>
+  </ul>
+
+  <h2>Converting between them</h2>
+  <p>For ordinary dialogue, conversion is lossless both ways: same times, same text, same italics. Converting VTT to SRT drops what SRT can't hold, like positions, regions, CSS classes and speaker tags. A good converter tells you what it dropped instead of hiding it.</p>
+  <div class="cta"><p>Convert <a href="/srt-to-vtt">SRT to VTT</a> or <a href="/vtt-to-srt">VTT to SRT</a> in your browser. Each cue is shown before you download, with anything dropped listed by cue number.</p></div>
+  <p>Don't just rename the file. Renaming <code>.srt</code> to <code>.vtt</code> leaves out the <code>WEBVTT</code> line and keeps the commas, and browsers reject it.</p>
+
+  <h2>Quick answers</h2>
+  <h3>Is VTT better than SRT?</h3>
+  <p>It can do more, but more players read SRT. Better is whichever one the place you're uploading to accepts.</p>
+  <h3>Can I use an SRT file on my website?</h3>
+  <p>Not directly in a <code>&lt;track&gt;</code>: browsers ignore it. Convert it to VTT first, or use a player that converts SRT for you.</p>
+  <h3>Do VTT and WebVTT mean the same thing?</h3>
+  <p>Yes. WebVTT is the format's name, and <code>.vtt</code> is its file extension. See <a href="/guides/how-to-open-a-vtt-file">how to open a VTT file</a>.</p>
+</Guide>

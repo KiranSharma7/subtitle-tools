@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ToolShell from '../components/ToolShell.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
 
 // Numbered like a numpad and ASS \an, listed top row first so the grid reads like the screen.
 const positions = [
@@ -42,6 +43,7 @@ const positions = [
       <li><strong>WebVTT</strong> gets <code>line</code>, <code>position</code> and <code>align</code> cue settings. Other settings, like <code>size</code>, stay.</li>
       <li><strong>ASS and SSA</strong> get a new <code>Alignment</code> in every style. Cues that set their own alignment with <code>\an</code> are changed too. Cues placed at an exact spot with <code>\pos</code> or <code>\move</code> keep that spot, and are listed above the preview.</li>
     </ul>
+    <ToolImage name="change-subtitle-position" alt="Subtitle position changer with position options and the cue preview" caption="Pick a position on screen. The preview shows the cues that change." />
     <h2>Will my player show it?</h2>
     <p>VLC, MPC-HC, mpv and most desktop players follow SRT <code>{'{\\an}'}</code> tags. Many TVs, game consoles and streaming sticks ignore them and show every subtitle at the bottom. Browsers follow WebVTT settings. ASS is the most reliable format for styling, so if a player ignores the position, tick <em>Save SRT and WebVTT as ASS</em>. Anything ASS can't hold, like WebVTT cue settings, is listed before you download.</p>
     <h2>Removing positions</h2>

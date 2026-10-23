@@ -1,0 +1,69 @@
+---
+import Guide from '../../components/Guide.astro';
+---
+
+<Guide title="What is an SRT file? Open, make and fix one" crumb="What is an SRT file?" description="What an SRT subtitle file is, what is inside it, how to open it with a video, how to make one, and how to fix SRT files that are out of sync or garbled." published="2026-10-23">
+  <p>An SRT file is a subtitle file: plain text that tells a video player what to show on screen and when. The name comes from <strong>SubRip</strong>, an old Windows program that read subtitles off DVDs and saved them as text with the extension <code>.srt</code>. The program is long gone, but its simple format became the most widely supported subtitle format there is. VLC, Plex, YouTube, Premiere Pro, smart TVs and almost every other player and editor read it.</p>
+
+  <h2>What is inside an SRT file</h2>
+  <p>Open one in a text editor and you'll see blocks like this:</p>
+  <pre><code>1
+00:00:12,400 --> 00:00:14,800
+Is the coffee still warm?
+
+2
+00:00:15,200 --> 00:00:18,000
+&lt;i&gt;Barely.&lt;/i&gt;
+You took your time.</code></pre>
+  <p>Each block is one subtitle, and has four parts:</p>
+  <ol>
+    <li><strong>A number</strong>, counting up from 1.</li>
+    <li><strong>The start and end time</strong>, separated by <code>--&gt;</code>. Times are hours, minutes, seconds and milliseconds, with a <em>comma</em> before the milliseconds: <code>00:00:12,400</code> is 12.4 seconds in.</li>
+    <li><strong>The text</strong>, usually one or two lines.</li>
+    <li><strong>A blank line</strong> that ends the block.</li>
+  </ol>
+  <p>Most players also understand a few HTML-style tags: <code>&lt;i&gt;</code> for italics, <code>&lt;b&gt;</code> for bold, <code>&lt;u&gt;</code> for underline, and sometimes <code>&lt;font color="..."&gt;</code>. Some players and editors understand <code>{'{\\an8}'}</code> at the start of a line to put it at the top of the screen. That's all the styling SRT has: no fonts, no sizes, no exact positions. That simplicity is why everything supports it.</p>
+
+  <h2>How to open an SRT file</h2>
+  <h3>To read or edit the text</h3>
+  <p>Any text editor opens it: Notepad on Windows, TextEdit on a Mac, or a code editor. If the letters look like <code>Ã©</code> or <code>Ð¿Ñ€Ð¸</code>, the file was saved in an old encoding; see <a href="#garbled">garbled text</a> below. For editing times and text without breaking the format, use an <a href="/srt-editor">online SRT editor</a>.</p>
+  <h3>To watch it with a video</h3>
+  <ul>
+    <li><strong>Same name, same folder:</strong> name the subtitle file like the video, <code>Holiday.mp4</code> and <code>Holiday.srt</code>, and keep them together. VLC, MPC-HC, mpv, Plex, Jellyfin and Kodi then load the subtitles on their own. Add a language code for media servers: <code>Holiday.en.srt</code>.</li>
+    <li><strong>VLC:</strong> drag the .srt onto the playing video, or use <em>Subtitle › Add Subtitle File</em>.</li>
+    <li><strong>On a TV:</strong> copy both files to the USB stick with the same name. Many TVs only read SRT, not other formats.</li>
+  </ul>
+  <h3>To add it to an online video</h3>
+  <p>YouTube, Vimeo, LinkedIn and most video hosts accept SRT uploads in their captions or subtitles settings. Facebook asks for SRT with the language in the file name, like <code>video.en_US.srt</code>. For a video on your own website, convert the SRT to WebVTT: browsers only accept WebVTT in a <code>&lt;track&gt;</code>. See <a href="/guides/srt-vs-vtt">SRT vs VTT</a>.</p>
+
+  <h2>How to make an SRT file</h2>
+  <p>You can type one in Notepad if you follow the format exactly: number, times with commas, text, blank line, and save it as UTF-8 with the <code>.srt</code> extension. It's easy to slip, though, and one bad timestamp can make a player skip the rest of the file.</p>
+  <div class="cta"><p>The <a href="/srt-editor">SRT editor</a> writes the format for you: paste your text, one subtitle per row, then time each line to your video by pressing a key, or let it time the lines by reading speed. Download the .srt when you're done.</p></div>
+  <p>Good subtitles are easy to read: keep lines under about 42 characters, use no more than two lines, and leave each subtitle up long enough to read, roughly 15 characters a second.</p>
+
+  <h2>Common SRT problems and how to fix them</h2>
+  <h3>Subtitles are early or late</h3>
+  <p>If every line is off by the same amount, shift the whole file with the <a href="/subtitle-shifter">subtitle shifter</a>. If they start in sync and drift further apart, the frame rate doesn't match; if only part is off, after an ad break or a cut, use the <a href="/partial-subtitle-shifter">partial shifter</a>. The <a href="/guides/fix-out-of-sync-subtitles">out-of-sync guide</a> explains how to tell which one you have.</p>
+  <h3 id="garbled">Garbled letters</h3>
+  <p>Characters like <code>Ã©</code> instead of <code>é</code>, or question marks in place of Cyrillic, Greek, Arabic or Chinese, mean the file isn't UTF-8. Older SRT files were often saved in Windows-1251, Windows-1252, GBK or Shift-JIS. The <a href="/utf-8-converter">UTF-8 converter</a> reads the old encoding and saves a UTF-8 copy every player understands.</p>
+  <h3>The player won't load it, or stops partway</h3>
+  <p>Usually a broken timestamp (a dot instead of a comma, a missing digit), a missing blank line between blocks, or subtitles out of order. The <a href="/subtitle-validator">SRT validator</a> lists each problem with its subtitle number and fixes the safe ones for you.</p>
+  <h3>Tags or hearing-impaired notes show on screen</h3>
+  <p>Text like <code>&lt;font color="#ffff00"&gt;</code>, <code>[DOOR SLAMS]</code> or <code>JOHN:</code> can be removed with the <a href="/srt-cleaner">SRT cleaner</a>.</p>
+
+  <h2>Converting SRT files</h2>
+  <ul>
+    <li><a href="/srt-to-vtt">SRT to VTT</a> for web players and HTML5 video</li>
+    <li><a href="/srt-to-ass">SRT to ASS</a> to style the subtitles or burn them in</li>
+    <li><a href="/srt-to-txt">SRT to TXT</a>, <a href="/srt-to-word">SRT to Word</a> or <a href="/convert-subtitles-to-pdf">SRT to PDF</a> for a transcript</li>
+    <li><a href="/convert-to-srt">Any format to SRT</a>: <a href="/vtt-to-srt">VTT</a>, <a href="/ass-to-srt">ASS</a>, <a href="/smi-to-srt">SMI</a>, <a href="/sub-to-srt">SUB</a></li>
+  </ul>
+
+  <h2>Quick answers</h2>
+  <h3>Is an SRT file safe to open?</h3>
+  <p>Yes. It's plain text and can't run code. Any program you open it with only reads the text.</p>
+  <h3>Why does my SRT file open in Notepad instead of with the video?</h3>
+  <p>Because it is a text file. Open the video in your player and load the subtitles from there, or give both files the same name in the same folder.</p>
+  <h3>What's the difference between SRT and SUB?</h3>
+  <p>A .sub file is either MicroDVD text, which counts video frames instead of times, or a VobSub image file from a DVD. SRT is text with real times, which is why it's easier to work with. <a href="/sub-to-srt">MicroDVD .sub converts to SRT</a> in one step.</p>
+</Guide>

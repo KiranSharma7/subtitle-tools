@@ -22,7 +22,7 @@ test('toggle options, check the preview, download', async ({ page }) => {
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText('Line one line two');
   await expect(rows.first()).toHaveClass('flag');
-  await expect(page.getByText('1 cues changed, 0 removed.')).toBeVisible();
+  await expect(page.getByText('1 cue changed, 0 removed.')).toBeVisible();
 
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download' }).click()]);
   expect(download.suggestedFilename()).toBe('sample.srt');

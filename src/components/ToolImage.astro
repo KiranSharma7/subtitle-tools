@@ -1,0 +1,19 @@
+---
+// A screenshot of the tool with a demo file loaded, from scripts/screenshots.ts (which also writes the sizes).
+import sizes from '../screenshots.json';
+
+type Props = { name: keyof typeof sizes; alt: string; caption: string };
+const { name, alt, caption } = Astro.props;
+const { width, height } = sizes[name];
+---
+
+<figure class="shot">
+  <img src={`/images/tools/${name}.jpg`} alt={alt} width={width} height={height} loading="lazy" decoding="async" />
+  <figcaption>{caption}</figcaption>
+</figure>
+
+<style>
+  .shot { margin: 0 0 32px; }
+  .shot img { display: block; width: 100%; height: auto; border: 1px solid var(--ink); border-radius: var(--radius-sm); }
+  figcaption { color: var(--graphite); font-size: 14px; margin-top: 8px; }
+</style>

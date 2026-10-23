@@ -1,0 +1,62 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import ToolImage from '../components/ToolImage.astro';
+---
+
+<Layout title="SUB to SRT converter online" description="Convert MicroDVD .sub subtitles to SRT online for free. Turns frame numbers into timestamps at your video's frame rate. Preview first. No upload.">
+  <h1>Convert SUB to SRT</h1>
+  <p class="lede">Turn a MicroDVD subtitle file (.sub) into an SRT, with frame numbers turned into real timestamps.</p>
+
+  <ToolShell columns={['#', 'Start', 'End', 'Text']} label="Upload a SUB file" />
+
+  <section class="help">
+    <h2>How to convert SUB to SRT</h2>
+    <ol>
+      <li>Upload the .sub file.</li>
+      <li>If the file doesn't state its frame rate, pick the video's under <em>Frame rate</em>. The preview updates straight away.</li>
+      <li>Check a few times against the video, then download the .srt.</li>
+    </ol>
+    <ToolImage name="sub-to-srt" alt="MicroDVD .sub file converted to SRT, with the frame rate picker and the cue preview" caption="Frame numbers turned into SRT times at the chosen frame rate." />
+    <h2>Why the frame rate matters</h2>
+    <p>MicroDVD doesn't store times. It stores frame numbers: <code>{'{125}{200}'}</code> means "from frame 125 to frame 200". The time depends on how many frames the video shows per second. At 25 fps, frame 125 is 5.0 seconds. At 23.976 fps, it's 5.21 seconds, and the gap grows through the film.</p>
+    <pre><code>{'{1}{1}23.976\n{125}{200}Wait.|Over here!'}</code></pre>
+    <pre><code>1
+00:00:05,214 --> 00:00:08,342
+Wait.
+Over here!</code></pre>
+    <p>A first line of <code>{'{1}{1}23.976'}</code> states the rate and is used automatically. Without it, the default is 23.976, the rate of most film releases. PAL DVDs use 25, and NTSC TV uses 29.97.</p>
+    <h2>Subtitles that drift</h2>
+    <p>If the SRT starts in sync and gets later and later, the frame rate is wrong. Change it under <em>Frame rate</em> and check again. If the whole file is off by the same amount from the start, the rate is right and the subtitles need a <a href="/subtitle-shifter">shift</a> instead.</p>
+    <h2>What carries over</h2>
+    <p>The <code>|</code> line separator becomes a real line break. <code>{'{y:i}'}</code>, <code>{'{y:b}'}</code> and <code>{'{y:u}'}</code> become SRT italic, bold and underline tags. Colour, font and position codes like <code>{'{c:$0000FF}'}</code> or <code>{'{P:…}'}</code> are dropped and listed above the preview.</p>
+    <h2>Is my .sub a MicroDVD file?</h2>
+    <p>Open it in a text editor. MicroDVD lines start with two numbers in curly braces. If the .sub comes with an .idx file and looks like binary data, it's VobSub: a DVD image subtitle that needs OCR, which this converter can't do. Lines like <code>[125][200]</code> in square brackets are MPL2, which the <a href="/convert-to-srt">SRT converter</a> reads.</p>
+  </section>
+
+  <Faq title="SUB to SRT FAQ" items={[
+    { question: 'How do I convert a SUB file to SRT?', answer: 'Upload the .sub on this page, choose the video’s frame rate if the file does not state it, check the preview and download the .srt.' },
+    { question: 'Which frame rate should I pick?', answer: 'The video’s. Most films are 23.976. PAL DVDs and European TV use 25, and NTSC TV uses 29.97. A media player’s file info shows it.' },
+    { question: 'Can it convert VobSub .sub/.idx files?', answer: 'No. Those are pictures of text, not text, and need OCR. This page converts text-based MicroDVD .sub files.' },
+    { question: 'Is the file uploaded?', answer: 'No. The conversion runs in your browser and the file stays on your device.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/subtitle-shifter', label: 'Fix a constant delay', description: 'Shift every cue earlier or later.' },
+    { href: '/partial-subtitle-shifter', label: 'Fix one section', description: 'Use a different offset after a cut or reel change.' },
+    { href: '/utf-8-converter', label: 'Fix garbled text', description: 'Old .sub files often use Windows-1250 or 1251.' },
+    { href: '/convert-to-srt', label: 'Other formats to SRT', description: 'VTT, ASS, SAMI, MPL2 and LRC.' },
+  ]} />
+</Layout>
+
+<script>
+  import { mountConverter } from '../components/converter.ts';
+  mountConverter('srt');
+</script>
+
+<style>
+  :global(.tool td:nth-child(-n + 3)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
+</style>

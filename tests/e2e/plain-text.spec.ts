@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const fixture = (f: string) => fileURLToPath(new URL(`../fixtures/${f}`, import.meta.url));
 
 test('convert to plain text, join lines, download', async ({ page }) => {
-  await page.goto('/convert-to-plain-text');
+  await page.goto('/srt-to-txt');
   await page.getByLabel('Choose a subtitle file').setInputFiles(fixture('sample.vtt'));
 
   const rows = page.locator('tbody tr');
@@ -23,7 +23,7 @@ test('convert to plain text, join lines, download', async ({ page }) => {
 });
 
 test('plain text input is refused with a reason', async ({ page }) => {
-  await page.goto('/convert-to-plain-text');
+  await page.goto('/srt-to-txt');
   await page.getByLabel('Choose a subtitle file').setInputFiles(fixture('not-subtitle.txt'));
   await expect(page.getByRole('alert')).toContainText("Plain text can't be read: it has no timing.");
 });
@@ -31,6 +31,6 @@ test('plain text input is refused with a reason', async ({ page }) => {
 test('plain text converter is in the nav and on the homepage', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'All tools' }).click();
-  await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Convert to plain text' })).toBeVisible();
-  await expect(page.getByRole('main').getByRole('link', { name: 'Convert to plain text' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'SRT to TXT', exact: true })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'SRT to TXT', exact: true })).toBeVisible();
 });
