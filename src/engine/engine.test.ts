@@ -99,6 +99,17 @@ test('convert vtt with a plain WEBVTT line and numeric ids loses nothing', () =>
   assert.deepEqual(convert(parse('WEBVTT\n\n1\n00:01.000 --> 00:02.000\nHi\n\n2\n00:03.000 --> 00:04.000\nBye\n').file, 'srt').losses, []);
 });
 
+test('convert vtt to srt: voice, class and timestamp tags are removed and reported, i/b/u stay', () => {
+  const vtt = 'WEBVTT\n\n00:01.000 --> 00:02.000\n<v Bob>Hello <c.yellow>there</c>.</v>\n\n00:03.000 --> 00:04.000\nOne <00:00:03.500>two <i>three</i>\n\n00:05.000 --> 00:06.000\n<v.loud Ann>Hi</v> <lang en>you</lang>\n';
+  const r = convert(parse(vtt).file, 'srt');
+  assert.equal(write(r.file), '1\n00:00:01,000 --> 00:00:02,000\nHello there.\n\n2\n00:00:03,000 --> 00:00:04,000\nOne two <i>three</i>\n\n3\n00:00:05,000 --> 00:00:06,000\nHi you\n');
+  assert.deepEqual(r.losses, [
+    { kind: 'formatting', cues: [1, 3] },
+    { kind: 'name', cues: [1, 3] },
+    { kind: 'wordTimings', cues: [2] },
+  ]);
+});
+
 test('convert to the same format keeps everything', () => {
   const vtt = 'WEBVTT - title\n\nSTYLE\n::cue { color: red }\n\nintro\n00:01.000 --> 00:02.000 align:start\nHi\n';
   const { file } = parse(vtt);
@@ -469,7 +480,7 @@ test('convert srt to ass: default header and style, tags mapped, unmapped format
 
 test('convert vtt to ass: header and cue settings reported, then a position can be set', () => {
   const r = convert(parse('WEBVTT\n\nSTYLE\n::cue { color: red }\n\n00:01.000 --> 00:02.000 line:0\n<v Anna>Hi</v>\n').file, 'ass');
-  assert.deepEqual(r.losses, [{ kind: 'header', cues: [] }, { kind: 'formatting', cues: [1] }, { kind: 'settings', cues: [1] }]);
+  assert.deepEqual(r.losses, [{ kind: 'header', cues: [] }, { kind: 'name', cues: [1] }, { kind: 'settings', cues: [1] }]);
   assert.equal(r.file.cues[0].text, 'Hi');
   assert.match(write(setPosition(r.file, 8).file), /\nStyle: Default,[^\n]*,8,10,10,10,1\n/);
 });

@@ -16,7 +16,21 @@ function toCommon(format: Format, c: Cue, n: number): { text: string; lost: stri
   if (format === 'mpl2') return mpl2ToCommon(c);
   if (format === 'lrc') return lrcToCommon(c);
   // An id equal to the cue number comes back as SRT's own numbering, so nothing is lost.
-  return { text: c.text, lost: Object.entries(c.extras ?? {}).filter(([k, v]) => !(k === 'id' && v === String(n))).map(([k]) => k) };
+  const extras = Object.entries(c.extras ?? {}).filter(([k, v]) => !(k === 'id' && v === String(n))).map(([k]) => k);
+  if (format !== 'vtt') return { text: c.text, lost: extras };
+  const { text, lost } = vttTags(c.text);
+  return { text, lost: [...extras, ...lost] };
+}
+
+// WebVTT-only cue tags that SRT players show as raw text: <v Name> voices, <c.class> and <lang> spans,
+// ruby and <00:01.500> karaoke timestamps. <i>, <b> and <u> are shared, so they stay.
+function vttTags(text: string): { text: string; lost: string[] } {
+  const lost = new Set<string>();
+  const out = text.replace(/<\/?(v|c|lang|ruby|rt)\b[^<>\n]*>|<[\d:.]+>/gi, (_, kind: string | undefined) => {
+    lost.add(!kind ? 'wordTimings' : kind.toLowerCase() === 'v' ? 'name' : 'formatting');
+    return '';
+  });
+  return { text: out, lost: [...lost] };
 }
 
 // Converting goes to SRT, WebVTT, plain text, LRC or ASS; any format can be written back as itself.
