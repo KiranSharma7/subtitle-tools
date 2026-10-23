@@ -42,6 +42,12 @@ export const tools = [
     blurb: 'Remove timings and export the dialogue as a TXT file.',
   },
   {
+    name: 'Convert to PDF',
+    href: '/convert-subtitles-to-pdf',
+    category: 'Converters',
+    blurb: 'Make a printable PDF transcript from any subtitle file.',
+  },
+  {
     name: 'UTF-8 converter',
     href: '/utf-8-converter',
     category: 'Fixing and cleaning',

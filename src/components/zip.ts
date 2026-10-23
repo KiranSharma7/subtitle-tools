@@ -20,15 +20,16 @@ export function readZip(bytes: Uint8Array, accept = ''): ZipEntry[] {
   });
 }
 
-// Zips UTF-8 text files. A name that's already taken gets " (2)", " (3)", ... before its extension.
-export function makeZip(files: { name: string; text: string }[]): Uint8Array {
+// Zips UTF-8 text files, or bytes as they are. A name that's already taken gets " (2)", " (3)", ... before its extension.
+export function makeZip(files: ({ name: string; text: string } | { name: string; data: Uint8Array })[]): Uint8Array {
   const out: Record<string, Uint8Array> = {};
-  for (const { name, text } of files) {
+  for (const file of files) {
+    const { name } = file;
     const dot = name.lastIndexOf('.');
     const [stem, ext] = dot > 0 ? [name.slice(0, dot), name.slice(dot)] : [name, ''];
     let unique = name;
     for (let n = 2; unique in out; n++) unique = `${stem} (${n})${ext}`;
-    out[unique] = strToU8(text);
+    out[unique] = 'data' in file ? file.data : strToU8(file.text);
   }
   return zipSync(out);
 }

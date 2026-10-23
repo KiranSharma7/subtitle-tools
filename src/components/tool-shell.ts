@@ -14,12 +14,16 @@ export type Tool = {
   // In a batch, view and output run once per file, so keep per-file state in the ParseResult, not in the closure.
   // ready: false keeps the file from downloading (the merger before a merge file is chosen).
   view: (parsed: ParseResult, options?: ViewOptions) => { warnings: string[]; rows: Row[]; summary?: string; result?: string; total?: number; ready?: boolean };
-  output: (parsed: ParseResult, name: string) => string;
+  output: (parsed: ParseResult, name: string) => Output | Promise<Output>;
   filename?: (name: string, parsed: ParseResult) => string; // download name; defaults to the uploaded name
-  parse?: (text: string) => ParseResult; // for tools that take any text, not only subtitles
+  mime?: string; // download type; defaults to UTF-8 text
+  parse?: (text: string, options: { fps: number }) => ParseResult; // for tools that take any text, not only subtitles
+  // A batch downloads the one file this makes instead of a zip, while it returns a function (the PDF page's "Combine into one PDF").
+  combine?: () => ((files: { parsed: ParseResult; name: string }[]) => Promise<{ name: string; data: Uint8Array }>) | undefined;
   loaded?: (names: string[]) => void; // after a file or batch is read, with every file name, before the first render
 };
 
+type Output = string | Uint8Array;
 type Loaded = { parsed: ParseResult; encoding: string };
 type BatchItem = { file: File; error?: string } & Partial<Loaded>;
 
@@ -105,6 +109,7 @@ export function mountTool(tool: Tool): () => void {
   let singleLabel = '';
   let worker: Worker | null = null;
   let request = 0;
+  let making = false; // a download is being built (the PDF page's output is async)
 
   // The drop box only shows while there's no file. After that, Replace file and dropping on the panel take over.
   function setProcessing(active: boolean) {
@@ -157,7 +162,7 @@ export function mountTool(tool: Tool): () => void {
         } else if (message.type === 'result' && message.encoding && (message.text != null || message.parsed)) {
           done();
           try {
-            const result = tool.parse ? tool.parse(message.text ?? '') : message.parsed;
+            const result = tool.parse ? tool.parse(message.text ?? '', { fps: +fps.value }) : message.parsed;
             if (!result) throw new Error('The file could not be parsed.');
             resolve({ parsed: result, encoding: message.encoding });
           } catch (e) {
@@ -253,7 +258,7 @@ export function mountTool(tool: Tool): () => void {
     // A page may rename Download (the validator's "Fix and download"); a batch swaps the label and puts it back after.
     if (isBatch) {
       singleLabel ||= download.textContent ?? '';
-      download.textContent = 'Download all (.zip)';
+      download.textContent = tool.combine?.() ? singleLabel : 'Download all (.zip)';
     } else if (singleLabel) {
       download.textContent = singleLabel;
     }
@@ -273,7 +278,7 @@ export function mountTool(tool: Tool): () => void {
         ? `This is a large file (${formatBytes(sourceFile.size)}). Processing may use extra memory.`
         : '';
       largeWarning.hidden = !sourceFile || sourceFile.size < LARGE_FILE_BYTES;
-      download.disabled = view.ready === false;
+      download.disabled = view.ready === false || making;
 
       $('result').textContent = view.result ?? 'Ready to download.';
 
@@ -330,7 +335,7 @@ export function mountTool(tool: Tool): () => void {
     warnings.hidden = true;
     previewNote.hidden = true;
     $('result').textContent = ready ? `${ready} ${ready === 1 ? 'file' : 'files'} ready to download.` : 'No files to download.';
-    download.disabled = !ready;
+    download.disabled = !ready || making;
 
     batchList.replaceChildren(
       ...items.map(({ item, detail, notes, error: message }) => {
@@ -393,22 +398,49 @@ export function mountTool(tool: Tool): () => void {
   const outputFormat = (original: string, p: ParseResult) => (tool.filename ? tool.filename(original, p).split('.').pop()! : p.file.format);
 
   let doneTimer = 0;
-  download.addEventListener('click', () => {
+  download.addEventListener('click', async () => {
     const ready = batch.length ? batchReady : [];
-    if (!parsed && !ready.length) return;
-    download.classList.add('done');
-    clearTimeout(doneTimer);
-    doneTimer = window.setTimeout(() => download.classList.remove('done'), 1500);
+    if ((!parsed && !ready.length) || making) return;
+    making = true;
+    download.disabled = true;
+    $('result').textContent = 'Making your file...';
+    try {
+      await saveAll(ready);
+      download.classList.add('done');
+      clearTimeout(doneTimer);
+      doneTimer = window.setTimeout(() => download.classList.remove('done'), 1500);
+    } catch (e) {
+      error.textContent = (e as Error).message || 'The file could not be made.';
+      error.hidden = false;
+    } finally {
+      making = false;
+      render();
+    }
+  });
 
+  async function saveAll(ready: (BatchItem & { parsed: ParseResult })[]) {
+    const mime = tool.mime ?? 'text/plain;charset=utf-8';
     if (!parsed) {
-      const files = ready.map((item) => ({ name: tool.filename?.(item.file.name, item.parsed) ?? item.file.name, text: tool.output(item.parsed, item.file.name) }));
+      const combine = tool.combine?.();
+      if (combine) {
+        const { name: combined, data } = await combine(ready.map((item) => ({ parsed: item.parsed, name: item.file.name })));
+        for (const item of ready) track('download', { tool: toolName, input_format: item.parsed.file.format, output_format: combined.split('.').pop()! });
+        save(new Blob([data as BlobPart], { type: mime }), combined);
+        return;
+      }
+      const files: Parameters<typeof makeZip>[0] = [];
+      for (const item of ready) {
+        const out = await tool.output(item.parsed, item.file.name);
+        files.push({ name: tool.filename?.(item.file.name, item.parsed) ?? item.file.name, ...(typeof out === 'string' ? { text: out } : { data: out }) });
+      }
       for (const item of ready) track('download', { tool: toolName, input_format: item.parsed.file.format, output_format: outputFormat(item.file.name, item.parsed) });
       save(new Blob([makeZip(files) as BlobPart], { type: 'application/zip' }), 'subtitles.zip');
       return;
     }
+    const out = await tool.output(parsed, name);
     track('download', { tool: toolName, input_format: parsed.file.format, output_format: outputFormat(name, parsed) });
-    save(new Blob([tool.output(parsed, name)], { type: 'text/plain;charset=utf-8' }), tool.filename?.(name, parsed) ?? name);
-  });
+    save(new Blob([out as BlobPart], { type: mime }), tool.filename?.(name, parsed) ?? name);
+  }
 
   return render;
 }

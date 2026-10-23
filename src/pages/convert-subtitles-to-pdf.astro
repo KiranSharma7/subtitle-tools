@@ -1,0 +1,169 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ToolShell from '../components/ToolShell.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+---
+
+<Layout title="Convert subtitles to PDF online" description="Turn SRT, WebVTT, ASS and other subtitle files, or any text file, into a printable PDF transcript. Runs in your browser, nothing is uploaded.">
+  <h1>Convert subtitles to PDF</h1>
+  <p class="lede">Make a printable PDF transcript from a subtitle file, with or without timestamps. The PDF is made on your device.</p>
+
+  <ToolShell columns={['#', 'Time', 'Text']} hint="SRT, WebVTT, ASS, SSA, SAMI, MicroDVD, MPL2, LRC, or any TXT file. Several files or a zip work too.">
+    <div class="controls">
+      <div class="selects">
+        <label>Font size
+          <select id="size">
+            <option value="tiny">Tiny</option>
+            <option value="small">Small</option>
+            <option value="default" selected>Default</option>
+            <option value="large">Large</option>
+          </select>
+        </label>
+        <label>Page size
+          <select id="page">
+            <option value="a4">A4</option>
+            <option value="letter">Letter</option>
+          </select>
+        </label>
+      </div>
+      <div class="chips">
+        <label class="chip"><input id="timestamps" type="checkbox" checked /> Timestamps</label>
+        <label class="chip"><input id="gap" type="checkbox" checked /> Empty line between cues</label>
+        <label class="chip"><input id="heading" type="checkbox" checked /> File name heading</label>
+        <label class="chip"><input id="numbers" type="checkbox" checked /> Page numbers</label>
+        <label class="chip" id="combine-option" hidden><input id="combine" type="checkbox" /> Combine into one PDF</label>
+      </div>
+    </div>
+  </ToolShell>
+
+  <section class="help">
+    <h2>How to convert subtitles to PDF</h2>
+    <p>Upload a subtitle file, choose the font size and page size, and download the PDF. The preview shows each cue as it will appear. Upload several files or a zip to get one PDF per file in a zip, or tick <em>Combine into one PDF</em> to put them all in one PDF, each starting on a new page.</p>
+    <h2>What goes in the PDF</h2>
+    <p>Each cue's text, in order, with its start and end time above it in grey. Turn off <em>Timestamps</em> for a clean transcript. Plain text files have no timing, so each paragraph goes in as it is.</p>
+    <pre><code>00:00:01 – 00:00:04
+I wanted to tell you something.
+But I did not know how.</code></pre>
+    <h2>Languages and fonts</h2>
+    <p>The PDF uses Noto fonts for Latin, Greek, Cyrillic, Arabic, Hebrew, Devanagari, Thai, Chinese, Japanese and Korean text. Only the fonts your file needs are downloaded, and only the characters it uses are put in the PDF, so it stays small. Chinese text with no Japanese or Korean in it is shown with the Simplified Chinese font. Arabic and Hebrew lines are right-aligned. A line that mixes right-to-left and left-to-right words may show some of them in the wrong order. Emoji and scripts not listed here are left out, and the page lists them before you download.</p>
+    <h2>What gets removed?</h2>
+    <p>Formatting tags, colors, positions, ASS styles and karaoke effects are removed, the same as in the <a href="/convert-to-plain-text">plain text converter</a>. Cues with no text left are left out. The PDF is for reading and printing: it can't be turned back into a subtitle file.</p>
+    <h2>If the text looks wrong</h2>
+    <p>If accents or non-Latin letters look garbled in the preview, pick another encoding next to <em>Read as</em>, or fix the file with the <a href="/utf-8-converter">UTF-8 converter</a>. To remove hearing-impaired notes or speaker labels first, use the <a href="/srt-cleaner">SRT cleaner</a>.</p>
+  </section>
+
+  <Faq title="Subtitles to PDF FAQ" items={[
+    { question: 'Can I convert an SRT file to PDF?', answer: 'Yes. Upload the SRT file and download a PDF with every cue, with or without timestamps.' },
+    { question: 'Are my files uploaded?', answer: 'No. The PDF is made in your browser. Only the fonts for your text are downloaded, from this site.' },
+    { question: 'Can I make one PDF from several subtitle files?', answer: 'Yes. Upload several files or a zip and tick Combine into one PDF. Each file starts on a new page, under its file name.' },
+    { question: 'Does it work with Chinese, Japanese, Korean or Arabic?', answer: 'Yes. The page loads a Noto font for each script your file uses. Arabic and Hebrew lines are right-aligned.' },
+  ]} />
+
+  <RelatedTools tools={[
+    { href: '/convert-to-plain-text', label: 'Get a text file instead', description: 'Save the dialogue as a TXT file you can edit.' },
+    { href: '/srt-cleaner', label: 'Clean before printing', description: 'Remove tags, SDH notes, speaker labels and duplicate cues.' },
+    { href: '/utf-8-converter', label: 'Fix the text encoding', description: 'Repair garbled accents and non-Latin text first.' },
+    { href: '/subtitle-validator', label: 'Check the subtitle file', description: 'Find broken timestamps, overlaps and empty cues.' },
+  ]} />
+</Layout>
+
+<script>
+  import { parse } from '../engine/formats.ts';
+  import { convert } from '../engine/convert.ts';
+  import type { ParseResult } from '../engine/formats.ts';
+  import { mountTool } from '../components/tool-shell.ts';
+  import { lossWarnings } from '../components/converter.ts';
+  import { buildPdf, cueRows, scriptsIn, type PdfOptions } from '../components/pdf.ts';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const size = $<HTMLSelectElement>('size');
+  const pageSize = $<HTMLSelectElement>('page');
+  const timestamps = $<HTMLInputElement>('timestamps');
+  const gap = $<HTMLInputElement>('gap');
+  const heading = $<HTMLInputElement>('heading');
+  const numbers = $<HTMLInputElement>('numbers');
+  const combine = $<HTMLInputElement>('combine');
+  const combineOption = $('combine-option');
+
+  const options = (): PdfOptions => ({
+    size: size.value as PdfOptions['size'],
+    page: pageSize.value as PdfOptions['page'],
+    heading: heading.checked,
+    pageNumbers: numbers.checked,
+    gap: gap.checked,
+  });
+
+  // Fonts come from this site only. Each one is fetched once per visit, however many PDFs are made.
+  const fonts = new Map<string, Promise<Uint8Array>>();
+  const loadFont = (url: string) => {
+    if (!fonts.has(url)) {
+      fonts.set(url, fetch(url).then(async (r) => {
+        if (!r.ok) throw new Error();
+        return new Uint8Array(await r.arrayBuffer());
+      }).catch(() => {
+        fonts.delete(url);
+        throw new Error('A font for this text could not be loaded. Check your connection and try again.');
+      }));
+    }
+    return fonts.get(url)!;
+  };
+
+  const doc = (parsed: ParseResult, name: string) => ({ title: name, cues: cueRows(parsed, timestamps.checked) });
+
+  const render = mountTool({
+    // Any text file works: what isn't a subtitle file goes in as paragraphs, split at blank lines.
+    parse(text, { fps }) {
+      try {
+        return parse(text, { fps });
+      } catch {
+        const paragraphs = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+        return { file: { format: 'txt', cues: paragraphs.map((p) => ({ start: 0, end: 0, text: p })) }, problems: [] };
+      }
+    },
+    view(parsed, { previewLimit = 200, name = '' } = {}) {
+      const { file } = parsed;
+      const cues = cueRows(parsed, timestamps.checked);
+      const warnings = file.format === 'txt' ? [] : lossWarnings(convert(file, 'txt').losses);
+      const { missing } = scriptsIn([name, ...cues.map((c) => c.text)].join('\n'));
+      if (missing.length) {
+        const shown = missing.slice(0, 12).join(' ') + (missing.length > 12 ? ' ...' : '');
+        warnings.push(`${missing.length} ${missing.length === 1 ? 'character has' : 'different characters have'} no font here and will be left out of the PDF: ${shown}`);
+      }
+      if (file.format === 'txt' && timestamps.checked) warnings.push('This is a plain text file, so the PDF has no timestamps.');
+      return {
+        warnings,
+        rows: cues.slice(0, previewLimit).map((c, i) => ({ cells: [String(i + 1), c.time ?? '', c.text] })),
+        total: cues.length,
+        ready: cues.length > 0,
+        result: cues.length ? undefined : 'There is no text to put in a PDF.',
+      };
+    },
+    output: (parsed, name) => buildPdf([doc(parsed, name)], options(), loadFont),
+    mime: 'application/pdf',
+    filename: (name) => name.replace(/\.[^.]*$/, '') + '.pdf',
+    combine: () => combine.checked
+      ? async (files) => ({ name: 'subtitles.pdf', data: await buildPdf(files.map((f) => doc(f.parsed, f.name)), options(), loadFont) })
+      : undefined,
+    loaded(names) {
+      combineOption.hidden = names.length < 2;
+    },
+  });
+
+  for (const control of [size, pageSize, timestamps, gap, heading, numbers, combine]) control.addEventListener('change', render);
+</script>
+
+<style>
+  .controls { display: grid; gap: 16px; }
+  .selects { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  .selects label { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--ink); border-radius: var(--pill); font-size: 16px; cursor: pointer; }
+  .chip[hidden] { display: none; }
+  .chip:hover { background: var(--cream); }
+  .chip:has(:checked) { background: var(--cream); box-shadow: 0 0 0 1px var(--ink); }
+  :global(.tool td:nth-child(-n + 2)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  :global(.tool td:last-child) { width: 100%; }
+  /* Mobile labels each value; plain text has no time, so don't show a bare "Time" label. */
+  @media (max-width: 640px) { :global(.tool td:empty) { display: none; } }
+</style>

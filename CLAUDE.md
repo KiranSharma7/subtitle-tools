@@ -21,6 +21,7 @@ Static Astro site of small subtitle tools (shift, convert). Everything runs in t
   - `convert.ts`: cross-format conversion (only to SRT, WebVTT, txt, LRC for the timed lyrics editor, and ASS for the style tools' "Save as ASS"). Each format supplies a `*ToCommon` function that returns SRT-style text plus what was lost. Losses must always be reported, never dropped silently.
   - `decode.ts`: byte decoding / charset detection (jschardet). `shift.ts`, `time.ts`: re-timing and timestamp parse/format.
   - All tests are in `engine.test.ts`.
+- `src/components/pdf.ts`: the PDF page's output (pdf-lib + fontkit, imported only when a PDF is made). Fonts are Noto TTFs in `public/fonts`, one per script, fetched only when the text needs them and subset on embed. The CJK fonts are Google's variable fonts pinned to Regular with fontTools, and their glyphs must be padded to an even length or pdf-lib's subsetter breaks their outlines (a test in `pdf.test.ts` checks every font).
 - `src/components/`: `ToolShell.astro` is the shared upload/preview/download markup. `tool-shell.ts` `mountTool()` wires it up; each tool supplies `view` (warnings + preview rows) and `output`. `converter.ts` is the shared script for the convert pages.
 - `src/pages/*.astro`: one page per tool. `src/tools.ts` lists the tools for the index page, so add new tools there too.
 - Adding a format touches: `types.ts` `Format`, `formats.ts` detect/parse/write, `convert.ts` `toCommon`, `formatNames` in `tool-shell.ts`, the tool pages' format lists, and tests.

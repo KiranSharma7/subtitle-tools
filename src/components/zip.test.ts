@@ -39,6 +39,12 @@ test('makeZip round-trips text and renames clashing names', () => {
   assert.equal(strFromU8(files[0].data), 'Café');
 });
 
+test('makeZip keeps bytes as they are', () => {
+  const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0xff, 0x00]);
+  const [file] = readZip(makeZip([{ name: 'a.pdf', data: pdf }]));
+  assert.deepEqual(file.data, pdf);
+});
+
 test('accepts matches extensions, and an empty accept list takes anything', () => {
   assert.equal(accepts('Movie.SRT', '.srt,.vtt'), true);
   assert.equal(accepts('notes.nfo', '.srt,.vtt'), false);
